@@ -1,5 +1,23 @@
 # OrchestAI
 
+<!-- Status & Build -->
+[![Status](https://img.shields.io/badge/status-active%20development-yellow?style=flat-square)](https://github.com/ggarciasoft/orchestai)
+[![Backend Tests](https://img.shields.io/badge/backend%20tests-125%20passing-brightgreen?style=flat-square&logo=dotnet)](./tests/OrchestAI.Tests)
+[![Frontend Tests](https://img.shields.io/badge/frontend%20tests-24%20passing-brightgreen?style=flat-square&logo=jest)](./apps/web)
+[![Last Commit](https://img.shields.io/github/last-commit/ggarciasoft/orchestai?style=flat-square)](https://github.com/ggarciasoft/orchestai/commits/main)
+
+<!-- Stack -->
+[![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com)
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=nextdotjs)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript)](https://typescriptlang.org)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev)
+
+<!-- Project Stats -->
+[![Nodes](https://img.shields.io/badge/nodes-19%20built--in-blue?style=flat-square)](./docs/NODES.md)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green?style=flat-square)](./LICENSE)
+
+<!-- TODO: replace static test badges with dynamic CI badges once GitHub Actions is configured -->
+
 > Open-source enterprise AI workflow platform for orchestrating agents, tools, human approvals, documents, and business automation.
 
 OrchestAI is a modular platform that lets teams build AI-driven business workflows using reusable nodes. Workflows are stored as **data**, executed by a backend **engine**, and surfaced through a **visual designer**.
