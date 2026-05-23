@@ -13,7 +13,7 @@ OrchestAI is a modular platform that lets teams build AI-driven business workflo
 - **AI nodes** — summarize, classify, extract, analyze, reason, and call tools through a provider-agnostic LLM abstraction.
 - **Human approvals** — first-class node type; workflows pause and resume.
 - **Document processing** — PDF text extraction, OCR (future), classification.
-- **Integrations** — email, HTTP, webhooks, Slack, Teams, Jira (post-MVP).
+- **Integrations** — HTTP requests, email, webhooks, Slack (shipped), Teams/Jira (future).
 - **Auditability** — full execution timeline, AI usage logs, retries, decisions.
 
 ---

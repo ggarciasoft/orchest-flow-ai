@@ -83,8 +83,12 @@
 | Execution engine logic (node graph walking) | ✅ Works (in-process) |
 | Execution enqueue + worker pickup | ✅ Works (in-memory, same process) |
 | Approval approve/reject API | ✅ Works |
-| All backend unit tests | ✅ 88/88 passing |
+| All backend unit tests | ✅ 125/125 passing |
 | All frontend unit tests | ✅ 24/24 passing |
+| Node count | ✅ 19 nodes (7 → 19) |
+| Code comments (XML/JSDoc) | ✅ All backend + frontend files commented |
+| Node deletion in designer | ✅ Keyboard, right-click, drawer button |
+| /workflows/new page | ✅ Fixed (was 404) |
 
 ---
 

@@ -95,9 +95,19 @@ Each entry has:
 
 - **Purpose:** Generic text summarization with configurable length/style.
 
-### `ai.classify`  · Phase 11
+### `ai.classify`  ✅ Shipped
 
-- **Purpose:** Classify text into a configurable set of labels.
+- **Purpose:** Classify text into configured categories using an LLM.
+- **Inputs:** `text` (`String`, required)
+- **Outputs:** `category` (`String`), `confidence` (`String`), `rawResponse` (`String`)
+- **Config:** `categories` (comma-separated, required), `model`, `instructions`
+
+### `ai.extract`  ✅ Shipped
+
+- **Purpose:** Extract structured fields from unstructured text using an LLM.
+- **Inputs:** `text` (`String`, required)
+- **Outputs:** `extractedJson` (`Json`), plus individual field outputs
+- **Config:** `fields` (comma-separated, required), `model`
 
 ### `ai.extract-entities`  · Phase 11
 
@@ -123,9 +133,12 @@ Each entry has:
 
 - **Purpose:** Search a knowledge base and return cited passages.
 
-### `ai.translate`  · Phase 11
+### `ai.translate`  ✅ Shipped
 
-- **Purpose:** Translate text between languages.
+- **Purpose:** Translate text into a configured target language using an LLM.
+- **Inputs:** `text` (`String`, required)
+- **Outputs:** `translatedText` (`String`), `targetLanguage` (`String`)
+- **Config:** `targetLanguage` (required), `model`
 
 ### `ai.policy-check`  · Phase 11
 
@@ -142,9 +155,12 @@ Each entry has:
 - **Outputs:** `result` (`Boolean`)
 - **Config:** `expression` (`String`, required)
 
-### `logic.switch`  · Phase 10
+### `logic.switch`  ✅ Shipped
 
-- **Purpose:** Multi-way routing by a key value.
+- **Purpose:** Multi-way routing by a key value matched against configured cases.
+- **Inputs:** `value` (`String`, required)
+- **Outputs:** `matchedCase` (`String`), `matched` (`Boolean`)
+- **Config:** `cases` (comma-separated, required)
 
 ### `logic.loop`  · Phase 10
 
@@ -154,13 +170,41 @@ Each entry has:
 
 - **Purpose:** Fan out to N branches; join when all complete.
 
-### `logic.delay`  · Phase 10
+### `logic.delay`  ✅ Shipped
 
 - **Purpose:** Pause the workflow for a configured duration.
+- **Inputs:** none
+- **Outputs:** `delayedMs` (`Number`)
+- **Config:** `durationMs` (`Number`, required, default 1000)
 
 ### `logic.retry-policy`  · Phase 10
 
 - **Purpose:** Override default retry behavior for a downstream node.
+
+### `logic.merge`  ✅ Shipped
+
+- **Purpose:** Synchronization point that collects outputs from multiple upstream branches and forwards all as outputs.
+- **Inputs:** dynamic
+- **Outputs:** all inputs forwarded
+- **Config:** none
+
+---
+
+## Data  ✅ Shipped
+
+### `data.set`  ✅ Shipped
+
+- **Purpose:** Sets workflow variables with optional `{{placeholder}}` substitution from node inputs.
+- **Inputs:** none
+- **Outputs:** dynamic — all keys from the `variables` config
+- **Config:** `variables` (JSON key→value map, required)
+
+### `data.json-transform`  ✅ Shipped
+
+- **Purpose:** Maps/reshapes a JSON object using dot-notation path mappings.
+- **Inputs:** `json` (`String`, required)
+- **Outputs:** `transformedJson` (`Json`) + individual mapped fields
+- **Config:** `mapping` (JSON output→input path map, required)
 
 ---
 
@@ -187,23 +231,34 @@ Each entry has:
 
 ---
 
-## Integrations  · Phase 11+
+## Integrations  ✅ Partial — 4 nodes shipped
 
-### `integration.email.send`
+### `integrations.http`  ✅ Shipped
 
-- **Purpose:** Send an email via configured provider.
+- **Purpose:** Calls any external REST API endpoint.
+- **Inputs:** none
+- **Outputs:** `statusCode` (`Number`), `responseBody` (`String`), `success` (`Boolean`)
+- **Config:** `url` (required), `method` (GET/POST/PUT/DELETE/PATCH), `headers` (JSON), `body`, `timeoutSeconds`
 
-### `integration.webhook.call`
+### `integrations.slack`  ✅ Shipped
 
-- **Purpose:** POST a payload to an external webhook.
+- **Purpose:** Sends a message to Slack via an incoming webhook URL.
+- **Outputs:** `sent` (`Boolean`)
+- **Config:** `webhookUrl` (required), `message` (supports `{{placeholders}}`), `channel`
 
-### `integration.http.request`
+### `integrations.webhook-out`  ✅ Shipped
 
-- **Purpose:** Arbitrary HTTP request (GET/POST/PUT/PATCH/DELETE) with auth.
+- **Purpose:** POSTs execution context and optional node inputs to a configured URL.
+- **Outputs:** `statusCode` (`Number`), `sent` (`Boolean`)
+- **Config:** `url` (required), `includeInputs` (all|none)
 
-### `integration.slack.send-message`
+### `integrations.email`  ✅ Shipped
 
-### `integration.teams.send-message`
+- **Purpose:** Sends an email via SMTP. Subject and body support `{{placeholder}}` substitution.
+- **Outputs:** `sent` (`Boolean`), `to` (`String`)
+- **Config:** `to`, `subject`, `body` (all required + `{{placeholders}}`), `smtpHost`, `smtpPort`
+
+### `integration.teams.send-message`  · Phase 12+
 
 ### `integration.jira.create-ticket`
 
@@ -215,10 +270,17 @@ Each entry has:
 
 ---
 
-## Priorities for Post-MVP
+## Node Inventory (as of 2026-05-23)
 
-| Tier   | Nodes                                                                                  |
+| Status | Count | Nodes |
+|---|---|---|
+| ✅ Shipped | 19 | `system.start`, `system.end`, `logic.condition`, `logic.delay`, `logic.switch`, `logic.merge`, `human.approval`, `ai.contract-risk-analysis`, `ai.executive-summary`, `ai.classify`, `ai.extract`, `ai.translate`, `documents.extract-pdf`, `integrations.http`, `integrations.slack`, `integrations.webhook-out`, `integrations.email`, `data.set`, `data.json-transform` |
+| 🚧 Roadmap | 20+ | See Phase 10–16 items above |
+
+## Priorities for Post-MVP (Remaining)
+
+| Tier | Nodes |
 | ------ | -------------------------------------------------------------------------------------- |
-| High   | `integration.email.send`, `integration.http.request`, `logic.switch`, `ai.summarize`, `ai.classify`, `ai.extract-entities`, `document.generate-pdf-report`, `integration.webhook.call`, `ai.rag-search`, `human.manual-review` |
-| Medium | `integration.slack.send-message`, `integration.jira.create-ticket`, `document.ocr`, `logic.parallel`, `logic.delay`, `ai.translate`, `ai.compare-documents`, `integration.database.query` |
+| High | `ai.summarize`, `document.generate-pdf-report`, `ai.rag-search`, `human.manual-review`, `logic.loop`, `logic.parallel` |
+| Medium | `integration.jira.create-ticket`, `document.ocr`, `ai.compare-documents`, `integration.database.query`, `ai.sentiment-analysis` |
 | Advanced | `ai.agent-executor`, `ai.multi-agent-review`, `ai.workflow-planner`, `system.error-boundary`, `system.compensation-step` |
