@@ -2,6 +2,10 @@ using OrchestAI.SDK.Interfaces;
 using System.Collections.Concurrent;
 namespace OrchestAI.Engine.Registry;
 
+/// <summary>
+/// Registry to manage workflow nodes and their descriptors.
+/// Provides functionality to register, retrieve, and list all registered nodes.
+/// </summary>
 public sealed class NodeRegistry : INodeRegistry
 {
     private readonly ConcurrentDictionary<string, IWorkflowNode> _nodes = new();
@@ -11,7 +15,12 @@ public sealed class NodeRegistry : INodeRegistry
     public IWorkflowNodeDescriptor? GetDescriptor(string type) => _descriptors.GetValueOrDefault(type);
     public IReadOnlyCollection<IWorkflowNodeDescriptor> GetAllDescriptors() => _descriptors.Values.ToList().AsReadOnly();
 
-    public void Register(IWorkflowNode node, IWorkflowNodeDescriptor descriptor)
+    /// <summary>
+/// Registers a workflow node and its related descriptor.
+/// </summary>
+/// <param name="node">The workflow node to register.</param>
+/// <param name="descriptor">The descriptor providing metadata about the node.</param>
+public void Register(IWorkflowNode node, IWorkflowNodeDescriptor descriptor)
     {
         _nodes[node.Type] = node;
         _descriptors[descriptor.Type] = descriptor;

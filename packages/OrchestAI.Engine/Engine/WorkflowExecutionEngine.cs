@@ -11,6 +11,10 @@ using Microsoft.Extensions.Logging;
 
 namespace OrchestAI.Engine;
 
+/// <summary>
+/// The core engine for executing workflows in the OrchestAI platform.
+/// This engine validates, executes, and manages workflow states and transitions during their lifecycle.
+/// </summary>
 public sealed class WorkflowExecutionEngine : IWorkflowEngine
 {
     private readonly IServiceProvider _services;
@@ -29,10 +33,22 @@ public sealed class WorkflowExecutionEngine : IWorkflowEngine
         _logger = logger;
     }
 
-    public Task<ValidationResult> ValidateAsync(WorkflowDefinition def, CancellationToken ct = default)
+    /// <summary>
+/// Validates the workflow definition against the registered node types.
+/// </summary>
+/// <param name="def">The workflow definition to validate.</param>
+/// <param name="ct">Cancellation token for the operation.</param>
+/// <returns>A ValidationResult indicating whether the workflow is valid.</returns>
+public Task<ValidationResult> ValidateAsync(WorkflowDefinition def, CancellationToken ct = default)
         => Task.FromResult(_validator.Validate(def, _registry));
 
-    public async Task RunAsync(Guid executionId, CancellationToken ct = default)
+    /// <summary>
+/// Executes a workflow based on its specific execution ID.
+/// </summary>
+/// <param name="executionId">The ID of the workflow execution to run.</param>
+/// <param name="ct">Cancellation token for the operation.</param>
+/// <returns>A Task representing the asynchronous operation.</returns>
+public async Task RunAsync(Guid executionId, CancellationToken ct = default)
     {
         using var scope = _services.CreateScope();
         var execRepo = scope.ServiceProvider.GetRequiredService<IEngineExecutionRepository>();
@@ -128,7 +144,14 @@ public sealed class WorkflowExecutionEngine : IWorkflowEngine
         await execRepo.UpdateExecutionAsync(execution, ct);
     }
 
-    public async Task ResumeAsync(Guid executionId, ResumeSignal signal, CancellationToken ct = default)
+    /// <summary>
+/// Resumes a suspended workflow execution using the provided signal.
+/// </summary>
+/// <param name="executionId">The ID of the workflow execution to resume.</param>
+/// <param name="signal">The resume signal containing the outputs to continue with.</param>
+/// <param name="ct">Cancellation token for the operation.</param>
+/// <returns>A Task representing the asynchronous operation.</returns>
+public async Task ResumeAsync(Guid executionId, ResumeSignal signal, CancellationToken ct = default)
     {
         using var scope = _services.CreateScope();
         var execRepo = scope.ServiceProvider.GetRequiredService<IEngineExecutionRepository>();

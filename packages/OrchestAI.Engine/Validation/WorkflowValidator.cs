@@ -2,6 +2,10 @@ using OrchestAI.Engine.Models;
 using OrchestAI.Engine.Registry;
 namespace OrchestAI.Engine.Validation;
 
+/// <summary>
+/// Validates workflows by ensuring that all nodes and edges conform to expected structures
+/// and practices within the OrchestAI environment.
+/// </summary>
 public sealed class WorkflowValidator
 {
     public ValidationResult Validate(WorkflowDefinition def, INodeRegistry registry)

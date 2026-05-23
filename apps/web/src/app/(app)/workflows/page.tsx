@@ -6,8 +6,13 @@ import { api } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { Plus, Search, GitBranch, Play } from 'lucide-react';
 
+/**
+ * WorkflowsPage — lists all workflows for the current tenant.
+ * Supports live search filtering and navigation to create or open workflows.
+ */
 export default function WorkflowsPage() {
   const [search, setSearch] = useState('');
+  // Re-fetch when search term changes; debounce handled server-side via query params
   const { data, isLoading } = useQuery({ queryKey: ['workflows', search], queryFn: () => api.workflows.list({ search }) });
 
   return (

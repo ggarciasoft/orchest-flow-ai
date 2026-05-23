@@ -5,11 +5,17 @@ import { api } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { CheckCircle, XCircle } from 'lucide-react';
 
+/**
+ * ApprovalsPage — inbox for pending human approval requests.
+ * Allows reviewers to approve or reject workflow pauses with an optional comment.
+ */
 export default function ApprovalsPage() {
   const qc = useQueryClient();
+  // Per-approval comment state keyed by approval id
   const [comment, setComment] = useState<Record<string, string>>({});
   const { data, isLoading } = useQuery({ queryKey: ['approvals', 'Pending'], queryFn: () => api.approvals.list('Pending') });
 
+  // Invalidate approval list after approve/reject so the inbox updates immediately
   const approve = useMutation({
     mutationFn: ({ id, c }: { id: string; c?: string }) => api.approvals.approve(id, c),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['approvals'] }),

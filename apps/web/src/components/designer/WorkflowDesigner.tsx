@@ -22,6 +22,13 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 interface ContextMenu { x: number; y: number; nodeId: string; }
 
+/**
+ * WorkflowDesigner — full-screen canvas for building workflow graphs.
+ * Handles node drag-and-drop, edge connections, config drawer, delete, and execution.
+ *
+ * @param workflow - The workflow metadata (id, name, description)
+ * @param nodeCatalog - Available node types fetched from /api/nodes
+ */
 export function WorkflowDesigner({ workflow, nodeCatalog }: Props) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -29,14 +36,25 @@ export function WorkflowDesigner({ workflow, nodeCatalog }: Props) {
   const [executing, setExecuting] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
 
+  /**
+   * Handles connection creation between two nodes.
+   *
+   * @param {Connection} conn - The connection object containing the source and target nodes.
+   */
   const onConnect = useCallback((conn: Connection) => setEdges(eds => addEdge(conn, eds)), [setEdges]);
 
+  /**
+   * Handles clicking on a node, deselecting context menu and selecting the clicked node.
+   */
   const onNodeClick: NodeMouseHandler = (_evt, node) => {
     setContextMenu(null);
     setSelected(node);
   };
 
-  // Delete a node (and its connected edges) by id
+  /**
+   * Deletes a node by its ID and removes associated edges.
+   * If the node being deleted is currently selected, deselect it as well.
+   */
   const deleteNode = useCallback((nodeId: string) => {
     setNodes(nds => nds.filter(n => n.id !== nodeId));
     setEdges(eds => eds.filter(e => e.source !== nodeId && e.target !== nodeId));
@@ -44,22 +62,30 @@ export function WorkflowDesigner({ workflow, nodeCatalog }: Props) {
     setContextMenu(null);
   }, [setNodes, setEdges]);
 
-  // Keyboard: Delete or Backspace removes selected node
+  /**
+   * Handles key presses, deleting selected nodes on Delete/Backspace keys.
+   * Skips deletion if the user is typing in an input or textarea element.
+   */
   const onKeyDown = useCallback((evt: React.KeyboardEvent) => {
     if ((evt.key === 'Delete' || evt.key === 'Backspace') && selected) {
-      // Don't fire if user is typing in an input/textarea
       const tag = (evt.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       deleteNode(selected.id);
     }
   }, [selected, deleteNode]);
 
-  // Right-click context menu on a node
+  /**
+   * Displays a context menu for a right-click event on a node.
+   */
   const onNodeContextMenu: NodeMouseHandler = useCallback((evt, node) => {
     evt.preventDefault();
     setContextMenu({ x: evt.clientX, y: evt.clientY, nodeId: node.id });
   }, []);
 
+  /**
+   * Adds a new node to the canvas based on the provided descriptor.
+   * Automatically generates a unique ID and random position.
+   */
   const addNode = (descriptor: NodeDescriptor) => {
     const newNode: Node = {
       id: `${descriptor.type}-${Date.now()}`,
@@ -75,6 +101,10 @@ export function WorkflowDesigner({ workflow, nodeCatalog }: Props) {
     setNodes(nds => [...nds, newNode]);
   };
 
+  /**
+   * Executes the workflow represented by the current state.
+   * Displays alerts for both success and error cases.
+   */
   const handleExecute = async () => {
     setExecuting(true);
     try {
@@ -82,7 +112,9 @@ export function WorkflowDesigner({ workflow, nodeCatalog }: Props) {
       alert('Execution started! Check the Executions page for progress.');
     } catch (e) {
       alert('Execution failed: ' + (e as Error).message);
-    } finally { setExecuting(false); }
+    } finally {
+      setExecuting(false);
+    }
   };
 
   return (

@@ -1,5 +1,9 @@
 namespace OrchestAI.Engine.Conditions;
 
+/// <summary>
+/// Evaluates boolean expressions against a given variable scope.
+/// Used for workflow transitions that depend on conditions.
+/// </summary>
 public sealed class ExpressionEvaluator
 {
     public bool Evaluate(string expression, Dictionary<string, object?> scope)

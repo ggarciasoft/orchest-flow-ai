@@ -4,11 +4,18 @@ import { api } from '@/lib/api';
 import { statusColor, formatDate } from '@/lib/utils';
 import { GitBranch, Play, CheckSquare, AlertCircle } from 'lucide-react';
 
+/**
+ * DashboardPage — landing overview showing key workflow stats,
+ * recent executions, and pending approvals.
+ */
 export default function DashboardPage() {
   const { data: workflows } = useQuery({ queryKey: ['workflows'], queryFn: () => api.workflows.list() });
   const { data: executions } = useQuery({ queryKey: ['executions'], queryFn: () => api.executions.list({ page: 1 }) });
   const { data: approvals } = useQuery({ queryKey: ['approvals', 'Pending'], queryFn: () => api.approvals.list('Pending') });
 
+  /**
+   * Data array for displaying summary statistics at the top of the dashboard.
+   */
   const stats = [
     { label: 'Total Workflows', value: workflows?.total ?? 0, icon: GitBranch, color: 'text-blue-600 bg-blue-50' },
     { label: 'Executions', value: executions?.total ?? 0, icon: Play, color: 'text-green-600 bg-green-50' },
@@ -23,6 +30,7 @@ export default function DashboardPage() {
         <p className="text-gray-500 mt-1">Overview of your AI workflows</p>
       </div>
 
+      {/* Render the stats summary cards */}
       <div className="grid grid-cols-4 gap-6">
         {stats.map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-white rounded-xl border p-6 flex items-center justify-between">
@@ -36,6 +44,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-6">
+        {/* Section for recent executions */}
         <div className="bg-white rounded-xl border">
           <div className="p-5 border-b"><h3 className="font-semibold">Recent Executions</h3></div>
           <div className="p-4 space-y-2">
@@ -49,6 +58,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Section for pending approvals */}
         <div className="bg-white rounded-xl border">
           <div className="p-5 border-b"><h3 className="font-semibold">Pending Approvals</h3></div>
           <div className="p-4 space-y-2">
