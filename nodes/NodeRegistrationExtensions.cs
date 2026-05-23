@@ -1,9 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using OrchestAI.Engine.Registry;
+using OrchestAI.Nodes.Integrations;
 using OrchestAI.Nodes.AI;
 using OrchestAI.Nodes.Documents;
 using OrchestAI.Nodes.Human;
 using OrchestAI.Nodes.Logic;
+using OrchestAI.Nodes.Data;
 using OrchestAI.Nodes.System;
 using OrchestAI.SDK.Interfaces;
 namespace OrchestAI.Nodes;
@@ -16,12 +18,26 @@ public static class NodeRegistrationExtensions
         RegisterNode<SystemStartNode, SystemStartNodeDescriptor>(services);
         RegisterNode<SystemEndNode, SystemEndNodeDescriptor>(services);
         RegisterNode<ConditionNode, ConditionNodeDescriptor>(services);
+        RegisterNode<DelayNode, DelayNodeDescriptor>(services);
+        RegisterNode<SwitchNode, SwitchNodeDescriptor>(services);
+        RegisterNode<MergeNode, MergeNodeDescriptor>(services);
         RegisterNode<HumanApprovalNode, HumanApprovalNodeDescriptor>(services);
         RegisterNode<ContractRiskAnalysisNode, ContractRiskAnalysisNodeDescriptor>(services);
+RegisterNode<TextClassifierNode, TextClassifierNodeDescriptor>(services);
+RegisterNode<DataExtractorNode, DataExtractorNodeDescriptor>(services);
+RegisterNode<TranslationNode, TranslationNodeDescriptor>(services);
         RegisterNode<ExecutiveSummaryNode, ExecutiveSummaryNodeDescriptor>(services);
         RegisterNode<ExtractPdfTextNode, ExtractPdfTextNodeDescriptor>(services);
+        RegisterNode<SetVariableNode, SetVariableNodeDescriptor>(services);
+        RegisterNode<JsonTransformNode, JsonTransformNodeDescriptor>(services);
 
         // Wire into registry after DI container is built
+        RegisterNode<HttpRequestNode, HttpRequestNodeDescriptor>(services);
+        RegisterNode<SlackNotifyNode, SlackNotifyNodeDescriptor>(services);
+        RegisterNode<WebhookOutNode, WebhookOutNodeDescriptor>(services);
+        RegisterNode<SendEmailNode, SendEmailNodeDescriptor>(services);
+
+        services.AddHttpClient();
         services.AddHostedService<NodeRegistrationHostedService>();
         return services;
     }

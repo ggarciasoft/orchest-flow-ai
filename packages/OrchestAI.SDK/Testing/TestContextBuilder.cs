@@ -8,11 +8,14 @@ public sealed class TestContextBuilder
     private Dictionary<string, object?> _workflowInputs = new();
     private Guid _executionId = Guid.NewGuid();
     private Guid _tenantId = Guid.NewGuid();
+    private IServiceProvider? _services;
 
     public TestContextBuilder WithInputs(Dictionary<string, object?> inputs) { _inputs = inputs; return this; }
     public TestContextBuilder WithConfig(Dictionary<string, object?> config) { _config = config; return this; }
     public TestContextBuilder WithWorkflowInputs(Dictionary<string, object?> inputs) { _workflowInputs = inputs; return this; }
     public TestContextBuilder WithExecutionId(Guid id) { _executionId = id; return this; }
+    /// <summary>Provides a custom <see cref="IServiceProvider"/> for nodes that resolve DI services.</summary>
+    public TestContextBuilder WithServices(IServiceProvider services) { _services = services; return this; }
 
     public WorkflowExecutionContext Build() => new()
     {
@@ -22,7 +25,7 @@ public sealed class TestContextBuilder
         NodeInputs = _inputs,
         NodeConfig = _config,
         WorkflowInputs = _workflowInputs,
-        Services = new TestServiceProvider(),
+        Services = _services ?? new TestServiceProvider(),
         CurrentNodeId = "test-node"
     };
 
