@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>OrchestAI.Nodes</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\packages\OrchestAI.SDK\OrchestAI.SDK.csproj" />
+    <ProjectReference Include="..\packages\OrchestAI.Engine\OrchestAI.Engine.csproj" />
+    <ProjectReference Include="..\packages\OrchestAI.Application\OrchestAI.Application.csproj" />
+    <ProjectReference Include="..\services\OrchestAI.AI\OrchestAI.AI.csproj" />
+    <PackageReference Include="UglyToad.PdfPig" Version="0.1.9-alpha001-patch1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.5" />
+  </ItemGroup>
+</Project>

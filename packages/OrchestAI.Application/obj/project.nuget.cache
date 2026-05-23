@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "2mfv8fM8NZs=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\ggarc\\.openclaw\\workspace\\OrchestAI\\packages\\OrchestAI.Application\\OrchestAI.Application.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\ggarc\\.nuget\\packages\\mediatr\\12.4.1\\mediatr.12.4.1.nupkg.sha512",
+    "C:\\Users\\ggarc\\.nuget\\packages\\mediatr.contracts\\2.0.1\\mediatr.contracts.2.0.1.nupkg.sha512",
+    "C:\\Users\\ggarc\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\9.0.5\\microsoft.extensions.dependencyinjection.abstractions.9.0.5.nupkg.sha512",
+    "C:\\Users\\ggarc\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\9.0.5\\microsoft.extensions.logging.abstractions.9.0.5.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>OrchestAI.Application</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\OrchestAI.Domain\OrchestAI.Domain.csproj" />
+    <ProjectReference Include="..\OrchestAI.SDK\OrchestAI.SDK.csproj" />
+    <ProjectReference Include="..\OrchestAI.Engine\OrchestAI.Engine.csproj" />
+    <ProjectReference Include="..\OrchestAI.Contracts\OrchestAI.Contracts.csproj" />
+    <PackageReference Include="MediatR" Version="12.4.1" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,2 @@
+namespace OrchestAI.Contracts.Responses;
+public sealed record ApprovalRequestResponse(Guid Id, Guid WorkflowExecutionId, Guid NodeExecutionId, string Status, string PayloadJson, DateTime RequestedAt, DateTime? RespondedAt, string? Decision, string? Comment);

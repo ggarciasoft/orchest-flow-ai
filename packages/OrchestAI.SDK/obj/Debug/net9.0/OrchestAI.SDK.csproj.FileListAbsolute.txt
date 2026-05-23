@@ -1,0 +1,12 @@
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.SDK\obj\Debug\net9.0\OrchestAI.SDK.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.SDK\obj\Debug\net9.0\OrchestAI.SDK.AssemblyInfoInputs.cache
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.SDK\obj\Debug\net9.0\OrchestAI.SDK.AssemblyInfo.cs
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.SDK\obj\Debug\net9.0\OrchestAI.SDK.csproj.CoreCompileInputs.cache
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.SDK\obj\Debug\net9.0\OrchestAI.SDK.sourcelink.json
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.SDK\bin\Debug\net9.0\OrchestAI.SDK.deps.json
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.SDK\bin\Debug\net9.0\OrchestAI.SDK.dll
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.SDK\bin\Debug\net9.0\OrchestAI.SDK.pdb
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.SDK\obj\Debug\net9.0\OrchestAI.SDK.dll
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.SDK\obj\Debug\net9.0\refint\OrchestAI.SDK.dll
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.SDK\obj\Debug\net9.0\OrchestAI.SDK.pdb
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.SDK\obj\Debug\net9.0\ref\OrchestAI.SDK.dll

@@ -1,0 +1,21 @@
+# .NET build outputs
+bin/
+obj/
+*.user
+.vs/
+
+# Node
+node_modules/
+.next/
+out/
+apps/web/.next/
+apps/web/node_modules/
+
+# Secrets
+.env
+.env.local
+*.env
+
+# OS
+.DS_Store
+Thumbs.db

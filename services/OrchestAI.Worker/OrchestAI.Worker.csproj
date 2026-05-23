@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>OrchestAI.Worker</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\packages\OrchestAI.Application\OrchestAI.Application.csproj" />
+    <ProjectReference Include="..\..\packages\OrchestAI.Infrastructure\OrchestAI.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\packages\OrchestAI.Engine\OrchestAI.Engine.csproj" />
+    <ProjectReference Include="..\..\packages\OrchestAI.SDK\OrchestAI.SDK.csproj" />
+    <ProjectReference Include="..\OrchestAI.AI\OrchestAI.AI.csproj" />
+    <ProjectReference Include="..\..\nodes\OrchestAI.Nodes.csproj" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
+    <PackageReference Include="MediatR" Version="12.4.1" />
+    <PackageReference Include="OpenAI" Version="2.2.0" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/nodes/">
+    <Project Path="nodes/OrchestAI.Nodes.csproj" />
+  </Folder>
+  <Folder Name="/packages/">
+    <Project Path="packages/OrchestAI.Application/OrchestAI.Application.csproj" />
+    <Project Path="packages/OrchestAI.Contracts/OrchestAI.Contracts.csproj" />
+    <Project Path="packages/OrchestAI.Domain/OrchestAI.Domain.csproj" />
+    <Project Path="packages/OrchestAI.Engine/OrchestAI.Engine.csproj" />
+    <Project Path="packages/OrchestAI.Infrastructure/OrchestAI.Infrastructure.csproj" />
+    <Project Path="packages/OrchestAI.Observability/OrchestAI.Observability.csproj" />
+    <Project Path="packages/OrchestAI.SDK/OrchestAI.SDK.csproj" />
+  </Folder>
+  <Folder Name="/services/">
+    <Project Path="services/OrchestAI.AI/OrchestAI.AI.csproj" />
+    <Project Path="services/OrchestAI.Api/OrchestAI.Api.csproj" />
+    <Project Path="services/OrchestAI.Worker/OrchestAI.Worker.csproj" />
+  </Folder>
+</Solution>

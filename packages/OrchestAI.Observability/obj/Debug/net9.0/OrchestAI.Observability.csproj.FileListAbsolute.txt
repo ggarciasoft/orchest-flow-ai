@@ -1,0 +1,13 @@
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.Observability\bin\Debug\net9.0\OrchestAI.Observability.deps.json
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.Observability\bin\Debug\net9.0\OrchestAI.Observability.dll
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.Observability\bin\Debug\net9.0\OrchestAI.Observability.pdb
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.Observability\obj\Debug\net9.0\OrchestAI.Observability.csproj.AssemblyReference.cache
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.Observability\obj\Debug\net9.0\OrchestAI.Observability.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.Observability\obj\Debug\net9.0\OrchestAI.Observability.AssemblyInfoInputs.cache
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.Observability\obj\Debug\net9.0\OrchestAI.Observability.AssemblyInfo.cs
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.Observability\obj\Debug\net9.0\OrchestAI.Observability.csproj.CoreCompileInputs.cache
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.Observability\obj\Debug\net9.0\OrchestAI.Observability.sourcelink.json
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.Observability\obj\Debug\net9.0\OrchestAI.Observability.dll
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.Observability\obj\Debug\net9.0\refint\OrchestAI.Observability.dll
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.Observability\obj\Debug\net9.0\OrchestAI.Observability.pdb
+C:\Users\ggarc\.openclaw\workspace\OrchestAI\packages\OrchestAI.Observability\obj\Debug\net9.0\ref\OrchestAI.Observability.dll
