@@ -6,121 +6,205 @@ OrchestAI is a modular platform that lets teams build AI-driven business workflo
 
 ---
 
-## 🎯 What OrchestAI Does
+## 🟢 Current Status
 
-- **Visual workflow design** — connect reusable nodes on a canvas (React Flow).
-- **Async execution** — a worker service runs workflows, persists state, retries, and resumes.
-- **AI nodes** — summarize, classify, extract, analyze, reason, and call tools through a provider-agnostic LLM abstraction.
-- **Human approvals** — first-class node type; workflows pause and resume.
-- **Document processing** — PDF text extraction, OCR (future), classification.
-- **Integrations** — HTTP requests, email, webhooks, Slack (shipped), Teams/Jira (future).
-- **Auditability** — full execution timeline, AI usage logs, retries, decisions.
+**Active development.** Core architecture is built and running.
+
+| Area | Status |
+|---|---|
+| Backend API (.NET 9) | ✅ Running — all endpoints implemented |
+| Frontend (Next.js) | ✅ Running — designer, pages, auth |
+| Workflow Engine | ✅ Implemented — graph execution, retries, approvals |
+| Node Library | ✅ **19 nodes** across 6 categories |
+| Unit Tests | ✅ **125/125 backend** · **24/24 frontend** passing |
+| Database | ⚠️ In-memory stubs (PostgreSQL not yet wired) |
+| Designer Save | ⚠️ Not yet implemented — see `BACKLOG.md` |
+| Auth guard (frontend) | ⚠️ Partial — login works, route guard pending |
+
+> See [`BACKLOG.md`](./BACKLOG.md) for the full list of known gaps and next steps.
 
 ---
 
-## 🚀 MVP: Contract Review Workflow
+## 🎯 What OrchestAI Does
 
-The MVP proves the architecture by shipping a single end-to-end flow:
+- **Visual workflow design** — drag-and-drop nodes on a canvas (React Flow). Connect, configure, and delete nodes.
+- **Async execution** — a worker service runs workflows, persists state, retries, and resumes after human decisions.
+- **19 built-in nodes** — logic, AI, integrations, data, documents, human approval, and system nodes.
+- **AI nodes** — classify, extract, translate, summarize, and analyze using a provider-agnostic LLM abstraction.
+- **Human approvals** — first-class node type; workflows pause and resume after approve/reject decisions.
+- **Document processing** — PDF text extraction; OCR and classification planned.
+- **Integrations** — HTTP requests, email (SMTP), webhooks, Slack — all shipped.
+- **Auditability** — full execution timeline, AI usage logs, retries, and decisions recorded.
+
+---
+
+## 🚀 Reference Workflow: Contract Review
 
 ```
 Upload Contract PDF
-  → Extract Text
-    → AI Analyze Contract Risk
-      → AI Generate Executive Summary
-        → If Risk Is High → Human Approval
-          → Generate Final Report
-            → Complete
+  → Extract Text (documents.extract-pdf)
+    → AI Contract Risk Analysis (ai.contract-risk-analysis)
+      → AI Executive Summary (ai.executive-summary)
+        → Condition: Risk == "High" (logic.condition)
+          → Human Approval (human.approval)
+            → Webhook Notify (integrations.webhook-out)
 ```
 
 See [`docs/sample-workflows/contract-review.md`](./docs/sample-workflows/contract-review.md).
 
 ---
 
+## 🧩 Node Library (19 nodes)
+
+### System
+| Type | Purpose |
+|---|---|
+| `system.start` | Entry point — surfaces workflow inputs |
+| `system.end` | Terminal node — marks completion |
+
+### Logic
+| Type | Purpose |
+|---|---|
+| `logic.condition` | Evaluate boolean expression, branch on result |
+| `logic.switch` | Route by matching a value against configured cases |
+| `logic.delay` | Pause execution for N milliseconds |
+| `logic.merge` | Synchronize multiple branches |
+
+### AI
+| Type | Purpose |
+|---|---|
+| `ai.contract-risk-analysis` | Structured contract risk assessment (Low/Medium/High) |
+| `ai.executive-summary` | Generate executive summary from text |
+| `ai.classify` | Classify text into configured categories |
+| `ai.extract` | Extract structured fields from unstructured text |
+| `ai.translate` | Translate text to a target language |
+
+### Human
+| Type | Purpose |
+|---|---|
+| `human.approval` | Pause workflow for approve/reject decision |
+
+### Documents
+| Type | Purpose |
+|---|---|
+| `documents.extract-pdf` | Extract plain text from a PDF |
+
+### Integrations
+| Type | Purpose |
+|---|---|
+| `integrations.http` | Call any external REST API |
+| `integrations.slack` | Post a message to a Slack webhook |
+| `integrations.webhook-out` | POST execution payload to a URL |
+| `integrations.email` | Send email via SMTP |
+
+### Data
+| Type | Purpose |
+|---|---|
+| `data.set` | Set variables with `{{placeholder}}` substitution |
+| `data.json-transform` | Reshape JSON using dot-notation field mappings |
+
+Full catalog with inputs/outputs/config: [`docs/NODES.md`](./docs/NODES.md)
+
+---
+
 ## 🧱 Stack
 
-| Layer       | Tech                                                                |
-| ----------- | ------------------------------------------------------------------- |
-| Backend     | .NET 9 (C#)                                                         |
-| Frontend    | Next.js, React, TypeScript, Tailwind, shadcn/ui, React Flow         |
-| Database    | PostgreSQL                                                          |
-| Cache/Queue | Redis (optional for MVP)                                            |
-| AI          | Provider abstraction (OpenAI, Azure OpenAI, Anthropic)              |
-| Deploy      | Docker Compose locally; Kubernetes/Terraform later                  |
-| Observ.     | OpenTelemetry, structured logs, correlation IDs                     |
+| Layer | Tech |
+|---|---|
+| Backend | .NET 9 (C#) — xUnit, Moq, FluentAssertions |
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS, React Flow |
+| Database | PostgreSQL *(planned — currently in-memory stubs)* |
+| Queue | In-memory .NET Channels *(Redis/Service Bus planned)* |
+| AI | Provider abstraction — OpenAI, FakeLLMProvider (tests) |
+| Testing | xUnit + Jest + React Testing Library |
+
+---
+
+## 📂 Repository Layout
+
+```
+orchestai/
+├── apps/
+│   └── web/                    # Next.js frontend (designer, pages, auth)
+├── services/
+│   ├── OrchestAI.Api/          # REST API (.NET 9)
+│   ├── OrchestAI.Worker/       # Background workflow executor
+│   └── OrchestAI.AI/           # LLM abstraction + providers
+├── packages/
+│   ├── OrchestAI.Domain/       # Entities + domain logic
+│   ├── OrchestAI.Application/  # Abstractions (interfaces)
+│   ├── OrchestAI.Infrastructure/ # Repos, queue, storage, auth
+│   ├── OrchestAI.Contracts/    # Request/response DTOs
+│   ├── OrchestAI.Engine/       # Workflow execution engine
+│   ├── OrchestAI.SDK/          # Node authoring SDK + test helpers
+│   └── OrchestAI.Observability/ # Middleware, logging
+├── nodes/
+│   ├── ai/                     # AI nodes
+│   ├── data/                   # Data transformation nodes
+│   ├── documents/              # Document processing nodes
+│   ├── human/                  # Human-in-the-loop nodes
+│   ├── integrations/           # External service nodes
+│   ├── logic/                  # Control flow nodes
+│   └── system/                 # Start/End nodes
+├── tests/
+│   └── OrchestAI.Tests/        # xUnit test project (125 tests)
+├── docs/                       # Architecture, API, nodes, setup docs
+├── rules/                      # Coding rules by domain
+├── AGENTS.md                   # AI agent roles and rules
+├── BACKLOG.md                  # Known gaps and next steps
+└── README.md
+```
 
 ---
 
 ## 📂 Documentation Map
 
-Start here:
-
-1. [`docs/VISION.md`](./docs/VISION.md) — product vision, principles, non-goals
-2. [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — system architecture
-3. [`docs/WORKFLOW-ENGINE.md`](./docs/WORKFLOW-ENGINE.md) — runtime + execution model
-4. [`docs/NODE-SDK.md`](./docs/NODE-SDK.md) — node contracts and authoring guide
-5. [`docs/NODES.md`](./docs/NODES.md) — node catalog (MVP + future)
-6. [`docs/AI-RUNTIME.md`](./docs/AI-RUNTIME.md) — LLM abstraction + structured output
-7. [`docs/DATABASE.md`](./docs/DATABASE.md) — data model
-8. [`docs/API.md`](./docs/API.md) — REST endpoints
-9. [`docs/FRONTEND.md`](./docs/FRONTEND.md) — web app and designer
-10. [`docs/SECURITY.md`](./docs/SECURITY.md) — auth, tenancy, secrets
-11. [`docs/OBSERVABILITY.md`](./docs/OBSERVABILITY.md) — logs, traces, metrics
-12. [`docs/SETUP.md`](./docs/SETUP.md) — local development
-13. [`docs/ROADMAP.md`](./docs/ROADMAP.md) — phases and future work
-14. [`docs/GLOSSARY.md`](./docs/GLOSSARY.md) — vocabulary
-
-For contributors / coding agents:
-
-- [`AGENTS.md`](./AGENTS.md) — development agents (roles for AI coding tools)
-- [`RULES.md`](./RULES.md) — coding rules and architectural constraints
-- [`CONTRIBUTING.md`](./CONTRIBUTING.md) — how to contribute
-- [`docs/PROMPTS.md`](./docs/PROMPTS.md) — bootstrap prompts for AI tools
+| Doc | Contents |
+|---|---|
+| [`docs/VISION.md`](./docs/VISION.md) | Product vision, principles, non-goals |
+| [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | System architecture and boundaries |
+| [`docs/WORKFLOW-ENGINE.md`](./docs/WORKFLOW-ENGINE.md) | Runtime + execution model |
+| [`docs/NODE-SDK.md`](./docs/NODE-SDK.md) | Node authoring guide |
+| [`docs/NODES.md`](./docs/NODES.md) | Full node catalog |
+| [`docs/AI-RUNTIME.md`](./docs/AI-RUNTIME.md) | LLM abstraction + structured output |
+| [`docs/DATABASE.md`](./docs/DATABASE.md) | Data model |
+| [`docs/API.md`](./docs/API.md) | REST endpoints |
+| [`docs/FRONTEND.md`](./docs/FRONTEND.md) | Web app and designer |
+| [`docs/SECURITY.md`](./docs/SECURITY.md) | Auth, tenancy, secrets |
+| [`docs/SETUP.md`](./docs/SETUP.md) | Local development setup |
+| [`docs/ROADMAP.md`](./docs/ROADMAP.md) | Phases and future work |
+| [`BACKLOG.md`](./BACKLOG.md) | Known gaps and next items |
+| [`AGENTS.md`](./AGENTS.md) | AI agent roles + unit test enforcement rules |
+| [`RULES.md`](./RULES.md) | Coding rules index |
 
 ---
 
-## 📦 Repository Layout
+## ⚡ Quick Start
 
-```
-orchestai/
-├── apps/
-│   ├── web/                    # Next.js frontend
-│   └── docs/                   # Docs site (optional)
-├── services/
-│   ├── OrchestAI.Api/          # REST API
-│   ├── OrchestAI.Worker/       # Background workflow executor
-│   └── OrchestAI.AI/           # AI runtime (service or module)
-├── packages/
-│   ├── OrchestAI.Domain/
-│   ├── OrchestAI.Application/
-│   ├── OrchestAI.Infrastructure/
-│   ├── OrchestAI.Contracts/
-│   ├── OrchestAI.Engine/
-│   ├── OrchestAI.SDK/
-│   └── OrchestAI.Observability/
-├── nodes/
-│   ├── ai/
-│   ├── documents/
-│   ├── human/
-│   ├── logic/
-│   ├── integrations/
-│   └── system/
-├── deploy/
-│   ├── docker-compose.yml
-│   ├── k8s/
-│   └── terraform/
-├── samples/
-│   └── contract-review-workflow/
-├── docs/
-└── README.md
+```bash
+# Clone
+git clone https://github.com/ggarciasoft/orchestai.git
+cd orchestai
+
+# Run backend API
+cd services/OrchestAI.Api
+dotnet run
+
+# Run frontend
+cd apps/web
+npm install
+npm run dev
+
+# Run backend tests
+cd tests/OrchestAI.Tests
+dotnet test
+
+# Run frontend tests
+cd apps/web
+npm test
 ```
 
-See [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) for the rationale behind each project.
-
----
-
-## 🟢 Status
-
-**Pre-MVP planning.** No code yet. Documentation-first to lock the architecture before implementation.
+> **Note:** The backend currently uses in-memory repositories — no database setup needed to run locally, but data is lost on restart. See `BACKLOG.md` for the PostgreSQL wiring task.
 
 ---
 
