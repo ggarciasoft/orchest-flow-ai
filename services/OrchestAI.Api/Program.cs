@@ -15,7 +15,7 @@ builder.Services.AddOrchestAIInfrastructure(builder.Configuration);
 builder.Services.AddOrchestAIAI(builder.Configuration);
 builder.Services.AddOrchestAIEngine();
 builder.Services.AddOrchestAINodes();
-builder.Services.AddOrchestAIObservability();
+//builder.Services.AddOrchestAIObservability();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

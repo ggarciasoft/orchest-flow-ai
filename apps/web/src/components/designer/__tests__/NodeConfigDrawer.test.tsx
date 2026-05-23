@@ -6,11 +6,13 @@ import { NodeConfigDrawer } from "../NodeConfigDrawer";
 jest.mock("@xyflow/react", () => ({}));
 jest.mock("lucide-react", () => ({
   X: () => <span>X</span>,
+  Trash2: () => <span data-testid="trash-icon" />,
 }));
 
 describe("NodeConfigDrawer", () => {
   const mockOnClose = jest.fn();
   const mockOnConfigChange = jest.fn();
+  const mockOnDelete = jest.fn();
 
   const defaultProps = {
     node: {
@@ -57,6 +59,7 @@ describe("NodeConfigDrawer", () => {
       },
     ],
     onClose: mockOnClose,
+    onDelete: mockOnDelete,
     onConfigChange: mockOnConfigChange,
   };
 
@@ -76,7 +79,7 @@ describe("NodeConfigDrawer", () => {
 
   it("calls onClose when the close button is clicked", () => {
     render(<NodeConfigDrawer {...defaultProps} />);
-    const closeButton = screen.getByRole("button");
+    const closeButton = screen.getByTitle("Close");
     fireEvent.click(closeButton);
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
@@ -84,5 +87,12 @@ describe("NodeConfigDrawer", () => {
   it("renders configuration fields", () => {
     render(<NodeConfigDrawer {...defaultProps} />);
     expect(screen.getByText(/Setting 1/)).toBeInTheDocument();
+  });
+
+  it("calls onDelete when the delete button is clicked", () => {
+    render(<NodeConfigDrawer {...defaultProps} />);
+    const deleteButton = screen.getByText("Delete Node");
+    fireEvent.click(deleteButton);
+    expect(mockOnDelete).toHaveBeenCalledTimes(1);
   });
 });

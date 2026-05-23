@@ -4,6 +4,7 @@ import {
   ReactFlow, Background, Controls, MiniMap,
   addEdge, useNodesState, useEdgesState,
   type Connection, type Node, type Edge,
+  type NodeMouseHandler,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { Workflow, NodeDescriptor } from '@/lib/api';
@@ -19,14 +20,45 @@ const CATEGORY_COLORS: Record<string, string> = {
   system: '#94a3b8', integrations: '#60a5fa',
 };
 
+interface ContextMenu { x: number; y: number; nodeId: string; }
+
 export function WorkflowDesigner({ workflow, nodeCatalog }: Props) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selected, setSelected] = useState<Node | null>(null);
   const [executing, setExecuting] = useState(false);
+  const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
 
   const onConnect = useCallback((conn: Connection) => setEdges(eds => addEdge(conn, eds)), [setEdges]);
-  const onNodeClick = (_: React.MouseEvent, node: Node) => setSelected(node);
+
+  const onNodeClick: NodeMouseHandler = (_evt, node) => {
+    setContextMenu(null);
+    setSelected(node);
+  };
+
+  // Delete a node (and its connected edges) by id
+  const deleteNode = useCallback((nodeId: string) => {
+    setNodes(nds => nds.filter(n => n.id !== nodeId));
+    setEdges(eds => eds.filter(e => e.source !== nodeId && e.target !== nodeId));
+    setSelected(prev => (prev?.id === nodeId ? null : prev));
+    setContextMenu(null);
+  }, [setNodes, setEdges]);
+
+  // Keyboard: Delete or Backspace removes selected node
+  const onKeyDown = useCallback((evt: React.KeyboardEvent) => {
+    if ((evt.key === 'Delete' || evt.key === 'Backspace') && selected) {
+      // Don't fire if user is typing in an input/textarea
+      const tag = (evt.target as HTMLElement).tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      deleteNode(selected.id);
+    }
+  }, [selected, deleteNode]);
+
+  // Right-click context menu on a node
+  const onNodeContextMenu: NodeMouseHandler = useCallback((evt, node) => {
+    evt.preventDefault();
+    setContextMenu({ x: evt.clientX, y: evt.clientY, nodeId: node.id });
+  }, []);
 
   const addNode = (descriptor: NodeDescriptor) => {
     const newNode: Node = {
@@ -54,13 +86,15 @@ export function WorkflowDesigner({ workflow, nodeCatalog }: Props) {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden" onKeyDown={onKeyDown} tabIndex={0} style={{ outline: 'none' }}>
       <NodePalette catalog={nodeCatalog} onAddNode={addNode} />
       <div className="flex-1 flex flex-col min-w-0">
         <div className="flex items-center justify-between px-5 py-3 border-b bg-white shrink-0">
           <div>
             <h2 className="font-semibold text-gray-900">{workflow.name}</h2>
-            <p className="text-xs text-gray-400">Drag nodes from the left panel to design your workflow</p>
+            <p className="text-xs text-gray-400">
+              Click a node to configure · Right-click or press <kbd className="text-xs bg-gray-100 border rounded px-1">Del</kbd> to delete
+            </p>
           </div>
           <div className="flex gap-2">
             <button className="border text-sm px-3 py-1.5 rounded-lg hover:bg-gray-50 flex items-center gap-1.5 text-gray-600"
@@ -73,25 +107,48 @@ export function WorkflowDesigner({ workflow, nodeCatalog }: Props) {
             </button>
           </div>
         </div>
-        <div className="flex-1">
+        <div className="flex-1" onClick={() => setContextMenu(null)}>
           <ReactFlow
             nodes={nodes} edges={edges}
             onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
-            onConnect={onConnect} onNodeClick={onNodeClick} fitView>
+            onConnect={onConnect}
+            onNodeClick={onNodeClick}
+            onNodeContextMenu={onNodeContextMenu}
+            onPaneClick={() => { setSelected(null); setContextMenu(null); }}
+            fitView>
             <Background />
             <Controls />
             <MiniMap />
           </ReactFlow>
         </div>
       </div>
+
+      {/* Config drawer — includes delete button */}
       {selected && (
         <NodeConfigDrawer
           node={selected} catalog={nodeCatalog}
           onClose={() => setSelected(null)}
+          onDelete={() => deleteNode(selected.id)}
           onConfigChange={(config) =>
             setNodes(nds => nds.map(n => n.id === selected.id ? { ...n, data: { ...n.data, config } } : n))
           }
         />
+      )}
+
+      {/* Right-click context menu */}
+      {contextMenu && (
+        <div
+          className="fixed z-50 bg-white border rounded-lg shadow-lg py-1 min-w-[140px]"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          onMouseLeave={() => setContextMenu(null)}
+        >
+          <button
+            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+            onClick={() => deleteNode(contextMenu.nodeId)}
+          >
+            <span>🗑️</span> Delete Node
+          </button>
+        </div>
       )}
     </div>
   );
