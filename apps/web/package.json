@@ -28,14 +28,17 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^30.4.2",
     "jest-dom": "^4.0.0",
     "jest-environment-jsdom": "^30.4.1",
+    "jsdom": "^29.1.1",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.11",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.7"
   }
 }
