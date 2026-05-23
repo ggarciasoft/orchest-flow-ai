@@ -31,3 +31,14 @@
 14. Avoid `static` mutable state. Use DI-scoped or transient services.
 
 15. Prefer explicit error types (`NodeExecutionException` with `Code` and `Retryable`) over bare exceptions in node code.
+
+
+---
+
+## Unit Test Requirement
+
+16. **Every .NET code change requires unit tests.** Before committing any backend change:
+    - Run `dotnet test` and confirm **0 failures**
+    - Add `<ClassName>Tests.cs` in `tests/OrchestAI.Tests/` for every new class
+    - Update existing tests impacted by the change
+    - Use xUnit + Moq + FluentAssertions. No bare `Assert`.

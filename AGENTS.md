@@ -24,3 +24,20 @@ See [`agents/`](./agents/) for the complete agent roster.
 ## Rules
 
 All agents are bound by [`rules/`](./rules/).
+
+
+## Unit Test Enforcement (Non-Negotiable)
+
+> See full rules in `rules/09-testing.md` sections 14-20.
+
+**Every agent that writes production code must:**
+1. Run the relevant test suite before AND after changes.
+2. Create unit tests for every new class, component, or function introduced.
+3. Update unit tests broken by the change (never delete or skip them silently).
+4. Commit code and tests together in the same PR/commit.
+5. Never mark a task as done if tests are failing.
+
+| Layer | Test command | Test location |
+|---|---|---|
+| Backend (.NET) | `dotnet test` | `tests/OrchestAI.Tests/` |
+| Frontend | `npm test` | `src/**/__tests__/` |

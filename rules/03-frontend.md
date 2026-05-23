@@ -32,3 +32,14 @@
 12. Avoid layout shift. Reserve space for content with skeletons before data arrives.
 
 13. Wrap multiple external links in `<>` for Discord/chat surfaces to suppress embeds. (Applies to generated output, not UI code.)
+
+
+---
+
+## Unit Test Requirement
+
+14. **Every frontend code change requires unit tests.** Before committing any frontend change:
+    - Run `npm test` and confirm **0 failures**
+    - Add `<ComponentName>.test.tsx` or `<filename>.test.ts` alongside new files
+    - Update existing tests impacted by the change
+    - Use Jest + React Testing Library. Mock external dependencies with `jest.mock`.
