@@ -2,7 +2,7 @@
 
 > Open-source enterprise AI workflow platform for orchestrating agents, tools, human approvals, documents, and business automation.
 
-OrchestAI (working name; see also: AgentFlow Enterprise, AgentBridge, FlowMind) is a modular platform that lets teams build AI-driven business workflows using reusable nodes. Workflows are stored as **data**, executed by a backend **engine**, and surfaced through a **visual designer**.
+OrchestAI is a modular platform that lets teams build AI-driven business workflows using reusable nodes. Workflows are stored as **data**, executed by a backend **engine**, and surfaced through a **visual designer**.
 
 ---
 
