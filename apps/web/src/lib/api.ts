@@ -62,6 +62,9 @@ export const api = {
       apiFetch<WorkflowExecution>(`/api/workflows/${id}/execute`, { method: 'POST', body: JSON.stringify({ input }) }),
     /** Validates the active workflow version's node graph without executing it. */
     validate: (id: string) => apiFetch<ValidationResult>(`/api/workflows/${id}/validate`, { method: 'POST' }),
+    /** Fetches the active version's definition JSON for loading into the designer. */
+    getActiveVersion: (id: string) =>
+      apiFetch<{ versionId: string; versionNumber: number; definitionJson: string }>(`/api/workflows/${id}/versions/active`),
     /** Saves a new version of a workflow definition and activates it. */
     saveVersion: (id: string, definition: object) =>
       apiFetch<{ id: string; versionNumber: number }>(`/api/workflows/${id}/versions`, { method: 'POST', body: JSON.stringify({ definition }) }),

@@ -4,10 +4,31 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { WorkflowDesigner } from '@/components/designer/WorkflowDesigner';
 
+/**
+ * DesignerPage — loads workflow metadata, node catalog, and the active version
+ * definition, then renders the full WorkflowDesigner canvas.
+ * Shows a loading spinner while data is being fetched.
+ */
 export default function DesignerPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: workflow } = useQuery({ queryKey: ['workflow', id], queryFn: () => api.workflows.get(id) });
-  const { data: catalog } = useQuery({ queryKey: ['nodes-catalog'], queryFn: () => api.nodes.catalog() });
+
+  const { data: workflow } = useQuery({
+    queryKey: ['workflow', id],
+    queryFn: () => api.workflows.get(id),
+  });
+
+  const { data: catalog } = useQuery({
+    queryKey: ['nodes-catalog'],
+    queryFn: () => api.nodes.catalog(),
+  });
+
+  // Fetch the active version definition to hydrate the canvas
+  const { data: activeVersion } = useQuery({
+    queryKey: ['workflow-version', id],
+    queryFn: () => api.workflows.getActiveVersion(id),
+    // Don't fail the whole page if no version exists yet
+    retry: false,
+  });
 
   if (!workflow || !catalog) {
     return (
@@ -19,5 +40,12 @@ export default function DesignerPage() {
       </div>
     );
   }
-  return <WorkflowDesigner workflow={workflow} nodeCatalog={catalog.nodes} />;
+
+  return (
+    <WorkflowDesigner
+      workflow={workflow}
+      nodeCatalog={catalog.nodes}
+      initialDefinitionJson={activeVersion?.definitionJson}
+    />
+  );
 }

@@ -128,6 +128,28 @@ public sealed class WorkflowsController : ControllerBase
     }
 
     /// <summary>
+    /// Gets the active version's definition JSON for a workflow.
+    /// Used by the designer to hydrate the canvas when opening an existing workflow.
+    /// </summary>
+    /// <param name="id">The workflow id.</param>
+    /// <response code="200">The active version definition as a JSON object.</response>
+    /// <response code="404">Workflow or active version not found.</response>
+    [HttpGet("{id}/versions/active")]
+    public async Task<ActionResult> GetActiveVersion(Guid id, CancellationToken ct)
+    {
+        var w = await _workflows.GetAsync(id, TenantId, ct);
+        if (w == null) return NotFound();
+        var activeVersion = await _workflows.GetActiveVersionAsync(id, ct);
+        if (activeVersion == null) return NotFound("No active version");
+        return Ok(new
+        {
+            versionId = activeVersion.Id,
+            versionNumber = activeVersion.VersionNumber,
+            definitionJson = activeVersion.DefinitionJson
+        });
+    }
+
+    /// <summary>
     /// Saves a new version of the workflow definition.
     /// Does NOT automatically activate — call the activate endpoint separately.
     /// </summary>

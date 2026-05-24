@@ -6,16 +6,46 @@ using OrchestAI.AI.Providers;
 using OrchestAI.AI.Routing;
 namespace OrchestAI.AI.Extensions;
 
+/// <summary>
+/// Extension methods for registering AI/LLM services into the DI container.
+/// </summary>
 public static class AIServiceExtensions
 {
+    /// <summary>
+    /// Registers LLM providers and the router.
+    /// Set LLM_PROVIDER=fake in environment/config for local dev without an API key.
+    /// Set LLM_PROVIDER=openai (default) with OPENAI_API_KEY for real calls.
+    /// </summary>
     public static IServiceCollection AddOrchestAIAI(this IServiceCollection services, IConfiguration configuration)
     {
-        var apiKey = configuration["LLM:OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("ORCHESTAI_LLM__OPENAI__API_KEY") ?? "";
-        var defaultProvider = configuration["LLM:DefaultProvider"] ?? "openai";
-        var defaultModel = configuration["LLM:DefaultModel"] ?? "gpt-4o-mini";
+        var apiKey = configuration["LLM:OpenAI:ApiKey"]
+            ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+            ?? "";
 
-        services.AddSingleton<ILLMProvider>(sp => new OpenAILLMProvider(apiKey, sp.GetRequiredService<ILogger<OpenAILLMProvider>>()));
-        services.AddSingleton(sp => new LLMProviderRouter(sp.GetServices<ILLMProvider>(), defaultProvider, defaultModel));
+        var defaultProvider = configuration["LLM:DefaultProvider"]
+            ?? Environment.GetEnvironmentVariable("LLM_PROVIDER")
+            ?? "openai";
+
+        var defaultModel = configuration["LLM:DefaultModel"]
+            ?? Environment.GetEnvironmentVariable("OPENAI_DEFAULT_MODEL")
+            ?? "gpt-4o-mini";
+
+        // Always register FakeLLMProvider so it's available for tests and dev mode
+        services.AddSingleton<FakeLLMProvider>();
+        services.AddSingleton<ILLMProvider>(sp => sp.GetRequiredService<FakeLLMProvider>());
+
+        // Register OpenAI provider only when an API key is configured
+        if (!string.IsNullOrWhiteSpace(apiKey))
+        {
+            services.AddSingleton<OpenAILLMProvider>(sp =>
+                new OpenAILLMProvider(apiKey, sp.GetRequiredService<ILogger<OpenAILLMProvider>>()));
+            services.AddSingleton<ILLMProvider>(sp => sp.GetRequiredService<OpenAILLMProvider>());
+        }
+
+        // Router resolves the correct provider based on the model string or default
+        services.AddSingleton(sp =>
+            new LLMProviderRouter(sp.GetServices<ILLMProvider>(), defaultProvider, defaultModel));
+
         return services;
     }
 }
