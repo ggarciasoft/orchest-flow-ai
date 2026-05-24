@@ -43,6 +43,7 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<IUserRepository, EfUserRepository>();
             services.AddScoped<IDocumentRepository, EfDocumentRepository>();
             services.AddScoped<IAIUsageRepository, EfAIUsageRepository>();
+            services.AddScoped<INodePresetRepository, EfNodePresetRepository>();
             services.AddScoped<OrchestAI.Engine.IEngineExecutionRepository, EfEngineExecutionRepository>();
         }
         else
@@ -55,6 +56,7 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<IDocumentRepository, StubDocumentRepository>();
             services.AddScoped<IAIUsageRepository, StubAIUsageRepository>();
             services.AddScoped<IUserRepository, StubUserRepository>();
+            services.AddScoped<INodePresetRepository, StubNodePresetRepository>();
             services.AddScoped<OrchestAI.Engine.IEngineExecutionRepository, StubEngineExecutionRepository>();
         }
 

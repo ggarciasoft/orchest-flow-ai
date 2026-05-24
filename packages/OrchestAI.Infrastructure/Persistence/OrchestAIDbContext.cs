@@ -21,20 +21,19 @@ public sealed class OrchestAIDbContext : DbContext
     public DbSet<ApprovalRequest> ApprovalRequests => Set<ApprovalRequest>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<AIUsageLog> AIUsageLogs => Set<AIUsageLog>();
+    public DbSet<NodePreset> NodePresets => Set<NodePreset>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // All entities use private setters — use field access so EF can hydrate them
         modelBuilder.UsePropertyAccessMode(PropertyAccessMode.PreferFieldDuringConstruction);
 
-        // ── Tenant ──────────────────────────────────────────────────────────
         modelBuilder.Entity<Tenant>(e =>
         {
             e.HasKey(t => t.Id);
             e.Property(t => t.Name).IsRequired().HasMaxLength(200);
         });
 
-        // ── User ─────────────────────────────────────────────────────────────
         modelBuilder.Entity<User>(e =>
         {
             e.HasKey(u => u.Id);
@@ -45,7 +44,6 @@ public sealed class OrchestAIDbContext : DbContext
             e.HasIndex(u => new { u.TenantId, u.Email }).IsUnique();
         });
 
-        // ── Workflow ─────────────────────────────────────────────────────────
         modelBuilder.Entity<Workflow>(e =>
         {
             e.HasKey(w => w.Id);
@@ -54,16 +52,13 @@ public sealed class OrchestAIDbContext : DbContext
             e.HasIndex(w => w.TenantId);
         });
 
-        // ── WorkflowVersion ──────────────────────────────────────────────────
         modelBuilder.Entity<WorkflowVersion>(e =>
         {
             e.HasKey(v => v.Id);
             e.Property(v => v.DefinitionJson).IsRequired();
             e.HasIndex(v => v.WorkflowId);
-            // Only one active version per workflow — enforced in code, not DB constraint
         });
 
-        // ── WorkflowExecution ────────────────────────────────────────────────
         modelBuilder.Entity<WorkflowExecution>(e =>
         {
             e.HasKey(ex => ex.Id);
@@ -74,7 +69,6 @@ public sealed class OrchestAIDbContext : DbContext
             e.HasIndex(ex => ex.CorrelationId);
         });
 
-        // ── NodeExecution ────────────────────────────────────────────────────
         modelBuilder.Entity<NodeExecution>(e =>
         {
             e.HasKey(n => n.Id);
@@ -84,7 +78,6 @@ public sealed class OrchestAIDbContext : DbContext
             e.HasIndex(n => n.WorkflowExecutionId);
         });
 
-        // ── ApprovalRequest ──────────────────────────────────────────────────
         modelBuilder.Entity<ApprovalRequest>(e =>
         {
             e.HasKey(a => a.Id);
@@ -94,7 +87,6 @@ public sealed class OrchestAIDbContext : DbContext
             e.HasIndex(a => a.WorkflowExecutionId);
         });
 
-        // ── Document ─────────────────────────────────────────────────────────
         modelBuilder.Entity<Document>(e =>
         {
             e.HasKey(d => d.Id);
@@ -104,11 +96,19 @@ public sealed class OrchestAIDbContext : DbContext
             e.HasIndex(d => d.TenantId);
         });
 
-        // ── AIUsageLog ───────────────────────────────────────────────────────
         modelBuilder.Entity<AIUsageLog>(e =>
         {
             e.HasKey(l => l.Id);
             e.HasIndex(l => l.WorkflowExecutionId);
+        });
+
+        modelBuilder.Entity<NodePreset>(e =>
+        {
+            e.HasKey(p => p.Id);
+            e.Property(p => p.Name).IsRequired().HasMaxLength(200);
+            e.Property(p => p.NodeType).IsRequired().HasMaxLength(200);
+            e.Property(p => p.ConfigJson).IsRequired();
+            e.HasIndex(p => new { p.TenantId, p.NodeType });
         });
     }
 }

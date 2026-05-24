@@ -1,103 +1,57 @@
 using Microsoft.EntityFrameworkCore;
-using OrchestAI.Domain.Entities;
 using OrchestAI.Application.Abstractions;
+using OrchestAI.Domain.Entities;
+using OrchestAI.Domain.Enums;
 using OrchestAI.Infrastructure.Persistence;
-using System.Collections.Generic;
-using System.Linq;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace OrchestAI.Infrastructure.Repositories;
 
-public class EfWorkflowRepository : IWorkflowRepository
+/// <summary>EF Core implementation of <see cref="IWorkflowRepository"/>.</summary>
+public sealed class EfWorkflowRepository : IWorkflowRepository
 {
-    private readonly OrchestAIDbContext _context;
+    private readonly OrchestAIDbContext _db;
+    public EfWorkflowRepository(OrchestAIDbContext db) => _db = db;
 
-    public EfWorkflowRepository(OrchestAIDbContext context)
-    {
-        _context = context;
-    }
-
-    public async Task<Workflow?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default)
-    {
-        return await _context.Workflows.FirstOrDefaultAsync(w => w.Id == id && w.TenantId == tenantId, ct);
-    }
+    public Task<Workflow?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default)
+        => _db.Workflows.FirstOrDefaultAsync(w => w.Id == id && w.TenantId == tenantId, ct);
 
     public async Task<Workflow> CreateAsync(Workflow workflow, CancellationToken ct = default)
-    {
-        await _context.Workflows.AddAsync(workflow, ct);
-        await _context.SaveChangesAsync(ct);
-        return workflow;
-    }
+    { _db.Workflows.Add(workflow); await _db.SaveChangesAsync(ct); return workflow; }
 
     public async Task UpdateAsync(Workflow workflow, CancellationToken ct = default)
-    {
-        _context.Workflows.Update(workflow);
-        await _context.SaveChangesAsync(ct);
-    }
+    { _db.Workflows.Update(workflow); await _db.SaveChangesAsync(ct); }
 
     public async Task<IReadOnlyList<Workflow>> ListAsync(Guid tenantId, string? search, int page, int pageSize, CancellationToken ct = default)
     {
-        IQueryable<Workflow> query = _context.Workflows.Where(w => w.TenantId == tenantId);
-
-        if (!string.IsNullOrEmpty(search))
-        {
-            query = query.Where(w => w.Name.Contains(search));
-        }
-
-        return await query
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(ct);
+        var q = _db.Workflows.Where(w => w.TenantId == tenantId);
+        if (!string.IsNullOrEmpty(search)) q = q.Where(w => w.Name.Contains(search));
+        return await q.OrderByDescending(w => w.UpdatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
     }
 
     public async Task<int> CountAsync(Guid tenantId, string? search, CancellationToken ct = default)
     {
-        IQueryable<Workflow> query = _context.Workflows.Where(w => w.TenantId == tenantId);
-
-        if (!string.IsNullOrEmpty(search))
-        {
-            query = query.Where(w => w.Name.Contains(search));
-        }
-
-        return await query.CountAsync(ct);
+        var q = _db.Workflows.Where(w => w.TenantId == tenantId);
+        if (!string.IsNullOrEmpty(search)) q = q.Where(w => w.Name.Contains(search));
+        return await q.CountAsync(ct);
     }
 
-    public async Task<WorkflowVersion?> GetActiveVersionAsync(Guid workflowId, CancellationToken ct = default)
-    {
-        return await _context.WorkflowVersions.FirstOrDefaultAsync(v => v.WorkflowId == workflowId && v.IsActive, ct);
-    }
+    public Task<WorkflowVersion?> GetActiveVersionAsync(Guid workflowId, CancellationToken ct = default)
+        => _db.WorkflowVersions.FirstOrDefaultAsync(v => v.WorkflowId == workflowId && v.IsActive, ct);
 
     public async Task<WorkflowVersion> CreateVersionAsync(WorkflowVersion version, CancellationToken ct = default)
-    {
-        await _context.WorkflowVersions.AddAsync(version, ct);
-        await _context.SaveChangesAsync(ct);
-        return version;
-    }
+    { _db.WorkflowVersions.Add(version); await _db.SaveChangesAsync(ct); return version; }
 
-    public async Task<WorkflowVersion?> GetVersionAsync(Guid versionId, CancellationToken ct = default)
-    {
-        return await _context.WorkflowVersions.FindAsync(new object[] { versionId }, ct);
-    }
+    public Task<WorkflowVersion?> GetVersionAsync(Guid versionId, CancellationToken ct = default)
+        => _db.WorkflowVersions.FindAsync(new object[] { versionId }, ct).AsTask();
 
     public async Task ActivateVersionAsync(Guid versionId, Guid workflowId, CancellationToken ct = default)
     {
-        var activeVersions = _context.WorkflowVersions.Where(v => v.WorkflowId == workflowId && v.IsActive);
-        await activeVersions.ForEachAsync(v => v.Deactivate(), ct);
-
-        var version = await _context.WorkflowVersions.FindAsync(new object[] { versionId }, ct);
-
-        if (version != null)
-        {
-            version.Activate();
-        }
-
-        await _context.SaveChangesAsync(ct);
+        await _db.WorkflowVersions.Where(v => v.WorkflowId == workflowId && v.IsActive).ForEachAsync(v => v.Deactivate(), ct);
+        var version = await _db.WorkflowVersions.FindAsync(new object[] { versionId }, ct);
+        version?.Activate();
+        await _db.SaveChangesAsync(ct);
     }
 }
-
-// Add similar EF implementation classes: EfExecutionRepository, EfApprovalRepository, EfUserRepository, EfDocumentRepository, EfAIUsageRepository
 
 /// <summary>EF Core implementation of <see cref="IExecutionRepository"/>.</summary>
 public sealed class EfExecutionRepository : IExecutionRepository
@@ -151,7 +105,7 @@ public sealed class EfApprovalRepository : IApprovalRepository
 
     public async Task<IReadOnlyList<ApprovalRequest>> ListPendingAsync(Guid tenantId, int page, int pageSize, CancellationToken ct = default)
         => await _db.ApprovalRequests
-            .Where(a => a.TenantId == tenantId && a.Status == OrchestAI.Domain.Enums.ApprovalStatus.Pending)
+            .Where(a => a.TenantId == tenantId && a.Status == ApprovalStatus.Pending)
             .OrderByDescending(a => a.RequestedAt)
             .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
 }
@@ -230,4 +184,33 @@ public sealed class EfEngineExecutionRepository : OrchestAI.Engine.IEngineExecut
 
     public async Task<ApprovalRequest> CreateApprovalAsync(ApprovalRequest approval, CancellationToken ct = default)
     { _db.ApprovalRequests.Add(approval); await _db.SaveChangesAsync(ct); return approval; }
+}
+
+/// <summary>EF Core implementation of <see cref="INodePresetRepository"/>.</summary>
+public sealed class EfNodePresetRepository : INodePresetRepository
+{
+    private readonly OrchestAIDbContext _db;
+    public EfNodePresetRepository(OrchestAIDbContext db) => _db = db;
+
+    public Task<NodePreset?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default)
+        => _db.NodePresets.FirstOrDefaultAsync(p => p.Id == id && p.TenantId == tenantId, ct);
+
+    public async Task<IReadOnlyList<NodePreset>> ListByNodeTypeAsync(Guid tenantId, string? nodeType, CancellationToken ct = default)
+    {
+        var q = _db.NodePresets.Where(p => p.TenantId == tenantId);
+        if (!string.IsNullOrEmpty(nodeType)) q = q.Where(p => p.NodeType == nodeType);
+        return await q.OrderBy(p => p.Name).ToListAsync(ct);
+    }
+
+    public async Task<NodePreset> CreateAsync(NodePreset preset, CancellationToken ct = default)
+    { _db.NodePresets.Add(preset); await _db.SaveChangesAsync(ct); return preset; }
+
+    public async Task UpdateAsync(NodePreset preset, CancellationToken ct = default)
+    { _db.NodePresets.Update(preset); await _db.SaveChangesAsync(ct); }
+
+    public async Task DeleteAsync(Guid id, Guid tenantId, CancellationToken ct = default)
+    {
+        var preset = await GetAsync(id, tenantId, ct);
+        if (preset != null) { _db.NodePresets.Remove(preset); await _db.SaveChangesAsync(ct); }
+    }
 }

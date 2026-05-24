@@ -6,7 +6,7 @@ namespace OrchestAI.Infrastructure.Persistence;
 
 /// <summary>
 /// Design-time factory for EF Core migrations tooling.
-/// Uses a local PostgreSQL connection for generating migrations without needing the full app running.
+/// Used by `dotnet ef migrations add` without needing the full app running.
 /// </summary>
 public sealed class OrchestAIDbContextFactory : IDesignTimeDbContextFactory<OrchestAIDbContext>
 {
@@ -14,9 +14,9 @@ public sealed class OrchestAIDbContextFactory : IDesignTimeDbContextFactory<Orch
     {
         var opts = new DbContextOptionsBuilder<OrchestAIDbContext>();
 
-        // Use env var or fall back to a local dev connection string for migrations
+        // Use env var or fall back to a local dev placeholder for migration generation
         var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING")
-            ?? "Host=localhost;Database=orchestai_dev;Username=postgres;Password=postgres";
+            ?? "Host=localhost;Database=orchestai_dev;Username=postgres;Password=changeme";
 
         opts.UseNpgsql(connectionString);
         return new OrchestAIDbContext(opts.Options);

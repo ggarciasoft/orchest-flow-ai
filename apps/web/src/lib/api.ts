@@ -33,6 +33,17 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 /** All OrchestAI API methods organized by resource domain. */
+/**
+ * Node configuration presets — reusable named config sets.
+ */
+export interface PresetResponse {
+  id: string;
+  name: string;
+  nodeType: string;
+  configJson: string;
+  createdAt: string;
+}
+
 export const api = {
   /** Authentication endpoints for login and current user info. */
   auth: {
@@ -124,7 +135,24 @@ export const api = {
     /** Returns the full catalog of available node types from the registry. */
     catalog: () => apiFetch<{ nodes: NodeDescriptor[] }>('/api/nodes/catalog'),
   },
-};
+},
+
+/** Node configuration presets — reusable named config sets. */
+presets: {
+  /** Lists all presets, optionally filtered by node type. */
+  list: (nodeType?: string) =>
+    apiFetch<PresetResponse[]>(`/api/presets${nodeType ? `?nodeType=${nodeType}` : ''}`),
+  /** Gets a single preset by id. */
+  get: (id: string) => apiFetch<PresetResponse>(`/api/presets/${id}`),
+  /** Creates a new preset. */
+  create: (data: { name: string; nodeType: string; configJson: string }) =>
+    apiFetch<PresetResponse>('/api/presets', { method: 'POST', body: JSON.stringify(data) }),
+  /** Updates an existing preset. */
+  update: (id: string, data: { name: string; configJson: string }) =>
+    apiFetch<PresetResponse>(`/api/presets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  /** Deletes a preset. */
+  delete: (id: string) => apiFetch<void>(`/api/presets/${id}`, { method: 'DELETE' }),
+}
 
 // ---- Type Definitions ----
 

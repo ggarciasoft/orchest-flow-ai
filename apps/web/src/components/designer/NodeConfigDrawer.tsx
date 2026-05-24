@@ -1,7 +1,9 @@
 'use client';
 import type { Node } from '@xyflow/react';
 import type { NodeDescriptor } from '@/lib/api';
-import { X, Trash2 } from 'lucide-react';
+import { X, Trash2, ChevronDown, Plus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { api, PresetResponse } from '@/lib/api';
 
 interface Props { node: Node; catalog: NodeDescriptor[]; onClose: () => void; onDelete: () => void; onConfigChange: (config: Record<string, unknown>) => void; }
 
@@ -20,7 +22,20 @@ export function NodeConfigDrawer({ node, catalog, onClose, onDelete, onConfigCha
   const descriptor = catalog.find(d => d.type === data.descriptor?.type);
   const config = data.config ?? {};
 
-  if (!descriptor) return null; // Return early if no descriptor is found
+  const [presets, setPresets] = useState<PresetResponse[]>([]);
+const [selectedPreset, setSelectedPreset] = useState<string>('');
+const [presetName, setPresetName] = useState<string>('');
+const [showSavePresetForm, setShowSavePresetForm] = useState<boolean>(false);
+
+useEffect(() => {
+  if (descriptor) {
+    api.presets.list(descriptor.type)
+      .then(setPresets)
+      .catch(err => console.error('Failed to fetch presets:', err));
+  }
+}, [descriptor]);
+
+if (!descriptor) return null; // Return early if no descriptor is found
 
   return (
     <div className="w-80 border-l bg-white flex flex-col shrink-0 overflow-hidden">
@@ -51,7 +66,180 @@ export function NodeConfigDrawer({ node, catalog, onClose, onDelete, onConfigCha
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase mb-3">Configuration</p>
             <div className="space-y-3">
-              {descriptor.configuration.map(cfg => (
+              {/* Preset selector at the top */}
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Use Preset</label>
+          <div className="flex gap-2 items-center">
+            <select
+              className="flex-1 border rounded-lg px-3 py-1.5 text-sm"
+              value={selectedPreset}
+              onChange={e => {
+                const preset = presets.find(p => p.id === e.target.value);
+                if (preset) {
+                  const presetConfig = JSON.parse(preset.configJson);
+                  onConfigChange({ ...presetConfig, ...config });
+                }
+                setSelectedPreset(e.target.value);
+              }}
+            >
+              <option value="">Select a preset</option>
+              {presets.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => setShowSavePresetForm(!showSavePresetForm)}
+              className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              <Plus size={14} /> Save as Preset
+            </button>
+          </div>
+          {showSavePresetForm && (
+            <div className="mt-2 flex gap-2">
+              <input
+                type="text"
+                value={presetName}
+                onChange={(e) => setPresetName(e.target.value)}
+                placeholder="Preset name"
+                className="flex-1 border rounded-lg px-3 py-1.5 text-sm"
+              />
+              <button
+                onClick={() => {
+                  api.presets.create({ name: presetName, nodeType: descriptor.type, configJson: JSON.stringify(config) })
+                    .then(newPreset => setPresets([...presets, newPreset]))
+                    .catch(err => console.error('Failed to save preset:', err));
+                  setPresetName('');
+                  setShowSavePresetForm(false);
+                }}
+                className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700"
+              >
+                Save
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Special auth section for HTTP nodes */}
+        {descriptor.type === 'integrations.http' && (
+          <div className="space-y-3">
+            <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Authentication</p>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Auth Type</label>
+              <select
+                className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={config.authType ?? 'None'}
+                onChange={e => onConfigChange({ ...config, authType: e.target.value })}
+              >
+                <option value="None">None</option>
+                <option value="Bearer">Bearer Token</option>
+                <option value="Basic">Basic Auth</option>
+                <option value="APIKey">API Key</option>
+                <option value="OAuth2">OAuth2 Client Credentials</option>
+              </select>
+            </div>
+            {config.authType === 'Bearer' && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Token</label>
+                <input
+                  className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={config.authToken ?? ''}
+                  onChange={e => onConfigChange({ ...config, authToken: e.target.value })}
+                />
+              </div>
+            )}
+            {config.authType === 'Basic' && (
+              <div className="space-y-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Username</label>
+                  <input
+                    className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={config.authUsername ?? ''}
+                    onChange={e => onConfigChange({ ...config, authUsername: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Password</label>
+                  <input
+                    type="password"
+                    className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={config.authPassword ?? ''}
+                    onChange={e => onConfigChange({ ...config, authPassword: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
+            {config.authType === 'APIKey' && (
+              <div className="space-y-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Header/Param Name</label>
+                  <input
+                    className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={config.authApiKeyName ?? ''}
+                    onChange={e => onConfigChange({ ...config, authApiKeyName: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Value</label>
+                  <input
+                    className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={config.authApiKeyValue ?? ''}
+                    onChange={e => onConfigChange({ ...config, authApiKeyValue: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Location</label>
+                  <select
+                    className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={config.authApiKeyLocation ?? 'Header'}
+                    onChange={e => onConfigChange({ ...config, authApiKeyLocation: e.target.value })}
+                  >
+                    <option value="Header">Header</option>
+                    <option value="Query">Query</option>
+                  </select>
+                </div>
+              </div>
+            )}
+            {config.authType === 'OAuth2' && (
+              <div className="space-y-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Token URL</label>
+                  <input
+                    className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={config.authTokenUrl ?? ''}
+                    onChange={e => onConfigChange({ ...config, authTokenUrl: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Client ID</label>
+                  <input
+                    className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={config.authClientId ?? ''}
+                    onChange={e => onConfigChange({ ...config, authClientId: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Client Secret</label>
+                  <input
+                    type="password"
+                    className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={config.authClientSecret ?? ''}
+                    onChange={e => onConfigChange({ ...config, authClientSecret: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Scope</label>
+                  <input
+                    className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={config.authScope ?? ''}
+                    onChange={e => onConfigChange({ ...config, authScope: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {descriptor.configuration.map(cfg => (
                 <div key={cfg.key}>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
                     {cfg.displayName}

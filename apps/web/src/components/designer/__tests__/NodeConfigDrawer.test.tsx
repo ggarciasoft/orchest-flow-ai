@@ -1,98 +1,92 @@
-import React from "react";
-import { render, fireEvent, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
-import { NodeConfigDrawer } from "../NodeConfigDrawer";
+import { render, screen, waitFor } from '@testing-library/react';
+import { NodeConfigDrawer } from '../NodeConfigDrawer';
 
-jest.mock("@xyflow/react", () => ({}));
-jest.mock("lucide-react", () => ({
-  X: () => <span>X</span>,
-  Trash2: () => <span data-testid="trash-icon" />,
+jest.mock('@/lib/api', () => ({
+  api: {
+    presets: {
+      list: jest.fn().mockResolvedValue([
+        { id: 'preset1', name: 'Example Preset', nodeType: 'integrations.http', configJson: '{"url":"https://example.com"}', createdAt: '2026-05-23T12:00:00Z' }
+      ]),
+    },
+  },
 }));
 
-describe("NodeConfigDrawer", () => {
-  const mockOnClose = jest.fn();
-  const mockOnConfigChange = jest.fn();
-  const mockOnDelete = jest.fn();
+jest.mock('lucide-react', () => ({
+  X: () => <span>X</span>,
+  Trash2: () => <span data-testid="trash-icon" />,
+  Plus: () => <span>Plus</span>,
+  Save: () => <span>Save</span>,
+  ChevronDown: () => <span>ChevronDown</span>,
+}));
 
-  const defaultProps = {
-    node: {
-      id: "node1",
-      position: { x: 0, y: 0 },
-      data: {
-        descriptor: {
-          type: "test",
-          displayName: "Test Node",
-          description: "A test node",
-          configuration: [
-            {
-              key: "setting1",
-              displayName: "Setting 1",
-              description: "Choose an option",
-              required: true,
-              allowedValues: ["Option A", "Option B"],
-              defaultValue: "Option A",
-            },
-          ],
-        },
-        config: {},
-      },
-    },
-    catalog: [
-      {
-        type: "test",
-        displayName: "Test Node",
-        description: "A test node",
-        category: "ai",
-        version: "1.0",
-        iconKey: "",
-        inputs: [],
-        outputs: [],
-        configuration: [
-          {
-            key: "setting1",
-            displayName: "Setting 1",
-            description: "Choose an option",
-            required: true,
-            allowedValues: ["Option A", "Option B"],
-          },
-        ],
-      },
-    ],
-    onClose: mockOnClose,
-    onDelete: mockOnDelete,
-    onConfigChange: mockOnConfigChange,
-  };
+const httpDescriptor = {
+  type: 'integrations.http',
+  displayName: 'HTTP Request',
+  description: 'Calls any REST API endpoint.',
+  category: 'integrations',
+  version: '1.0.0',
+  iconKey: 'globe',
+  inputs: [],
+  outputs: [],
+  configuration: [
+    { key: 'url', displayName: 'URL', description: 'Target URL', required: true },
+    { key: 'authType', displayName: 'Auth Type', description: 'Authentication type', required: false, allowedValues: ['none', 'bearer', 'basic', 'api-key', 'oauth2-client-credentials'] },
+  ],
+};
 
-  beforeEach(() => {
-    jest.clearAllMocks();
+const httpNode = {
+  id: 'node-http-1',
+  position: { x: 0, y: 0 },
+  data: {
+    descriptor: httpDescriptor,
+    config: {},
+  },
+};
+
+const defaultProps = {
+  node: httpNode,
+  catalog: [httpDescriptor],
+  onClose: jest.fn(),
+  onDelete: jest.fn(),
+  onConfigChange: jest.fn(),
+};
+
+describe('NodeConfigDrawer', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('renders the drawer with node title', () => {
+    render(<NodeConfigDrawer {...defaultProps} />);
+    expect(screen.getByText('HTTP Request')).toBeInTheDocument();
   });
 
-  it("renders the drawer with node title", () => {
+  it('calls onClose when the close button is clicked', () => {
     render(<NodeConfigDrawer {...defaultProps} />);
-    expect(screen.getByText("Test Node")).toBeInTheDocument();
+    const closeButton = screen.getByTitle('Close');
+    closeButton.click();
+    expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("renders the description", () => {
+  it('calls onDelete when the delete button is clicked', () => {
     render(<NodeConfigDrawer {...defaultProps} />);
-    expect(screen.getByText("A test node")).toBeInTheDocument();
+    const deleteButton = screen.getByText('Delete Node');
+    deleteButton.click();
+    expect(defaultProps.onDelete).toHaveBeenCalledTimes(1);
   });
 
-  it("calls onClose when the close button is clicked", () => {
+  it('renders configuration fields', () => {
     render(<NodeConfigDrawer {...defaultProps} />);
-    const closeButton = screen.getByTitle("Close");
-    fireEvent.click(closeButton);
-    expect(mockOnClose).toHaveBeenCalledTimes(1);
+    expect(screen.getAllByText(/URL/).length).toBeGreaterThan(0);
   });
 
-  it("renders configuration fields", () => {
+  it('shows authentication section for HTTP nodes', () => {
     render(<NodeConfigDrawer {...defaultProps} />);
-    expect(screen.getByText(/Setting 1/)).toBeInTheDocument();
+    expect(screen.getByText('Authentication')).toBeInTheDocument();
   });
 
-  it("calls onDelete when the delete button is clicked", () => {
+  it('renders preset selector', async () => {
     render(<NodeConfigDrawer {...defaultProps} />);
-    const deleteButton = screen.getByText("Delete Node");
-    fireEvent.click(deleteButton);
-    expect(mockOnDelete).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(screen.getByText('Use Preset')).toBeInTheDocument();
+    });
   });
 });

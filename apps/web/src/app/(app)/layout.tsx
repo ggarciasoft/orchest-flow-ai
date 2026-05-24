@@ -10,6 +10,7 @@ const nav = [
   { label: 'Workflows', href: '/workflows', icon: GitBranch },
   { label: 'Executions', href: '/executions', icon: Play },
   { label: 'Approvals', href: '/approvals', icon: CheckSquare },
+  { label: 'Presets', href: '/settings/presets', icon: FileText },
   { label: 'Documents', href: '/documents', icon: FileText },
   { label: 'Settings', href: '/settings', icon: Settings },
 ];
