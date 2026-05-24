@@ -89,4 +89,33 @@ app.UseSwaggerUI(c =>
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Auto-apply EF Core migrations and seed dev data on startup when PostgreSQL is configured
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var config = services.GetRequiredService<IConfiguration>();
+    var connectionString = config.GetConnectionString("Default")
+        ?? Environment.GetEnvironmentVariable("CONNECTION_STRING");
+
+    if (!string.IsNullOrWhiteSpace(connectionString))
+    {
+        try
+        {
+            var db = services.GetRequiredService<OrchestAI.Infrastructure.Persistence.OrchestAIDbContext>();
+            // Apply any pending migrations — creates tables on first run
+            await db.Database.MigrateAsync();
+            app.Logger.LogInformation("Database migrations applied successfully.");
+        }
+        catch (Exception ex)
+        {
+            app.Logger.LogError(ex, "Failed to apply database migrations.");
+        }
+    }
+    else
+    {
+        app.Logger.LogInformation("No CONNECTION_STRING configured — using in-memory repositories.");
+    }
+}
+
 app.Run();

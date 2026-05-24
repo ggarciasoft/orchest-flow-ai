@@ -26,15 +26,15 @@ public sealed class ExecutionsController : ControllerBase
 
     [HttpGet]
     /// <summary>
-/// Retrieves a paginated list of workflow executions for the current tenant,
-/// with optional filtering by status.
-/// </summary>
-/// <param name="status">The status to filter workflow executions by (optional).</param>
-/// <param name="page">Current page number for pagination.</param>
-/// <param name="pageSize">Size of the page for pagination.</param>
-/// <param name="ct">Cancellation token for the operation.</param>
-/// <returns>A paginated response containing the list of workflow executions.</returns>
-public async Task<ActionResult<PagedResponse<WorkflowExecutionResponse>>> List([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+    /// Retrieves a paginated list of workflow executions for the current tenant,
+    /// with optional filtering by status.
+    /// </summary>
+    /// <param name="status">The status to filter workflow executions by (optional).</param>
+    /// <param name="page">Current page number for pagination.</param>
+    /// <param name="pageSize">Size of the page for pagination.</param>
+    /// <param name="ct">Cancellation token for the operation.</param>
+    /// <returns>A paginated response containing the list of workflow executions.</returns>
+    public async Task<ActionResult<PagedResponse<WorkflowExecutionResponse>>> List([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
     {
         var items = await _executions.ListAsync(TenantId, status, page, pageSize, ct);
         var result = items.Select(e => new WorkflowExecutionResponse(e.Id, e.WorkflowId, e.WorkflowVersionId, e.Status.ToString(), e.StartedAt, e.CompletedAt, e.TriggeredBy, e.CorrelationId, e.ErrorMessage)).ToList();
@@ -43,12 +43,12 @@ public async Task<ActionResult<PagedResponse<WorkflowExecutionResponse>>> List([
 
     [HttpGet("{id}")]
     /// <summary>
-/// Retrieves details of a specific workflow execution by its ID.
-/// </summary>
-/// <param name="id">The ID of the workflow execution.</param>
-/// <param name="ct">Cancellation token for the operation.</param>
-/// <returns>The details of the workflow execution, or a 404 status code if not found.</returns>
-public async Task<ActionResult<WorkflowExecutionResponse>> Get(Guid id, CancellationToken ct)
+    /// Retrieves details of a specific workflow execution by its ID.
+    /// </summary>
+    /// <param name="id">The ID of the workflow execution.</param>
+    /// <param name="ct">Cancellation token for the operation.</param>
+    /// <returns>The details of the workflow execution, or a 404 status code if not found.</returns>
+    public async Task<ActionResult<WorkflowExecutionResponse>> Get(Guid id, CancellationToken ct)
     {
         var e = await _executions.GetAsync(id, ct);
         if (e == null || e.TenantId != TenantId) return NotFound();
@@ -57,12 +57,12 @@ public async Task<ActionResult<WorkflowExecutionResponse>> Get(Guid id, Cancella
 
     [HttpGet("{id}/timeline")]
     /// <summary>
-/// Retrieves the timeline details of a specific workflow execution, including nodes executed.
-/// </summary>
-/// <param name="id">The ID of the workflow execution.</param>
-/// <param name="ct">Cancellation token for the operation.</param>
-/// <returns>The timeline of the workflow execution, or a 404 status code if not found.</returns>
-public async Task<ActionResult<ExecutionTimelineResponse>> Timeline(Guid id, CancellationToken ct)
+    /// Retrieves the timeline details of a specific workflow execution, including nodes executed.
+    /// </summary>
+    /// <param name="id">The ID of the workflow execution.</param>
+    /// <param name="ct">Cancellation token for the operation.</param>
+    /// <returns>The timeline of the workflow execution, or a 404 status code if not found.</returns>
+    public async Task<ActionResult<ExecutionTimelineResponse>> Timeline(Guid id, CancellationToken ct)
     {
         var e = await _executions.GetAsync(id, ct);
         if (e == null || e.TenantId != TenantId) return NotFound();
