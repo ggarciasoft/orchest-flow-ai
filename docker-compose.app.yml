@@ -24,11 +24,14 @@ services:
       - LLM__DefaultProvider=${LLM_PROVIDER:-fake}
       - LLM__DefaultModel=${OPENAI_DEFAULT_MODEL:-gpt-4o-mini}
       - LLM__OpenAI__ApiKey=${OPENAI_API_KEY:-}
+      - REDIS_URL=redis://redis:6379
       - ASPNETCORE_ENVIRONMENT=Development
     volumes:
       - uploads:/app/uploads
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
@@ -47,6 +50,7 @@ services:
       - LLM__DefaultProvider=${LLM_PROVIDER:-fake}
       - LLM__DefaultModel=${OPENAI_DEFAULT_MODEL:-gpt-4o-mini}
       - LLM__OpenAI__ApiKey=${OPENAI_API_KEY:-}
+      - REDIS_URL=redis://redis:6379
     volumes:
       - uploads:/app/uploads
     depends_on:

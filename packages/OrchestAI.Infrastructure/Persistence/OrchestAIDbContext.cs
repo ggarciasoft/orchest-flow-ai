@@ -49,6 +49,9 @@ public sealed class OrchestAIDbContext : DbContext
             e.HasKey(w => w.Id);
             e.Property(w => w.Name).IsRequired().HasMaxLength(300);
             e.Property(w => w.Description).HasMaxLength(2000);
+            e.Property(w => w.TriggerType).HasConversion<string>().IsRequired();
+            e.Property(w => w.WebhookSecret).HasMaxLength(500);
+            e.Property(w => w.CronExpression).HasMaxLength(100);
             e.HasIndex(w => w.TenantId);
         });
 

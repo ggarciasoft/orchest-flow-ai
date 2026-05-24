@@ -1,18 +1,22 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using OrchestAI.Infrastructure.Queue;
+using OrchestAI.Application.Abstractions;
 using OrchestAI.Engine;
+
 namespace OrchestAI.Worker.Workers;
 
+/// <summary>Background worker that dequeues and runs workflow executions.</summary>
 public sealed class ExecutionWorker : BackgroundService
 {
-    private readonly InMemoryExecutionQueue _queue;
+    private readonly IExecutionQueueConsumer _queue;
     private readonly IWorkflowEngine _engine;
     private readonly ILogger<ExecutionWorker> _logger;
 
-    public ExecutionWorker(InMemoryExecutionQueue queue, IWorkflowEngine engine, ILogger<ExecutionWorker> logger)
+    /// <summary>Initialises the worker with a queue consumer and engine.</summary>
+    public ExecutionWorker(IExecutionQueueConsumer queue, IWorkflowEngine engine, ILogger<ExecutionWorker> logger)
     { _queue = queue; _engine = engine; _logger = logger; }
 
+    /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("ExecutionWorker started");

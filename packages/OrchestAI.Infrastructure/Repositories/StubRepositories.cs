@@ -44,6 +44,15 @@ public sealed class StubWorkflowRepository : IWorkflowRepository
         if (_versions.TryGetValue(versionId, out var ver)) ver.Activate();
         return Task.CompletedTask;
     }
+
+    public Task<Workflow?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        => Task.FromResult<Workflow?>(_store.Values.FirstOrDefault(w => w.Id == id && !w.IsDeleted));
+
+    public Task<IReadOnlyList<Workflow>> ListByTriggerTypeAsync(TriggerType triggerType, CancellationToken ct = default)
+    {
+        IReadOnlyList<Workflow> list = _store.Values.Where(w => w.TriggerType == triggerType && !w.IsDeleted).ToList();
+        return Task.FromResult(list);
+    }
 }
 
 /// <summary>In-memory stub implementation of <see cref="IExecutionRepository"/>.</summary>

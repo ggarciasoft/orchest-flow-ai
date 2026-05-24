@@ -3,7 +3,7 @@ using OrchestAI.Application.Abstractions;
 using OrchestAI.Contracts.Events;
 namespace OrchestAI.Infrastructure.Queue;
 
-public sealed class InMemoryExecutionQueue : IExecutionQueue
+public sealed class InMemoryExecutionQueue : IExecutionQueue, IExecutionQueueConsumer
 {
     private readonly Channel<ExecutionQueueMessage> _execChannel = Channel.CreateUnbounded<ExecutionQueueMessage>();
     private readonly Channel<ExecutionResumeMessage> _resumeChannel = Channel.CreateUnbounded<ExecutionResumeMessage>();

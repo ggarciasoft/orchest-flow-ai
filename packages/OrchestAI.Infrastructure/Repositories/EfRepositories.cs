@@ -51,6 +51,14 @@ public sealed class EfWorkflowRepository : IWorkflowRepository
         version?.Activate();
         await _db.SaveChangesAsync(ct);
     }
+
+    public Task<Workflow?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        => _db.Workflows.FirstOrDefaultAsync(w => w.Id == id && !w.IsDeleted, ct);
+
+    public Task<IReadOnlyList<Workflow>> ListByTriggerTypeAsync(TriggerType triggerType, CancellationToken ct = default)
+        => _db.Workflows.Where(w => w.TriggerType == triggerType && !w.IsDeleted)
+            .ToListAsync(ct)
+            .ContinueWith(t => (IReadOnlyList<Workflow>)t.Result, ct);
 }
 
 /// <summary>EF Core implementation of <see cref="IExecutionRepository"/>.</summary>

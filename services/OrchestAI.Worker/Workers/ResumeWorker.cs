@@ -1,18 +1,22 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using OrchestAI.Infrastructure.Queue;
+using OrchestAI.Application.Abstractions;
 using OrchestAI.Engine;
+
 namespace OrchestAI.Worker.Workers;
 
+/// <summary>Background worker that dequeues and resumes paused workflow executions (e.g. after approvals).</summary>
 public sealed class ResumeWorker : BackgroundService
 {
-    private readonly InMemoryExecutionQueue _queue;
+    private readonly IExecutionQueueConsumer _queue;
     private readonly IWorkflowEngine _engine;
     private readonly ILogger<ResumeWorker> _logger;
 
-    public ResumeWorker(InMemoryExecutionQueue queue, IWorkflowEngine engine, ILogger<ResumeWorker> logger)
+    /// <summary>Initialises the worker with a queue consumer and engine.</summary>
+    public ResumeWorker(IExecutionQueueConsumer queue, IWorkflowEngine engine, ILogger<ResumeWorker> logger)
     { _queue = queue; _engine = engine; _logger = logger; }
 
+    /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("ResumeWorker started");

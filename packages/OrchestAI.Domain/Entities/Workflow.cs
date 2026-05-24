@@ -1,3 +1,4 @@
+using OrchestAI.Domain.Enums;
 namespace OrchestAI.Domain.Entities;
 
 /// <summary>
@@ -41,6 +42,23 @@ public sealed class Workflow
     public DateTime UpdatedAt { get; private set; }
 
     /// <summary>
+    /// Gets the trigger type that determines how this workflow is started.
+    /// </summary>
+    public TriggerType TriggerType { get; private set; } = TriggerType.Manual;
+
+    /// <summary>
+    /// Gets the shared secret used to verify inbound webhook requests.
+    /// Only relevant when <see cref="TriggerType"/> is <see cref="TriggerType.Webhook"/>.
+    /// </summary>
+    public string? WebhookSecret { get; private set; }
+
+    /// <summary>
+    /// Gets the cron expression that defines the execution schedule.
+    /// Only relevant when <see cref="TriggerType"/> is <see cref="TriggerType.Cron"/>.
+    /// </summary>
+    public string? CronExpression { get; private set; }
+
+    /// <summary>
     /// Indicates whether the workflow is deleted.
     /// </summary>
     public bool IsDeleted { get; private set; }
@@ -63,7 +81,17 @@ public sealed class Workflow
     /// <param name="description">The description of the workflow.</param>
     /// <param name="createdBy">The unique identifier of the user who created the workflow.</param>
     /// <returns>A new <see cref="Workflow"/> instance with a generated identifier.</returns>
-    public static Workflow Create(Guid tenantId, string name, string description, Guid createdBy)
+    /// <param name="triggerType">How the workflow will be triggered. Defaults to <see cref="TriggerType.Manual"/>.</param>
+    /// <param name="webhookSecret">Optional shared secret for webhook verification.</param>
+    /// <param name="cronExpression">Optional cron expression for scheduled execution.</param>
+    public static Workflow Create(
+        Guid tenantId,
+        string name,
+        string description,
+        Guid createdBy,
+        TriggerType triggerType = TriggerType.Manual,
+        string? webhookSecret = null,
+        string? cronExpression = null)
         => new()
         {
             Id = Guid.NewGuid(),
@@ -72,8 +100,31 @@ public sealed class Workflow
             Description = description,
             CreatedBy = createdBy,
             CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = DateTime.UtcNow,
+            TriggerType = triggerType,
+            WebhookSecret = webhookSecret,
+            CronExpression = cronExpression,
         };
+
+    /// <summary>
+    /// Sets the trigger configuration for the workflow.
+    /// </summary>
+    /// <param name="triggerType">The type of trigger to configure.</param>
+    /// <param name="webhookSecret">The shared secret for webhook verification. Required when <paramref name="triggerType"/> is <see cref="TriggerType.Webhook"/>.</param>
+    /// <param name="cronExpression">The cron expression defining the schedule. Required when <paramref name="triggerType"/> is <see cref="TriggerType.Cron"/>.</param>
+    /// <exception cref="ArgumentException">Thrown when required fields for the trigger type are missing.</exception>
+    public void SetTrigger(TriggerType triggerType, string? webhookSecret, string? cronExpression)
+    {
+        if (triggerType == TriggerType.Webhook && string.IsNullOrWhiteSpace(webhookSecret))
+            throw new ArgumentException("WebhookSecret is required for Webhook trigger type.", nameof(webhookSecret));
+        if (triggerType == TriggerType.Cron && string.IsNullOrWhiteSpace(cronExpression))
+            throw new ArgumentException("CronExpression is required for Cron trigger type.", nameof(cronExpression));
+
+        TriggerType = triggerType;
+        WebhookSecret = triggerType == TriggerType.Webhook ? webhookSecret : null;
+        CronExpression = triggerType == TriggerType.Cron ? cronExpression : null;
+        UpdatedAt = DateTime.UtcNow;
+    }
 
     /// <summary>
     /// Updates the name and description of the workflow.

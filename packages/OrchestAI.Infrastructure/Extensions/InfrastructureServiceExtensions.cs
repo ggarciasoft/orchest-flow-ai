@@ -7,6 +7,7 @@ using OrchestAI.Infrastructure.Persistence;
 using OrchestAI.Infrastructure.Queue;
 using OrchestAI.Infrastructure.Repositories;
 using OrchestAI.Infrastructure.Storage;
+using StackExchange.Redis;
 
 namespace OrchestAI.Infrastructure.Extensions;
 
@@ -22,9 +23,22 @@ public static class InfrastructureServiceExtensions
     /// </summary>
     public static IServiceCollection AddOrchestAIInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        // Shared services always registered
-        services.AddSingleton<InMemoryExecutionQueue>();
-        services.AddSingleton<IExecutionQueue>(sp => sp.GetRequiredService<InMemoryExecutionQueue>());
+        // Queue — Redis when REDIS_URL is set, otherwise in-memory
+        var redisUrl = Environment.GetEnvironmentVariable("REDIS_URL");
+        if (!string.IsNullOrEmpty(redisUrl))
+        {
+            services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisUrl));
+            services.AddSingleton<RedisExecutionQueue>();
+            services.AddSingleton<IExecutionQueue>(sp => sp.GetRequiredService<RedisExecutionQueue>());
+            services.AddSingleton<IExecutionQueueConsumer>(sp => sp.GetRequiredService<RedisExecutionQueue>());
+        }
+        else
+        {
+            services.AddSingleton<InMemoryExecutionQueue>();
+            services.AddSingleton<IExecutionQueue>(sp => sp.GetRequiredService<InMemoryExecutionQueue>());
+            services.AddSingleton<IExecutionQueueConsumer>(sp => sp.GetRequiredService<InMemoryExecutionQueue>());
+        }
+
         services.AddScoped<IDocumentStorage, LocalFileDocumentStorage>();
         services.AddSingleton<JwtTokenService>();
 

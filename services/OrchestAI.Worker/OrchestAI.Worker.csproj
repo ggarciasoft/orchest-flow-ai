@@ -6,6 +6,7 @@
     <RootNamespace>OrchestAI.Worker</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Cronos" Version="0.13.0" />
     <ProjectReference Include="..\..\packages\OrchestAI.Application\OrchestAI.Application.csproj" />
     <ProjectReference Include="..\..\packages\OrchestAI.Infrastructure\OrchestAI.Infrastructure.csproj" />
     <ProjectReference Include="..\..\packages\OrchestAI.Engine\OrchestAI.Engine.csproj" />

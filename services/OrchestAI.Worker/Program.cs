@@ -14,5 +14,7 @@ builder.Services.AddOrchestAIEngine();
 builder.Services.AddOrchestAINodes();
 builder.Services.AddHostedService<ExecutionWorker>();
 builder.Services.AddHostedService<ResumeWorker>();
+builder.Services.AddHostedService<CronSchedulerService>();
+builder.Services.AddSingleton(TimeProvider.System);
 var host = builder.Build();
 host.Run();

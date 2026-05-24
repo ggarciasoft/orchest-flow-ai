@@ -19,6 +19,7 @@
 | Docker Compose all-in-one | Split into `docker-compose.yml` (infra) / `docker-compose.app.yml` / `docker-compose.observability.yml` |
 | HTTP node — only one auth mode | 5 auth types: `none`, `bearer`, `basic`, `api-key`, `oauth2-client-credentials` |
 | No reusable node config system | Node Config Presets — full CRUD backend + frontend `/settings/presets` |
+| No Workflow Trigger Types | `TriggerType` enum (Manual/Webhook/Cron) added to domain; `POST /api/webhooks/{id}` endpoint; `CronSchedulerService` background service using Cronos |
 
 ---
 
@@ -31,10 +32,6 @@
 ---
 
 ## 🟡 Important Gaps (Partial Functionality)
-
-### 2. No Workflow Trigger Types
-- **Problem:** Workflows can only be triggered manually via API. No webhook triggers, no cron/schedule support.
-- **Proposed fix:** Add a `TriggerType` enum (manual, webhook, cron) to `Workflow`. For webhooks, generate a unique inbound URL per workflow. For cron, store a cron expression and run on a background timer.
 
 ### 3. No Execution Retry / Backoff
 - **Problem:** If a node fails (e.g. HTTP 503), the whole execution fails. There's no automatic retry.

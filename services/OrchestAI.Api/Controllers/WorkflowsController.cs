@@ -45,7 +45,7 @@ public sealed class WorkflowsController : ControllerBase
     {
         var items = await _workflows.ListAsync(TenantId, search, page, pageSize, ct);
         var total = await _workflows.CountAsync(TenantId, search, ct);
-        var result = items.Select(w => new WorkflowResponse(w.Id, w.Name, w.Description, null, w.CreatedAt, w.UpdatedAt)).ToList();
+        var result = items.Select(w => new WorkflowResponse(w.Id, w.Name, w.Description, null, w.CreatedAt, w.UpdatedAt, (OrchestAI.Contracts.TriggerType)(int)w.TriggerType, w.WebhookSecret, w.CronExpression)).ToList();
         return Ok(new PagedResponse<WorkflowResponse>(result, page, pageSize, total));
     }
 
@@ -59,14 +59,14 @@ public sealed class WorkflowsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<WorkflowResponse>> Create([FromBody] CreateWorkflowRequest req, CancellationToken ct)
     {
-        var workflow = Workflow.Create(TenantId, req.Name, req.Description, UserId);
+        var workflow = Workflow.Create(TenantId, req.Name, req.Description, UserId, (OrchestAI.Domain.Enums.TriggerType)(int)req.TriggerType, req.WebhookSecret, req.CronExpression);
         await _workflows.CreateAsync(workflow, ct);
         var defJson = req.Definition.GetRawText();
         // Version 1 is created and immediately activated for new workflows
         var version = WorkflowVersion.Create(workflow.Id, 1, defJson, UserId);
         version.Activate();
         await _workflows.CreateVersionAsync(version, ct);
-        return CreatedAtAction(nameof(Get), new { id = workflow.Id }, new WorkflowResponse(workflow.Id, workflow.Name, workflow.Description, 1, workflow.CreatedAt, workflow.UpdatedAt));
+        return CreatedAtAction(nameof(Get), new { id = workflow.Id }, new WorkflowResponse(workflow.Id, workflow.Name, workflow.Description, 1, workflow.CreatedAt, workflow.UpdatedAt, (OrchestAI.Contracts.TriggerType)(int)workflow.TriggerType, workflow.WebhookSecret, workflow.CronExpression));
     }
 
     /// <summary>
@@ -81,7 +81,7 @@ public sealed class WorkflowsController : ControllerBase
         var w = await _workflows.GetAsync(id, TenantId, ct);
         if (w == null) return NotFound();
         var activeVersion = await _workflows.GetActiveVersionAsync(id, ct);
-        return Ok(new WorkflowResponse(w.Id, w.Name, w.Description, activeVersion?.VersionNumber, w.CreatedAt, w.UpdatedAt));
+        return Ok(new WorkflowResponse(w.Id, w.Name, w.Description, activeVersion?.VersionNumber, w.CreatedAt, w.UpdatedAt, (OrchestAI.Contracts.TriggerType)(int)w.TriggerType, w.WebhookSecret, w.CronExpression));
     }
 
     /// <summary>
