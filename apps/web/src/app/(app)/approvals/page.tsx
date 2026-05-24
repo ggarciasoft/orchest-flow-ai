@@ -48,7 +48,7 @@ export default function ApprovalsPage() {
             return (
               <div key={a.id} className="bg-white border border-yellow-200 rounded-xl p-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-lg">{String(payload._approvalTitle ?? 'Approval Required')}</h3>
+                  <h3 className="font-semibold text-lg"><Link href={`/approvals/${a.id}`}>{String(payload._approvalTitle ?? 'Approval Required')}</Link></h3>
                   <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 font-medium">Pending</span>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 text-sm space-y-1.5">
