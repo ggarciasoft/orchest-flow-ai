@@ -84,14 +84,42 @@
 
 ---
 
+## 🟡 Marketing / Public-Facing
+
+### ~~7. No public landing page~~ ✅ RESOLVED
+- **Problem:** The app has no marketing/home page. Visitors who aren't logged in see nothing meaningful.
+- **Resolution:** Added `/` landing page (outside the `(app)` route group) with hero section, feature highlights, and CTA to sign up or sign in.
+
+### ~~8. No site footer~~ ✅ RESOLVED
+- **Problem:** No footer exists on any page (public or app). Missing legal/nav links.
+- **Resolution:** Added `PublicFooter` component with links to Terms, Privacy, and Feedback. Shown on landing page, terms, privacy, and feedback pages.
+
+### ~~9. No cookie consent banner~~ ✅ RESOLVED
+- **Problem:** No GDPR/cookie consent popup. Required for EU compliance and any analytics use.
+- **Resolution:** Added `CookieBanner` component that appears on first visit, stores consent in `localStorage`, and disappears on accept/decline. Injected in root layout. Links to Privacy Policy.
+
+### ~~10. No Terms of Service / Privacy Policy pages~~ ✅ RESOLVED
+- **Problem:** Footer links to Terms and Privacy have no destination pages.
+- **Resolution:** Added `/terms` and `/privacy` static pages with appropriate placeholder content.
+
+### ~~11. No Feedback page/link~~ ✅ RESOLVED
+- **Problem:** No feedback channel from within the product.
+- **Resolution:** Added `/feedback` page with name, email, and message form. Shows success state on submit. Backend wiring via TODO comment for `POST /api/feedback`.
+
+---
+
 ## Suggested Priority Order
 
-1. **Workflow trigger types** — webhook + cron triggers unlock real automation
-2. **Execution retry / backoff** — makes integrations production-safe
-3. **Real-time execution log streaming** — major UX improvement for debugging
-4. **RBAC** — required before multi-user teams can safely share a tenant
-5. **Tenant onboarding UI** — needed for self-serve sign-up
-6. **Replace in-memory queue** — production readiness only
+1. ~~Workflow trigger types~~ ✅
+2. ~~Execution retry / backoff~~ ✅
+3. ~~Real-time execution log streaming~~ ✅
+4. ~~RBAC~~ ✅
+5. ~~Tenant onboarding UI~~ ✅
+6. ~~Replace in-memory queue~~ ✅
+7. **Public landing page** — first impression for new users
+8. **Footer + legal pages** (Terms, Privacy) — compliance baseline
+9. **Cookie consent banner** — GDPR compliance
+10. **Feedback page** — user engagement
 
 ---
 
