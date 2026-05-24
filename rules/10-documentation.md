@@ -18,6 +18,8 @@
 
 7. Diagrams (Mermaid, ASCII) are updated when architecture or flow changes. Stale diagrams are worse than no diagrams.
 
+8a. The public documentation site (`/docs`) mirrors `docs/*.md`. When a new `.md` file is added to `docs/`, a corresponding entry **must** be added to `apps/web/src/content/docs/index.ts` in the same PR. The entry must have the correct `slug`, `title`, `category`, and `filename`. Failing to do this leaves the docs site stale.
+
 8. The `README.md` is the entry point for new contributors. It must always:
    - Explain what OrchestAI is.
    - Link to the documentation map.

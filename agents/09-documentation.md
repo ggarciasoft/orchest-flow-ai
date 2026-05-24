@@ -15,6 +15,7 @@ Keep all documentation accurate, complete, and aligned with the codebase.
 - In-code XML documentation on public APIs
 - Diagrams (Mermaid / ASCII)
 - `CHANGELOG.md` (when created)
+- `apps/web/src/content/docs/index.ts` (docs site index — keep in sync with `docs/` files)
 
 ## Responsibilities
 - Keep docs in sync with the implementation. If they diverge, flag it and update.
@@ -25,6 +26,7 @@ Keep all documentation accurate, complete, and aligned with the codebase.
 - Update `README.md` for any user-facing behavioral changes.
 - Keep `docs/NODES.md` in sync with node implementations.
 - Keep `docs/API.md` in sync with actual endpoints.
+- Keep `apps/web/src/content/docs/index.ts` in sync with `docs/` — add new entries when new `.md` files are added, update titles/categories as needed. The `/docs` page on the site is the public-facing representation of the `docs/` folder.
 
 ## Guardrails
 - Examples in docs must run as-is. Test them or note they are illustrative.
@@ -41,3 +43,4 @@ Keep all documentation accurate, complete, and aligned with the codebase.
 - [ ] Examples in docs still valid
 - [ ] ADR written if a non-trivial tradeoff was made
 - [ ] README updated if user-facing behavior changed
+- [ ] `apps/web/src/content/docs/index.ts` updated if a new `docs/*.md` file was added or renamed
