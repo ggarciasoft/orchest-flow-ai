@@ -166,24 +166,23 @@ export const api = {
         body: JSON.stringify({ token, password }),
       }),
   },
-},
-
-/** Node configuration presets — reusable named config sets. */
-presets: {
-  /** Lists all presets, optionally filtered by node type. */
-  list: (nodeType?: string) =>
-    apiFetch<PresetResponse[]>(`/api/presets${nodeType ? `?nodeType=${nodeType}` : ''}`),
-  /** Gets a single preset by id. */
-  get: (id: string) => apiFetch<PresetResponse>(`/api/presets/${id}`),
-  /** Creates a new preset. */
-  create: (data: { name: string; nodeType: string; configJson: string }) =>
-    apiFetch<PresetResponse>('/api/presets', { method: 'POST', body: JSON.stringify(data) }),
-  /** Updates an existing preset. */
-  update: (id: string, data: { name: string; configJson: string }) =>
-    apiFetch<PresetResponse>(`/api/presets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  /** Deletes a preset. */
-  delete: (id: string) => apiFetch<void>(`/api/presets/${id}`, { method: 'DELETE' }),
-}
+  /** Node configuration presets — reusable named config sets. */
+  presets: {
+    /** Lists all presets, optionally filtered by node type. */
+    list: (nodeType?: string) =>
+      apiFetch<PresetResponse[]>(`/api/presets${nodeType ? `?nodeType=${nodeType}` : ''}`),
+    /** Gets a single preset by id. */
+    get: (id: string) => apiFetch<PresetResponse>(`/api/presets/${id}`),
+    /** Creates a new preset. */
+    create: (data: { name: string; nodeType: string; configJson: string }) =>
+      apiFetch<PresetResponse>('/api/presets', { method: 'POST', body: JSON.stringify(data) }),
+    /** Updates an existing preset. */
+    update: (id: string, data: { name: string; configJson: string }) =>
+      apiFetch<PresetResponse>(`/api/presets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    /** Deletes a preset. */
+    delete: (id: string) => apiFetch<void>(`/api/presets/${id}`, { method: 'DELETE' }),
+  },
+};
 
 // ---- Type Definitions ----
 

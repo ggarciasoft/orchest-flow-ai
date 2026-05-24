@@ -42,7 +42,9 @@ describe('AcceptInvitePage', () => {
 
   it('shows error when password is empty', async () => {
     render(<AcceptInvitePage />);
-    fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+    // Trigger submit via form submit event to bypass required attribute in jsdom
+    const form = document.querySelector('form')!;
+    fireEvent.submit(form);
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toHaveTextContent('Password is required.');

@@ -204,3 +204,38 @@ pnpm --filter @orchestai/web test:e2e   # Playwright (requires the stack running
 - **VS Code:** install the C# Dev Kit, ESLint, Prettier, Tailwind CSS extensions.
 - **Rider:** open `OrchestAI.sln` for backend; open `apps/web` separately or via the JS plugin.
 - Recommended `.editorconfig` is checked in; honor it.
+
+---
+
+## 12. Tenant Onboarding Flow
+
+OrchestAI provides a guided onboarding experience for creating a new workspace and inviting team members.
+
+### Onboarding Steps
+
+1. **Name your workspace** — Navigate to /onboarding. Enter a workspace name and submit. This calls POST /api/tenants (requires AdminOnly policy).
+
+2. **Invite your team** — Enter a teammate's email and select their role (Admin, Editor, Approver, Viewer). Submit to call POST /api/tenants/{id}/invite. An invite token is returned (in production this would be emailed; for MVP the token is displayed in the UI).
+
+3. **Share the invite link** — The generated invite link is in the format:
+   `
+   https://<host>/invite/<tenantId>?token=<inviteToken>
+   `
+
+4. **Invitee accepts** — The invitee visits /invite/<tenantId>?token=<inviteToken>, sets a password, and submits. This calls POST /api/tenants/{id}/invite/accept which creates their user account. They are then redirected to /login.
+
+### API Endpoints
+
+| Method | Path | Policy | Description |
+|--------|------|--------|-------------|
+| POST | /api/tenants | AdminOnly | Create a new tenant workspace |
+| GET | /api/tenants/{id} | ViewerOrAbove | Get tenant info (own tenant only) |
+| POST | /api/tenants/{id}/invite | AdminOnly | Invite a user by email |
+| POST | /api/tenants/{id}/invite/accept | Anonymous | Accept invite and create account |
+
+### Invite Lifecycle
+
+- Invites expire after **24 hours**.
+- Each invite token is a unique GUID string (32 hex characters).
+- Once accepted, the invite cannot be reused.
+- The new user's role is set from the invite's ole field.

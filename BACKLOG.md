@@ -46,9 +46,18 @@
 - **Problem:** All authenticated users have full access to all workflows/executions in the tenant. No per-workflow permissions, no "viewer" vs "editor" vs "admin" distinction.
 - **Proposed fix:** Add `Role` field to `User`; guard controller endpoints with role claims.
 
-### 6. Tenant Onboarding Flow Missing
+### ~~6. Tenant Onboarding Flow Missing~~ ✅ RESOLVED
 - **Problem:** There's no UI or guided flow for creating a new tenant or inviting team members.
-- **Proposed fix:** `/onboarding` page and `POST /api/tenants` + `POST /api/tenants/{id}/invite` endpoints.
+- **Resolution:** Implemented in `feat: tenant onboarding flow and team invite`.
+  - `POST /api/tenants` — create tenant (AdminOnly)
+  - `GET /api/tenants/{id}` — get tenant info (ViewerOrAbove)
+  - `POST /api/tenants/{id}/invite` — invite user by email (AdminOnly)
+  - `POST /api/tenants/{id}/invite/accept` — accept invite, creates user account
+  - `/onboarding` page — 3-step guided UI
+  - `/invite/[tenantId]` page — accept invite and set password
+  - `TenantInvite` domain entity with expiry and acceptance logic
+  - EF migration `AddTenantInvites`
+  - Full unit test coverage (backend + frontend)
 
 ---
 
