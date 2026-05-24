@@ -1,3 +1,13 @@
+# docker-compose.yml — Infrastructure layer
+# Starts PostgreSQL and Redis.
+# Run with: docker compose up -d
+#
+# To also start the application:
+#   docker compose -f docker-compose.yml -f docker-compose.app.yml up -d
+#
+# To also start observability (Prometheus / Grafana / OTEL):
+#   docker compose -f docker-compose.yml -f docker-compose.app.yml -f docker-compose.observability.yml up -d
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -14,6 +24,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
@@ -24,82 +35,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
-
-  # api:
-  #   build:
-  #     context: .
-  #     dockerfile: services/OrchestAI.Api/Dockerfile
-  #   ports:
-  #     - "5080:8080"
-  #   environment:
-  #     - ConnectionStrings__Default=Host=postgres;Database=orchestai;Username=orchestai;Password=orchestai
-  #     - Auth__JwtSigningKey=dev-signing-key-change-in-production-32chars
-  #     - Auth__JwtIssuer=orchestai
-  #     - Auth__JwtAudience=orchestai-web
-  #     - Storage__Root=/app/uploads
-  #     - LLM__DefaultProvider=openai
-  #     - LLM__DefaultModel=gpt-4o-mini
-  #     - ORCHESTAI_LLM__OPENAI__API_KEY=${OPENAI_API_KEY:-}
-  #   volumes:
-  #     - uploads:/app/uploads
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   profiles: ["full"]
-
-  # worker:
-  #   build:
-  #     context: .
-  #     dockerfile: services/OrchestAI.Worker/Dockerfile
-  #   environment:
-  #     - ConnectionStrings__Default=Host=postgres;Database=orchestai;Username=orchestai;Password=orchestai
-  #     - Storage__Root=/app/uploads
-  #     - LLM__DefaultProvider=openai
-  #     - LLM__DefaultModel=gpt-4o-mini
-  #     - ORCHESTAI_LLM__OPENAI__API_KEY=${OPENAI_API_KEY:-}
-  #   volumes:
-  #     - uploads:/app/uploads
-  #   depends_on:
-  #     - api
-  #   profiles: ["full"]
-
-  # web:
-  #   build:
-  #     context: apps/web
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     - NEXT_PUBLIC_API_BASE_URL=http://localhost:5080
-  #   depends_on:
-  #     - api
-  #   profiles: ["full"]
-
-  # Observability (optional profile)
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
-    volumes:
-      - ./deploy/otel/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
-    ports:
-      - "4317:4317"
-      - "4318:4318"
-    profiles: ["with-otel"]
-
-  prometheus:
-    image: prom/prometheus:latest
-    volumes:
-      - ./deploy/otel/prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "9090:9090"
-    profiles: ["with-otel"]
-
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3001:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    profiles: ["with-otel"]
+    restart: unless-stopped
 
 volumes:
   postgres_data:

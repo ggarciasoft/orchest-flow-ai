@@ -68,21 +68,40 @@ Now open:
 
 ---
 
-## 4. One-Command (Full Docker)
+## 4. Docker Compose
 
+The compose setup is split into three files for flexibility:
+
+| File | Purpose |
+|---|---|
+| `docker-compose.yml` | Infrastructure only: PostgreSQL + Redis |
+| `docker-compose.app.yml` | Application: API + Worker + Web frontend |
+| `docker-compose.observability.yml` | Monitoring: OTEL Collector + Prometheus + Grafana |
+
+### Infrastructure only (DB + Redis)
 ```bash
-docker compose --profile full up --build
+docker compose up -d
 ```
 
-Brings up Postgres, Redis, the API, the Worker, and the web app in containers. Slower iteration but a single command for demos.
-
-To enable OpenTelemetry locally:
-
+### Full stack (infra + app)
 ```bash
-docker compose --profile full --profile with-otel up --build
+docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
 ```
 
-This adds the OTel collector, Tempo, Prometheus, and Grafana.
+### Full stack with observability
+```bash
+docker compose -f docker-compose.yml -f docker-compose.app.yml -f docker-compose.observability.yml up -d --build
+```
+
+> The API auto-applies EF Core migrations on startup — no manual `dotnet ef database update` needed.
+
+### Service URLs
+| Service | URL |
+|---|---|
+| API + Swagger | http://localhost:5080/swagger |
+| Frontend | http://localhost:3000 |
+| Prometheus | http://localhost:9090 |
+| Grafana | http://localhost:3001 (admin/admin) |
 
 ---
 

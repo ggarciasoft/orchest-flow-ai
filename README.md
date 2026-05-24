@@ -199,30 +199,46 @@ orchestai/
 
 ## ⚡ Quick Start
 
+### Option A — Local dev (no Docker, in-memory DB)
 ```bash
-# Clone
 git clone https://github.com/ggarciasoft/orchestai.git
 cd orchestai
 
-# Run backend API
-cd services/OrchestAI.Api
-dotnet run
+# Backend API (runs at http://localhost:5080 — Swagger at /swagger)
+cd services/OrchestAI.Api && dotnet run
 
-# Run frontend
-cd apps/web
-npm install
-npm run dev
-
-# Run backend tests
-cd tests/OrchestAI.Tests
-dotnet test
-
-# Run frontend tests
-cd apps/web
-npm test
+# Frontend (runs at http://localhost:3000)
+cd apps/web && npm install && npm run dev
 ```
 
-> **Note:** The backend currently uses in-memory repositories — no database setup needed to run locally, but data is lost on restart. See `BACKLOG.md` for the PostgreSQL wiring task.
+### Option B — Docker with PostgreSQL
+```bash
+# Infrastructure only (PostgreSQL + Redis)
+docker compose up -d
+
+# Set your connection string and run the API
+CONNECTION_STRING="Host=localhost;Database=orchestai;Username=orchestai;Password=orchestai" dotnet run --project services/OrchestAI.Api
+```
+
+### Option C — Full Docker stack
+```bash
+# Copy and configure env vars
+cp .env.example .env
+
+# Start infra + app
+docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
+```
+
+### Run tests
+```bash
+# Backend (125 tests)
+cd tests/OrchestAI.Tests && dotnet test
+
+# Frontend (26 tests)
+cd apps/web && npm test
+```
+
+> Tables are created automatically on first startup when PostgreSQL is configured — no manual migration step needed.
 
 ---
 
