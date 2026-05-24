@@ -22,6 +22,8 @@ public sealed class OrchestAIDbContext : DbContext
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<AIUsageLog> AIUsageLogs => Set<AIUsageLog>();
     public DbSet<NodePreset> NodePresets => Set<NodePreset>();
+    public DbSet<TenantInvite> TenantInvites => Set<TenantInvite>();
+    public DbSet<ExecutionQueueItem> ExecutionQueue => Set<ExecutionQueueItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -113,6 +115,16 @@ public sealed class OrchestAIDbContext : DbContext
             e.HasIndex(l => l.WorkflowExecutionId);
         });
 
+        modelBuilder.Entity<TenantInvite>(e =>
+        {
+            e.HasKey(i => i.Id);
+            e.Property(i => i.Email).IsRequired().HasMaxLength(320);
+            e.Property(i => i.Role).IsRequired().HasMaxLength(50);
+            e.Property(i => i.Token).IsRequired().HasMaxLength(64);
+            e.HasIndex(i => i.Token).IsUnique();
+            e.HasIndex(i => i.TenantId);
+        });
+
         modelBuilder.Entity<NodePreset>(e =>
         {
             e.HasKey(p => p.Id);
@@ -120,6 +132,17 @@ public sealed class OrchestAIDbContext : DbContext
             e.Property(p => p.NodeType).IsRequired().HasMaxLength(200);
             e.Property(p => p.ConfigJson).IsRequired();
             e.HasIndex(p => new { p.TenantId, p.NodeType });
+        });
+
+        modelBuilder.Entity<ExecutionQueueItem>(e =>
+        {
+            e.HasKey(q => q.Id);
+            e.Property(q => q.TriggeredBy).IsRequired().HasMaxLength(50);
+            e.Property(q => q.Payload).IsRequired();
+            e.Property(q => q.Status).HasConversion<string>().IsRequired();
+            // Primary access pattern: workers poll for Pending items ordered by CreatedAt
+            e.HasIndex(q => new { q.Status, q.CreatedAt });
+            e.HasIndex(q => q.TenantId);
         });
     }
 }

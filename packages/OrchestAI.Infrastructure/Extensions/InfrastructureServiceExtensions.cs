@@ -47,6 +47,9 @@ public static class InfrastructureServiceExtensions
         // Default to stub notifier; API layer will override with SignalR when SignalR is configured
         services.AddScoped<IExecutionNotifier, StubExecutionNotifier>();
 
+        // Persistent queue — PostgreSQL when CONNECTION_STRING is set, otherwise in-memory stub
+        // (registered after the DB section so PostgresExecutionQueue can depend on the scoped DbContext)
+
         var connectionString = configuration.GetConnectionString("Default")
             ?? Environment.GetEnvironmentVariable("CONNECTION_STRING");
 
@@ -63,7 +66,11 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<IDocumentRepository, EfDocumentRepository>();
             services.AddScoped<IAIUsageRepository, EfAIUsageRepository>();
             services.AddScoped<INodePresetRepository, EfNodePresetRepository>();
+            services.AddScoped<ITenantRepository, EfTenantRepository>();
+            services.AddScoped<ITenantInviteRepository, EfTenantInviteRepository>();
             services.AddScoped<OrchestAI.Engine.IEngineExecutionRepository, EfEngineExecutionRepository>();
+            // Persistent queue backed by PostgreSQL
+            services.AddScoped<IPersistentExecutionQueue, PostgresExecutionQueue>();
         }
         else
         {
@@ -76,7 +83,11 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<IAIUsageRepository, StubAIUsageRepository>();
             services.AddScoped<IUserRepository, StubUserRepository>();
             services.AddScoped<INodePresetRepository, StubNodePresetRepository>();
+            services.AddScoped<ITenantRepository, StubTenantRepository>();
+            services.AddScoped<ITenantInviteRepository, StubTenantInviteRepository>();
             services.AddScoped<OrchestAI.Engine.IEngineExecutionRepository, StubEngineExecutionRepository>();
+            // In-memory stub persistent queue — no DB required
+            services.AddSingleton<IPersistentExecutionQueue, StubExecutionQueue>();
         }
 
         return services;

@@ -135,6 +135,37 @@ export const api = {
     /** Returns the full catalog of available node types from the registry. */
     catalog: () => apiFetch<{ nodes: NodeDescriptor[] }>('/api/nodes/catalog'),
   },
+  /** Tenant management and invite endpoints. */
+  tenants: {
+    /**
+     * Creates a new tenant workspace.
+     * @param name - The workspace name.
+     */
+    create: (name: string) =>
+      apiFetch<TenantResponse>('/api/tenants', { method: 'POST', body: JSON.stringify({ name }) }),
+    /**
+     * Invites a user to the given tenant by email.
+     * @param tenantId - The tenant id to invite into.
+     * @param email - The invitee's email address.
+     * @param role - The role to assign on acceptance.
+     */
+    invite: (tenantId: string, email: string, role: string) =>
+      apiFetch<TenantInviteResponse>(`/api/tenants/${tenantId}/invite`, {
+        method: 'POST',
+        body: JSON.stringify({ email, role }),
+      }),
+    /**
+     * Accepts a tenant invite and creates the user account.
+     * @param tenantId - The tenant id.
+     * @param token - The invite token.
+     * @param password - The desired password for the new account.
+     */
+    acceptInvite: (tenantId: string, token: string, password: string) =>
+      apiFetch<{ message: string }>(`/api/tenants/${tenantId}/invite/accept`, {
+        method: 'POST',
+        body: JSON.stringify({ token, password }),
+      }),
+  },
 },
 
 /** Node configuration presets — reusable named config sets. */
@@ -188,3 +219,9 @@ export interface NodePort { key: string; displayName: string; description: strin
 
 /** Result of a workflow definition validation check. */
 export interface ValidationResult { isValid: boolean; errors: { nodeId: string; message: string; }[]; }
+
+/** Tenant workspace metadata. */
+export interface TenantResponse { id: string; name: string; createdAt: string; }
+
+/** Tenant invite response — includes the token for the MVP invite flow. */
+export interface TenantInviteResponse { id: string; tenantId: string; email: string; role: string; token: string; expiresAt: string; }

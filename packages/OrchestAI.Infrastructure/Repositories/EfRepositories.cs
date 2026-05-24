@@ -226,3 +226,32 @@ public sealed class EfNodePresetRepository : INodePresetRepository
         if (preset != null) { _db.NodePresets.Remove(preset); await _db.SaveChangesAsync(ct); }
     }
 }
+
+/// <summary>EF Core implementation of <see cref="ITenantRepository"/>.</summary>
+public sealed class EfTenantRepository : ITenantRepository
+{
+    private readonly OrchestAIDbContext _db;
+    public EfTenantRepository(OrchestAIDbContext db) => _db = db;
+
+    public Task<Tenant?> GetAsync(Guid id, CancellationToken ct = default)
+        => _db.Tenants.FindAsync(new object[] { id }, ct).AsTask();
+
+    public async Task<Tenant> CreateAsync(Tenant tenant, CancellationToken ct = default)
+    { _db.Tenants.Add(tenant); await _db.SaveChangesAsync(ct); return tenant; }
+}
+
+/// <summary>EF Core implementation of <see cref="ITenantInviteRepository"/>.</summary>
+public sealed class EfTenantInviteRepository : ITenantInviteRepository
+{
+    private readonly OrchestAIDbContext _db;
+    public EfTenantInviteRepository(OrchestAIDbContext db) => _db = db;
+
+    public Task<TenantInvite?> GetByTokenAsync(string token, CancellationToken ct = default)
+        => _db.TenantInvites.FirstOrDefaultAsync(i => i.Token == token, ct);
+
+    public async Task<TenantInvite> CreateAsync(TenantInvite invite, CancellationToken ct = default)
+    { _db.TenantInvites.Add(invite); await _db.SaveChangesAsync(ct); return invite; }
+
+    public async Task UpdateAsync(TenantInvite invite, CancellationToken ct = default)
+    { _db.TenantInvites.Update(invite); await _db.SaveChangesAsync(ct); }
+}

@@ -26,9 +26,9 @@
 
 ## 🔴 Critical Gaps (Blocking End-to-End Execution)
 
-### 1. Workflow Execution Queue is In-Memory
+### 1. ~~Workflow Execution Queue is In-Memory~~ ✅ RESOLVED
 - **Problem:** `InMemoryExecutionQueue` uses .NET Channels. Doesn't survive restarts, no horizontal scaling.
-- **Fix (future):** RabbitMQ / Azure Service Bus / Redis Streams. In-memory is acceptable for single-process MVP.
+- **Resolution:** Implemented `PostgresExecutionQueue` backed by the `ExecutionQueue` table in PostgreSQL. Uses SELECT FOR UPDATE SKIP LOCKED for atomic multi-worker dequeue. Registered as `IPersistentExecutionQueue`. Falls back to `StubExecutionQueue` (in-memory, `ConcurrentQueue`) when no `CONNECTION_STRING` is set.
 
 ---
 

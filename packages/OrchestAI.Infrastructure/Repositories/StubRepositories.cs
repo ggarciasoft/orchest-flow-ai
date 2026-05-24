@@ -185,3 +185,21 @@ public sealed class StubNodePresetRepository : INodePresetRepository
     public Task UpdateAsync(NodePreset preset, CancellationToken ct = default) { _store[preset.Id] = preset; return Task.CompletedTask; }
     public Task DeleteAsync(Guid id, Guid tenantId, CancellationToken ct = default) { _store.TryRemove(id, out _); return Task.CompletedTask; }
 }
+
+/// <summary>In-memory stub implementation of <see cref="ITenantRepository"/>.</summary>
+public sealed class StubTenantRepository : ITenantRepository
+{
+    private static readonly ConcurrentDictionary<Guid, Tenant> _store = new();
+    public Task<Tenant?> GetAsync(Guid id, CancellationToken ct = default) => Task.FromResult(_store.GetValueOrDefault(id));
+    public Task<Tenant> CreateAsync(Tenant tenant, CancellationToken ct = default) { _store[tenant.Id] = tenant; return Task.FromResult(tenant); }
+}
+
+/// <summary>In-memory stub implementation of <see cref="ITenantInviteRepository"/>.</summary>
+public sealed class StubTenantInviteRepository : ITenantInviteRepository
+{
+    private static readonly ConcurrentDictionary<Guid, TenantInvite> _store = new();
+    public Task<TenantInvite?> GetByTokenAsync(string token, CancellationToken ct = default)
+        => Task.FromResult(_store.Values.FirstOrDefault(i => i.Token == token));
+    public Task<TenantInvite> CreateAsync(TenantInvite invite, CancellationToken ct = default) { _store[invite.Id] = invite; return Task.FromResult(invite); }
+    public Task UpdateAsync(TenantInvite invite, CancellationToken ct = default) { _store[invite.Id] = invite; return Task.CompletedTask; }
+}

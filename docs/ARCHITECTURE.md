@@ -279,6 +279,48 @@ Significant architectural decisions live in `docs/adr/NNNN-title.md` (to be crea
 
 - Choice of EF Core vs Dapper
 - Queue backend (Redis Streams vs RabbitMQ vs Postgres LISTEN/NOTIFY)
+
+---
+
+## 9. Persistent Execution Queue
+
+The persistent queue is backed by the `ExecutionQueue` table in PostgreSQL and accessed via `IPersistentExecutionQueue`.
+
+### Key design decisions
+
+| Concern | Decision |
+|---------|----------|
+| Atomicity | `SELECT FOR UPDATE SKIP LOCKED` ensures each worker claims exactly one item, even under concurrent load |
+| Ordering | Items are dequeued by `CreatedAt ASC` (FIFO within the same priority) |
+| Fault tolerance | Worker marks items `Processing` on pickup; items stuck in `Processing` can be re-queued by a watchdog (future work) |
+| Fallback | `StubExecutionQueue` (in-memory `ConcurrentQueue`) is used when `CONNECTION_STRING` is absent (local dev / tests) |
+
+### Status lifecycle
+```
+Pending → Processing → Done
+                    ↘ Failed
+```
+
+### Registration
+- `CONNECTION_STRING` set → `PostgresExecutionQueue` registered as `IPersistentExecutionQueue` (scoped, depends on `OrchestAIDbContext`)
+- No `CONNECTION_STRING` → `StubExecutionQueue` registered as `IPersistentExecutionQueue` (singleton)
+
+### Table schema
+```sql
+CREATE TABLE "ExecutionQueue" (
+    "Id"          uuid         PRIMARY KEY,
+    "WorkflowId"  uuid         NOT NULL,
+    "TenantId"    uuid         NOT NULL,
+    "TriggeredBy" varchar(50)  NOT NULL,
+    "Payload"     text         NOT NULL,
+    "Status"      varchar(20)  NOT NULL,
+    "CreatedAt"   timestamptz  NOT NULL,
+    "PickedUpAt"  timestamptz,
+    "CompletedAt" timestamptz
+);
+CREATE INDEX ON "ExecutionQueue" ("Status", "CreatedAt");
+CREATE INDEX ON "ExecutionQueue" ("TenantId");
+```
 - Multi-tenant strategy (row-level vs schema-per-tenant)
 - Workflow versioning strategy
 - Engine durability model
