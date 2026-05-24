@@ -5,6 +5,7 @@ import { useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { ArrowLeft, GitBranch } from 'lucide-react';
 import Link from 'next/link';
+import { PageHeader, Button } from '@/components/ui';
 
 export default function NewWorkflowPage() {
   const router = useRouter();
@@ -35,26 +36,19 @@ export default function NewWorkflowPage() {
   };
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
-      <div className="mb-6">
-        <Link href="/workflows" className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4">
-          <ArrowLeft size={16} /> Back to Workflows
-        </Link>
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-50 rounded-lg">
-            <GitBranch size={24} className="text-blue-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">New Workflow</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Create a new AI workflow definition</p>
-          </div>
-        </div>
-      </div>
+    <div className="max-w-2xl mx-auto">
+      <Link href="/workflows" className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 mb-4">
+        <ArrowLeft size={16} /> Back to Workflows
+      </Link>
+      <PageHeader
+        title="New Workflow"
+        subtitle="Create a new AI workflow definition"
+      />
 
-      <div className="bg-white border rounded-xl p-6 shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-xl p-6 max-w-lg">
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1.5">
               Workflow Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -63,14 +57,14 @@ export default function NewWorkflowPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Contract Risk Analysis"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               autoFocus
             />
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-              Description <span className="text-gray-400 font-normal">(optional)</span>
+            <label htmlFor="description" className="block text-sm font-medium text-slate-700 mb-1.5">
+              Description <span className="text-slate-400 font-normal">(optional)</span>
             </label>
             <textarea
               id="description"
@@ -78,7 +72,7 @@ export default function NewWorkflowPage() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe what this workflow does..."
               rows={3}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
             />
           </div>
 
@@ -87,17 +81,16 @@ export default function NewWorkflowPage() {
           )}
 
           <div className="flex items-center gap-3 pt-2">
-            <button
+            <Button
               type="submit"
               disabled={create.isPending}
-              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition-colors"
             >
               {create.isPending ? 'Creating...' : 'Create & Open Designer'}
-            </button>
+            </Button>
             <Link href="/workflows">
-              <button type="button" className="border text-sm font-medium px-5 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors">
+              <Button type="button" variant="ghost">
                 Cancel
-              </button>
+              </Button>
             </Link>
           </div>
         </form>

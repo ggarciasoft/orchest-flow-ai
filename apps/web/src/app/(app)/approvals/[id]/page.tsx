@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { CheckCircle, XCircle, ArrowLeft, Clock } from 'lucide-react';
 import { formatDate, statusColor } from '@/lib/utils';
 import Link from 'next/link';
+import { PageHeader, Badge, statusVariant } from '@/components/ui';
 
 /**
  * ApprovalDetailPage — shows full context for a single approval request.
@@ -57,20 +58,15 @@ export default function ApprovalDetailPage() {
 
   return (
     <div className="p-8 max-w-3xl mx-auto space-y-6">
-      {/* Back navigation */}
-      <Link href="/approvals" className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
-        <ArrowLeft size={16} /> Back to Approval Inbox
+      <Link href="/approvals" className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700">
+        <ArrowLeft size={14} /> Back to Approval Inbox
       </Link>
+      <PageHeader title={title} />
 
       {/* Header */}
-      <div className="bg-white border rounded-xl p-6 space-y-3">
+      <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-          <span className={`text-xs px-3 py-1 rounded-full font-medium ${
-            approval.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-            approval.status === 'Approved' ? 'bg-green-100 text-green-800' :
-            'bg-red-100 text-red-800'
-          }`}>{approval.status}</span>
+          <Badge variant={statusVariant(approval.status)}>{approval.status}</Badge>
         </div>
         <p className="text-xs text-gray-400 flex items-center gap-1">
           <Clock size={12} /> Requested: {formatDate(approval.requestedAt)}
@@ -85,13 +81,13 @@ export default function ApprovalDetailPage() {
 
       {/* Payload fields */}
       {visibleFields.length > 0 && (
-        <div className="bg-white border rounded-xl p-6">
-          <h3 className="font-semibold text-sm text-gray-700 uppercase tracking-wide mb-4">Context</h3>
+        <div className="bg-white border border-slate-200 rounded-xl p-6">
+          <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-4">Context</h3>
           <div className="space-y-2">
             {visibleFields.map(([key, value]) => (
               <div key={key} className="flex gap-3 text-sm">
-                <span className="font-medium text-gray-600 shrink-0 w-32">{key}</span>
-                <span className="text-gray-800 break-all">{String(value)}</span>
+                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide shrink-0 w-32">{key}</span>
+                <span className="text-sm text-slate-900 break-all">{String(value)}</span>
               </div>
             ))}
           </div>
@@ -100,8 +96,8 @@ export default function ApprovalDetailPage() {
 
       {/* Approve / Reject actions — only shown for pending approvals */}
       {approval.status === 'Pending' && (
-        <div className="bg-white border rounded-xl p-6 space-y-4">
-          <h3 className="font-semibold text-sm text-gray-700 uppercase tracking-wide">Decision</h3>
+        <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
+          <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wide">Decision</h3>
           <textarea
             className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             placeholder="Add a comment (optional)…"
@@ -113,7 +109,7 @@ export default function ApprovalDetailPage() {
             <button
               onClick={() => approve.mutate()}
               disabled={approve.isPending}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2.5 rounded-lg"
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2.5 rounded-lg"
             >
               <CheckCircle size={16} /> Approve
             </button>
@@ -130,22 +126,20 @@ export default function ApprovalDetailPage() {
 
       {/* Execution timeline */}
       {timeline && timeline.nodes.length > 0 && (
-        <div className="bg-white border rounded-xl p-6">
-          <h3 className="font-semibold text-sm text-gray-700 uppercase tracking-wide mb-4">Execution Timeline</h3>
-          <div className="space-y-2">
+        <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
+          <div className="px-6 py-4"><h3 className="text-xs font-medium text-slate-500 uppercase tracking-wide">Execution Timeline</h3></div>
+          <div className="divide-y divide-slate-100">
             {timeline.nodes.map((node, i) => (
-              <div key={node.id} className="flex items-center justify-between py-2 border-b last:border-0">
+              <div key={node.id} className="flex items-center justify-between px-6 py-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-xs font-mono text-gray-400 w-6">#{i + 1}</span>
+                  <span className="text-xs font-mono text-slate-400 w-6">#{i + 1}</span>
                   <div>
-                    <p className="text-sm font-medium text-gray-800">{node.nodeType}</p>
-                    <p className="text-xs text-gray-400 font-mono">{node.nodeId}</p>
+                    <p className="text-sm font-medium text-slate-900">{node.nodeType}</p>
+                    <p className="text-xs text-slate-400 font-mono">{node.nodeId}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColor(node.status)}`}>
-                    {node.status}
-                  </span>
+                  <Badge variant={statusVariant(node.status)}>{node.status}</Badge>
                   {node.completedAt && (
                     <p className="text-xs text-gray-400 mt-1">{formatDate(node.completedAt)}</p>
                   )}

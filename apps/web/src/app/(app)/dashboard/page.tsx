@@ -1,8 +1,9 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { statusColor, formatDate } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 import { GitBranch, Play, CheckSquare, AlertCircle } from 'lucide-react';
+import { PageHeader, Badge, statusVariant } from '@/components/ui';
 
 /**
  * DashboardPage — landing overview showing key workflow stats,
@@ -17,58 +18,63 @@ export default function DashboardPage() {
    * Data array for displaying summary statistics at the top of the dashboard.
    */
   const stats = [
-    { label: 'Total Workflows', value: workflows?.total ?? 0, icon: GitBranch, color: 'text-blue-600 bg-blue-50' },
-    { label: 'Executions', value: executions?.total ?? 0, icon: Play, color: 'text-green-600 bg-green-50' },
-    { label: 'Pending Approvals', value: approvals?.total ?? 0, icon: CheckSquare, color: 'text-yellow-600 bg-yellow-50' },
+    { label: 'Total Workflows', value: workflows?.total ?? 0, icon: GitBranch, color: 'text-indigo-600 bg-indigo-50' },
+    { label: 'Executions', value: executions?.total ?? 0, icon: Play, color: 'text-emerald-600 bg-emerald-50' },
+    { label: 'Pending Approvals', value: approvals?.total ?? 0, icon: CheckSquare, color: 'text-amber-600 bg-amber-50' },
     { label: 'Failed', value: executions?.items.filter(e => e.status === 'Failed').length ?? 0, icon: AlertCircle, color: 'text-red-600 bg-red-50' },
   ];
 
   return (
-    <div className="p-8 space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold text-gray-900">Dashboard</h2>
-        <p className="text-gray-500 mt-1">Overview of your AI workflows</p>
-      </div>
+    <div>
+      <PageHeader title="Dashboard" subtitle="Overview of your AI workflows" />
 
-      {/* Render the stats summary cards */}
-      <div className="grid grid-cols-4 gap-6">
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {stats.map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-white rounded-xl border p-6 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">{label}</p>
-              <p className="text-3xl font-bold mt-1">{value}</p>
+          <div key={label} className="bg-white border border-slate-200 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">{label}</span>
+              <div className={`p-2 rounded-lg ${color}`}><Icon size={14} /></div>
             </div>
-            <div className={`p-3 rounded-xl ${color}`}><Icon size={24} /></div>
+            <p className="text-2xl font-semibold text-slate-900">{value}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
-        {/* Section for recent executions */}
-        <div className="bg-white rounded-xl border">
-          <div className="p-5 border-b"><h3 className="font-semibold">Recent Executions</h3></div>
-          <div className="p-4 space-y-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Executions */}
+        <div className="bg-white border border-slate-200 rounded-xl">
+          <div className="px-5 py-4 border-b border-slate-200">
+            <h2 className="text-sm font-semibold text-slate-900">Recent Executions</h2>
+          </div>
+          <div className="divide-y divide-slate-100">
             {executions?.items.slice(0, 5).map(e => (
-              <div key={e.id} className="flex items-center justify-between py-2">
-                <span className="text-sm font-mono text-gray-600">{e.id.slice(0, 12)}…</span>
-                <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColor(e.status)}`}>{e.status}</span>
-                <span className="text-xs text-gray-400">{formatDate(e.startedAt)}</span>
+              <div key={e.id} className="flex items-center justify-between px-5 py-3">
+                <span className="text-xs font-mono text-slate-500">{e.id.slice(0, 12)}…</span>
+                <Badge variant={statusVariant(e.status)}>{e.status}</Badge>
+                <span className="text-xs text-slate-400">{formatDate(e.startedAt)}</span>
               </div>
-            )) ?? <p className="text-sm text-gray-400 py-4 text-center">No executions yet</p>}
+            )) ?? (
+              <p className="text-sm text-slate-400 text-center py-8">No executions yet</p>
+            )}
           </div>
         </div>
 
-        {/* Section for pending approvals */}
-        <div className="bg-white rounded-xl border">
-          <div className="p-5 border-b"><h3 className="font-semibold">Pending Approvals</h3></div>
-          <div className="p-4 space-y-2">
+        {/* Pending Approvals */}
+        <div className="bg-white border border-slate-200 rounded-xl">
+          <div className="px-5 py-4 border-b border-slate-200">
+            <h2 className="text-sm font-semibold text-slate-900">Pending Approvals</h2>
+          </div>
+          <div className="divide-y divide-slate-100">
             {approvals?.items.slice(0, 5).map(a => (
-              <div key={a.id} className="flex items-center justify-between py-2">
-                <span className="text-sm font-mono text-gray-600">{a.id.slice(0, 12)}…</span>
-                <span className="text-xs px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-800">Pending</span>
-                <span className="text-xs text-gray-400">{formatDate(a.requestedAt)}</span>
+              <div key={a.id} className="flex items-center justify-between px-5 py-3">
+                <span className="text-xs font-mono text-slate-500">{a.id.slice(0, 12)}…</span>
+                <Badge variant="warning">Pending</Badge>
+                <span className="text-xs text-slate-400">{formatDate(a.requestedAt)}</span>
               </div>
-            )) ?? <p className="text-sm text-gray-400 py-4 text-center">No pending approvals</p>}
+            )) ?? (
+              <p className="text-sm text-slate-400 text-center py-8">No pending approvals</p>
+            )}
           </div>
         </div>
       </div>

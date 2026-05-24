@@ -59,27 +59,24 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 space-y-6">
+    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6">
+      <div className="w-full max-w-lg mx-auto bg-white border border-slate-200 rounded-xl p-8 shadow-sm space-y-6">
 
         {/* Step indicator */}
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-center gap-4 mb-2">
           {steps.map((label, i) => (
-            <div key={i} className="flex flex-col items-center gap-1 flex-1">
+            <div key={i} className="flex flex-col items-center gap-1">
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-colors ${
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
                   step === i + 1
-                    ? 'bg-blue-600 border-blue-600 text-white'
+                    ? 'bg-indigo-600 text-white'
                     : step > i + 1
-                    ? 'bg-green-500 border-green-500 text-white'
-                    : 'border-gray-300 text-gray-400'
+                    ? 'bg-indigo-200 text-indigo-700'
+                    : 'bg-slate-200 text-slate-400'
                 }`}
               >
-                {step > i + 1 ? '✓' : i + 1}
+                {i + 1}
               </div>
-              <span className={`text-xs text-center hidden sm:block ${step === i + 1 ? 'text-blue-600 font-medium' : 'text-gray-400'}`}>
-                {label}
-              </span>
             </div>
           ))}
         </div>
@@ -87,13 +84,13 @@ export default function OnboardingPage() {
         {/* Step 1: Name your workspace */}
         {step === 1 && (
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-900">Name your workspace</h2>
-            <p className="text-gray-500 text-sm">This is your team&apos;s home in OrchestAI. You can change it later.</p>
+            <h2 className="text-xl font-semibold text-slate-900">Name your workspace</h2>
+            <p className="text-sm text-slate-500">This is your team&apos;s home in OrchestAI. You can change it later.</p>
             <label className="block">
-              <span className="text-sm font-medium text-gray-700">Workspace name</span>
+              <span className="text-sm font-medium text-slate-700">Workspace name</span>
               <input
                 type="text"
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1.5 block w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 placeholder="Acme Inc."
                 value={workspaceName}
                 onChange={e => setWorkspaceName(e.target.value)}
@@ -103,7 +100,7 @@ export default function OnboardingPage() {
             </label>
             {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
             <button
-              className="w-full bg-blue-600 text-white rounded-lg py-2 font-medium hover:bg-blue-700 disabled:opacity-50"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors w-full disabled:opacity-50"
               onClick={handleCreateTenant}
               disabled={loading}
             >
@@ -115,13 +112,13 @@ export default function OnboardingPage() {
         {/* Step 2: Invite your team */}
         {step === 2 && (
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-900">Invite your team</h2>
-            <p className="text-gray-500 text-sm">Send invite links to teammates. They&apos;ll set their own password.</p>
+            <h2 className="text-xl font-semibold text-slate-900">Invite your team</h2>
+            <p className="text-sm text-slate-500">Send invite links to teammates. They&apos;ll set their own password.</p>
             <label className="block">
-              <span className="text-sm font-medium text-gray-700">Email address</span>
+              <span className="text-sm font-medium text-slate-700">Email address</span>
               <input
                 type="email"
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1.5 block w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 placeholder="teammate@example.com"
                 value={inviteEmail}
                 onChange={e => setInviteEmail(e.target.value)}
@@ -129,9 +126,9 @@ export default function OnboardingPage() {
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-gray-700">Role</span>
+              <span className="text-sm font-medium text-slate-700">Role</span>
               <select
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1.5 block w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 value={inviteRole}
                 onChange={e => setInviteRole(e.target.value)}
                 aria-label="Invitee role"
@@ -151,14 +148,14 @@ export default function OnboardingPage() {
             )}
             <div className="flex gap-3">
               <button
-                className="flex-1 bg-blue-600 text-white rounded-lg py-2 font-medium hover:bg-blue-700 disabled:opacity-50"
+                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors disabled:opacity-50"
                 onClick={handleInvite}
                 disabled={loading}
               >
                 {loading ? 'Sending...' : 'Send invite'}
               </button>
               <button
-                className="flex-1 border border-gray-300 text-gray-700 rounded-lg py-2 font-medium hover:bg-gray-50"
+                className="flex-1 border border-slate-200 text-slate-700 rounded-lg py-2.5 text-sm font-medium hover:bg-slate-50 transition-colors"
                 onClick={() => setStep(3)}
               >
                 Done inviting
@@ -171,13 +168,13 @@ export default function OnboardingPage() {
         {step === 3 && (
           <div className="space-y-4 text-center">
             <div className="text-5xl">🎉</div>
-            <h2 className="text-2xl font-bold text-gray-900">You&apos;re all set!</h2>
-            <p className="text-gray-500 text-sm">
-              <span className="font-semibold text-gray-800">{tenantName}</span> is ready. Your team will receive their invite links shortly.
+            <h2 className="text-xl font-semibold text-slate-900">You&apos;re all set!</h2>
+            <p className="text-sm text-slate-500">
+              <span className="font-semibold text-slate-800">{tenantName}</span> is ready. Your team will receive their invite links shortly.
             </p>
             <a
               href="/dashboard"
-              className="block w-full bg-blue-600 text-white rounded-lg py-2 font-medium hover:bg-blue-700 text-center"
+              className="block w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors text-center"
             >
               Go to dashboard
             </a>

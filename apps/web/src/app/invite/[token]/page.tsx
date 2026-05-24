@@ -47,30 +47,37 @@ export default function AcceptInvitePage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 text-center space-y-4">
+      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6">
+        <div className="max-w-sm mx-auto bg-white border border-slate-200 rounded-xl p-8 shadow-sm text-center space-y-4">
           <div className="text-5xl">✅</div>
-          <h2 className="text-2xl font-bold text-gray-900">Account created!</h2>
-          <p className="text-gray-500 text-sm">Redirecting you to login…</p>
+          <h2 className="text-2xl font-bold text-slate-900">Account created!</h2>
+          <p className="text-slate-500 text-sm">Redirecting you to login…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 space-y-6">
+    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6">
+      <div className="max-w-sm mx-auto bg-white border border-slate-200 rounded-xl p-8 shadow-sm space-y-6">
+        {/* Logo mark */}
+        <div className="flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
+            <span className="text-white font-bold text-lg">O</span>
+          </div>
+        </div>
+
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Join your team on OrchestAI</h2>
-          <p className="text-gray-500 text-sm mt-1">Set a password to complete your registration.</p>
+          <h2 className="text-2xl font-bold text-slate-900">Join your team on OrchestAI</h2>
+          <p className="text-slate-500 text-sm mt-1">Set a password to complete your registration.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <label className="block">
-            <span className="text-sm font-medium text-gray-700">Password</span>
+            <span className="text-sm font-medium text-slate-700">Password</span>
             <input
               type="password"
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-lg border border-slate-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="At least 8 characters"
               value={password}
               onChange={e => setPassword(e.target.value)}
@@ -79,10 +86,10 @@ export default function AcceptInvitePage() {
             />
           </label>
           <label className="block">
-            <span className="text-sm font-medium text-gray-700">Confirm password</span>
+            <span className="text-sm font-medium text-slate-700">Confirm password</span>
             <input
               type="password"
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-lg border border-slate-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="Repeat your password"
               value={confirmPassword}
               onChange={e => setConfirmPassword(e.target.value)}
@@ -93,7 +100,7 @@ export default function AcceptInvitePage() {
           {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white rounded-lg py-2 font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="w-full bg-indigo-600 text-white rounded-lg py-2 font-medium hover:bg-indigo-700 disabled:opacity-50"
             disabled={loading}
           >
             {loading ? 'Creating account…' : 'Create account'}

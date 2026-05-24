@@ -36,6 +36,8 @@ jest.mock('@/lib/api', () => ({
 jest.mock('@/lib/utils', () => ({
   formatDate: jest.fn(() => '2026-05-23'),
   statusColor: jest.fn(() => 'bg-gray-100 text-gray-600'),
+  cn: (...args: (string | undefined | false | null)[]) => args.filter(Boolean).join(' '),
+  statusVariant: jest.fn(() => 'default'),
 }));
 
 jest.mock('lucide-react', () => ({

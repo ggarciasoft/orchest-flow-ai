@@ -4,6 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { CheckCircle, XCircle } from 'lucide-react';
+import Link from 'next/link';
+import { PageHeader, Badge, EmptyState } from '@/components/ui';
 
 /**
  * ApprovalsPage — inbox for pending human approval requests.
@@ -27,29 +29,22 @@ export default function ApprovalsPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold">Approval Inbox</h2>
-        <p className="text-gray-500 mt-1">Review and act on pending workflow approvals</p>
-      </div>
+      <PageHeader title="Approval Inbox" subtitle="Review and act on pending workflow approvals" />
 
       {isLoading ? (
         <div className="space-y-3">{[1,2].map(i => <div key={i} className="h-40 bg-gray-200 rounded-xl animate-pulse" />)}</div>
       ) : data?.items.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          <CheckCircle size={48} className="mx-auto mb-4 opacity-30" />
-          <p className="text-lg font-medium">All clear!</p>
-          <p className="text-sm mt-1">No pending approvals</p>
-        </div>
+        <EmptyState icon={CheckCircle} title="All clear!" subtitle="No pending approvals" />
       ) : (
-        <div className="space-y-4">
+        <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
           {data?.items.map(a => {
             let payload: Record<string, unknown> = {};
             try { payload = JSON.parse(a.payloadJson); } catch { /* ignore */ }
             return (
-              <div key={a.id} className="bg-white border border-yellow-200 rounded-xl p-6 space-y-4">
+              <div key={a.id} className="p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-lg"><Link href={`/approvals/${a.id}`}>{String(payload._approvalTitle ?? 'Approval Required')}</Link></h3>
-                  <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 font-medium">Pending</span>
+                  <Badge variant="warning">Pending</Badge>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 text-sm space-y-1.5">
                   {Object.entries(payload).filter(([k]) => !k.startsWith('_')).map(([k, v]) => (

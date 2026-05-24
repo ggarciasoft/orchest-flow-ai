@@ -12,6 +12,8 @@ jest.mock("@/lib/api", () => ({
 
 jest.mock("@/lib/utils", () => ({
   formatDate: jest.fn(() => "2024-01-01"),
+  cn: (...args: (string | undefined | false | null)[]) => args.filter(Boolean).join(' '),
+  statusVariant: jest.fn(() => 'default'),
 }));
 
 jest.mock("next/link", () => ({

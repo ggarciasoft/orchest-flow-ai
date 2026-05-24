@@ -24,30 +24,39 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+    <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
+      <div className="w-full max-w-sm">
+        {/* Logo mark */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">OrchestAI</h1>
-          <p className="text-gray-500 mt-2">Enterprise AI Workflow Platform</p>
+          <div className="inline-flex items-center justify-center w-10 h-10 bg-indigo-600 rounded-xl mb-4">
+            <span className="text-white font-bold text-lg">O</span>
+          </div>
+          <h1 className="text-xl font-semibold text-slate-900">OrchestAI</h1>
+          <p className="text-sm text-slate-500 mt-1">Sign in to your workspace</p>
         </div>
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          </div>
-          {error && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{error}</p>}
-          <button type="submit" disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50">
-            {loading ? 'Signing in…' : 'Sign In'}
-          </button>
-        </form>
-        <p className="text-xs text-gray-400 text-center mt-6">Demo: any email + any password</p>
+
+        <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm">
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
+              <input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+            </div>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
+              <input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+            </div>
+            {error && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-100 px-3 py-2 rounded-lg">{error}</p>
+            )}
+            <button type="submit" disabled={loading}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50 mt-2">
+              {loading ? 'Signing in…' : 'Sign In'}
+            </button>
+          </form>
+          <p className="text-xs text-slate-400 text-center mt-5">Demo: any email + any password</p>
+        </div>
       </div>
     </div>
   );
