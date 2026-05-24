@@ -53,6 +53,13 @@ public sealed class OrchestAIDbContext : DbContext
             e.Property(w => w.WebhookSecret).HasMaxLength(500);
             e.Property(w => w.CronExpression).HasMaxLength(100);
             e.HasIndex(w => w.TenantId);
+            // Map RetryPolicy as owned/flattened columns
+            e.OwnsOne(w => w.RetryPolicy, rp =>
+            {
+                rp.Property(p => p.MaxAttempts).HasColumnName("RetryMaxAttempts").HasDefaultValue(0);
+                rp.Property(p => p.BackoffMs).HasColumnName("RetryBackoffMs").HasDefaultValue(0);
+                rp.Property(p => p.BackoffMultiplier).HasColumnName("RetryBackoffMultiplier").HasDefaultValue(2.0);
+            });
         });
 
         modelBuilder.Entity<WorkflowVersion>(e =>
@@ -78,6 +85,7 @@ public sealed class OrchestAIDbContext : DbContext
             e.Property(n => n.Status).HasConversion<string>().IsRequired();
             e.Property(n => n.NodeId).IsRequired().HasMaxLength(200);
             e.Property(n => n.NodeType).IsRequired().HasMaxLength(200);
+            e.Property(n => n.AttemptNumber).HasDefaultValue(1);
             e.HasIndex(n => n.WorkflowExecutionId);
         });
 

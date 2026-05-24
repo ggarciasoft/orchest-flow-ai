@@ -6,6 +6,12 @@
     <RootNamespace>OrchestAI.Worker</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>OrchestAI.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Cronos" Version="0.13.0" />
     <ProjectReference Include="..\..\packages\OrchestAI.Application\OrchestAI.Application.csproj" />
     <ProjectReference Include="..\..\packages\OrchestAI.Infrastructure\OrchestAI.Infrastructure.csproj" />

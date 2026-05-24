@@ -33,9 +33,9 @@
 
 ## 🟡 Important Gaps (Partial Functionality)
 
-### 3. No Execution Retry / Backoff
+### 3. ~~No Execution Retry / Backoff~~ ✅ RESOLVED
 - **Problem:** If a node fails (e.g. HTTP 503), the whole execution fails. There's no automatic retry.
-- **Proposed fix:** `NodeConfigDefinition` already supports `RetryPolicy`-style config. Add `RetryAttempts` + `RetryBackoffMs` config fields to the engine and honor them in `WorkflowEngine`.
+- **Resolution:** Implemented `RetryPolicy` value object on `Workflow` entity. Engine honors `MaxAttempts` with exponential backoff via `GetDelay(attemptNumber)`. Configure via `RetryMaxAttempts`, `RetryBackoffMs`, `RetryBackoffMultiplier` in create/update workflow requests.
 
 ### 4. No Real-Time Execution Log Streaming
 - **Problem:** Execution status only shows on polling refresh. No live node-by-node updates.

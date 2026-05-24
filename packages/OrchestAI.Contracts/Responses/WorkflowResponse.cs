@@ -8,4 +8,7 @@ public sealed record WorkflowResponse(
     DateTime UpdatedAt,
     OrchestAI.Contracts.TriggerType TriggerType,
     string? WebhookSecret,
-    string? CronExpression);
+    string? CronExpression,
+    int RetryMaxAttempts = 0,
+    int RetryBackoffMs = 0,
+    double RetryBackoffMultiplier = 2.0);

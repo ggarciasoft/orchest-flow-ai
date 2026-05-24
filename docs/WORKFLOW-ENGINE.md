@@ -353,3 +353,58 @@ workflow.SetTrigger(TriggerType.Manual, webhookSecret: null, cronExpression: nul
 `
 
 Guard conditions: Webhook requires a non-empty WebhookSecret; Cron requires a non-empty CronExpression.
+---
+
+## 13. Execution Retry / Exponential Backoff
+
+Workflows support automatic retry of failed node executions with exponential backoff.
+
+### Configuration
+
+Set a RetryPolicy on the workflow via the API or domain entity:
+
+`json
+{
+  "name": "My Workflow",
+  "retryMaxAttempts": 3,
+  "retryBackoffMs": 500,
+  "retryBackoffMultiplier": 2.0
+}
+`
+
+Or in code:
+
+`csharp
+workflow.SetRetryPolicy(RetryPolicy.Create(maxAttempts: 3, backoffMs: 500, multiplier: 2.0));
+`
+
+### Retry Policy Fields
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| MaxAttempts | 0 | Maximum number of execution attempts. 0 = no retry. |
+| BackoffMs | 0 | Base delay in milliseconds before the first retry. |
+| BackoffMultiplier | 2.0 | Multiplier applied to delay on each subsequent attempt. |
+
+### Delay Calculation
+
+`
+delay = BackoffMs * (BackoffMultiplier ^ (attemptNumber - 1))
+`
+
+| Attempt | Delay (500ms base, 2x multiplier) |
+|---------|-----------------------------------|
+| 1 (first retry) | 500ms |
+| 2 | 1000ms |
+| 3 | 2000ms |
+
+### Engine Behavior
+
+1. On node failure, the engine checks if AttemptNumber < RetryPolicy.MaxAttempts.
+2. If yes: waits the calculated delay, increments AttemptNumber on the NodeExecution, and retries.
+3. If no (retries exhausted): marks NodeExecution as Failed and fails the WorkflowExecution.
+4. Each retry attempt is logged with LogWarning including the attempt number and delay.
+
+### RetryPolicy.None
+
+The default is RetryPolicy.None (MaxAttempts = 0) — no retry, fail immediately on error.

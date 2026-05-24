@@ -59,6 +59,11 @@ public sealed class NodeExecution
     public string? ErrorMessage { get; private set; }
 
     /// <summary>
+    /// Gets the 1-based attempt number for this node execution. Incremented on each retry.
+    /// </summary>
+    public int AttemptNumber { get; private set; } = 1;
+
+    /// <summary>
     /// Gets the number of retries attempted for this node execution.
     /// </summary>
     public int RetryCount { get; private set; }
@@ -123,6 +128,15 @@ public sealed class NodeExecution
         Status = NodeExecutionStatus.Failed;
         ErrorMessage = errorMessage;
         CompletedAt = DateTime.UtcNow;
+        RetryCount++;
+    }
+
+    /// <summary>
+    /// Increments the attempt number, indicating a retry is being performed.
+    /// </summary>
+    public void IncrementAttempt()
+    {
+        AttemptNumber++;
         RetryCount++;
     }
 

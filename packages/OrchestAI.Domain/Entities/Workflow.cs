@@ -1,4 +1,5 @@
 using OrchestAI.Domain.Enums;
+using OrchestAI.Domain.ValueObjects;
 namespace OrchestAI.Domain.Entities;
 
 /// <summary>
@@ -57,6 +58,11 @@ public sealed class Workflow
     /// Only relevant when <see cref="TriggerType"/> is <see cref="TriggerType.Cron"/>.
     /// </summary>
     public string? CronExpression { get; private set; }
+
+    /// <summary>
+    /// Gets the retry policy applied to node executions within this workflow.
+    /// </summary>
+    public RetryPolicy RetryPolicy { get; private set; } = RetryPolicy.None;
 
     /// <summary>
     /// Indicates whether the workflow is deleted.
@@ -135,6 +141,16 @@ public sealed class Workflow
     {
         Name = name;
         Description = description;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Sets the retry policy for node executions within this workflow.
+    /// </summary>
+    /// <param name="policy">The retry policy to apply.</param>
+    public void SetRetryPolicy(RetryPolicy policy)
+    {
+        RetryPolicy = policy;
         UpdatedAt = DateTime.UtcNow;
     }
 

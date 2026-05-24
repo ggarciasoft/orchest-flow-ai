@@ -192,6 +192,10 @@ public sealed class EfEngineExecutionRepository : OrchestAI.Engine.IEngineExecut
 
     public async Task<ApprovalRequest> CreateApprovalAsync(ApprovalRequest approval, CancellationToken ct = default)
     { _db.ApprovalRequests.Add(approval); await _db.SaveChangesAsync(ct); return approval; }
+
+    /// <summary>Gets the workflow entity by id — used by the engine to read the retry policy.</summary>
+    public Task<Workflow?> GetWorkflowAsync(Guid workflowId, CancellationToken ct = default)
+        => _db.Workflows.FindAsync(new object[] { workflowId }, ct).AsTask();
 }
 
 /// <summary>EF Core implementation of <see cref="INodePresetRepository"/>.</summary>

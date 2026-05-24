@@ -161,6 +161,8 @@ public sealed class StubEngineExecutionRepository : OrchestAI.Engine.IEngineExec
         return Task.FromResult(l);
     }
     public Task<ApprovalRequest> CreateApprovalAsync(ApprovalRequest approval, CancellationToken ct = default) { _approvals[approval.Id] = approval; return Task.FromResult(approval); }
+    /// <summary>Gets the workflow entity — returns null in stub (retry policy defaults to None).</summary>
+    public Task<Workflow?> GetWorkflowAsync(Guid workflowId, CancellationToken ct = default) => Task.FromResult((Workflow?)null);
 }
 
 /// <summary>In-memory stub implementation of <see cref="INodePresetRepository"/>.</summary>

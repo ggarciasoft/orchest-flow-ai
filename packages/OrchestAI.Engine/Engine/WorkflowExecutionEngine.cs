@@ -1,5 +1,6 @@
 using System.Text.Json;
 using OrchestAI.Domain.Entities;
+using OrchestAI.Domain.ValueObjects;
 using OrchestAI.Engine.Conditions;
 using OrchestAI.Engine.Models;
 using OrchestAI.Engine.Registry;
@@ -58,6 +59,10 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
         var version = await execRepo.GetWorkflowVersionAsync(execution.WorkflowVersionId, ct)
             ?? throw new InvalidOperationException($"Version {execution.WorkflowVersionId} not found");
 
+        // Load workflow to access the retry policy
+        var workflow = await execRepo.GetWorkflowAsync(execution.WorkflowId, ct);
+        var retryPolicy = workflow?.RetryPolicy ?? RetryPolicy.None;
+
         var def = JsonSerializer.Deserialize<WorkflowDefinition>(version.DefinitionJson, _jsonOpts)
             ?? throw new InvalidOperationException("Failed to deserialize workflow definition");
         var inputs = JsonSerializer.Deserialize<Dictionary<string, object?>>(execution.InputJson ?? "{}", _jsonOpts) ?? new();
@@ -99,6 +104,28 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
                 result = SDK.Models.NodeExecutionResult.Failed(ex.Message);
             }
 
+            // Retry loop: attempt additional tries if the policy allows and the result is failed
+            while (result.Status == SDK.Models.NodeExecutionStatus.Failed
+                   && nodeExec.AttemptNumber < retryPolicy.MaxAttempts)
+            {
+                var delay = retryPolicy.GetDelay(nodeExec.AttemptNumber);
+                _logger.LogWarning(
+                    "Node {NodeType} failed (attempt {Attempt}/{Max}). Retrying in {DelayMs}ms. ExecutionId={ExecutionId}",
+                    current.Type, nodeExec.AttemptNumber, retryPolicy.MaxAttempts, delay.TotalMilliseconds, executionId);
+                nodeExec.IncrementAttempt();
+                await execRepo.UpdateNodeExecutionAsync(nodeExec, ct);
+                await Task.Delay(delay, ct);
+                nodeExec.Start(nodeExec.InputJson);
+                await execRepo.UpdateNodeExecutionAsync(nodeExec, ct);
+                ctx = BuildContext(executionId, execution, nodeInputs, config, nodeOutputs, inputs, step, scope.ServiceProvider, ct);
+                try { result = await node.ExecuteAsync(ctx, ct); }
+                catch (Exception retryEx)
+                {
+                    _logger.LogError(retryEx, "Node {NodeType} threw exception on retry attempt {Attempt}", current.Type, nodeExec.AttemptNumber);
+                    result = SDK.Models.NodeExecutionResult.Failed(retryEx.Message);
+                }
+            }
+
             switch (result.Status)
             {
                 case SDK.Models.NodeExecutionStatus.WaitingForApproval:
@@ -114,7 +141,9 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
                 case SDK.Models.NodeExecutionStatus.Failed:
                     nodeExec.Fail(result.ErrorMessage ?? "error");
                     await execRepo.UpdateNodeExecutionAsync(nodeExec, ct);
-                    if (!result.Retryable) { execution.Fail(result.ErrorMessage ?? "error"); await execRepo.UpdateExecutionAsync(execution, ct); }
+                    // Mark execution as failed — retries have already been exhausted by the while loop above
+                    execution.Fail(result.ErrorMessage ?? "error");
+                    await execRepo.UpdateExecutionAsync(execution, ct);
                     return;
 
                 case SDK.Models.NodeExecutionStatus.Skipped:

@@ -201,6 +201,10 @@ namespace OrchestAI.Infrastructure.Migrations
                     b.Property<int>("RetryCount")
                         .HasColumnType("integer");
 
+                    b.Property<int>("AttemptNumber")
+                        .HasDefaultValue(1)
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("StartedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -360,6 +364,18 @@ namespace OrchestAI.Infrastructure.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RetryMaxAttempts")
+                        .HasDefaultValue(0)
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RetryBackoffMs")
+                        .HasDefaultValue(0)
+                        .HasColumnType("integer");
+
+                    b.Property<double>("RetryBackoffMultiplier")
+                        .HasDefaultValue(2.0)
+                        .HasColumnType("double precision");
 
                     b.HasKey("Id");
 
