@@ -106,6 +106,10 @@
 - **Problem:** No feedback channel from within the product.
 - **Resolution:** Added `/feedback` page with name, email, and message form. Shows success state on submit. Backend wiring via TODO comment for `POST /api/feedback`.
 
+### 12. ~~No public documentation page~~ ✅ RESOLVED
+- **Problem:** The project has rich docs in `/docs/*.md` but no user-facing documentation site.
+- **Resolution:** Added `/docs` section in the Next.js app rendering existing markdown files as styled pages. Sidebar with categories, `react-markdown` + `remark-gfm` renderer, `@tailwindcss/typography` prose styles.
+
 ---
 
 ## Suggested Priority Order

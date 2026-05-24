@@ -22,6 +22,7 @@ export default function HomePage() {
             <span className="text-sm font-semibold text-slate-900">OrchestAI</span>
           </div>
           <div className="flex items-center gap-3">
+            <Link href="/docs" className="text-sm text-slate-600 hover:text-slate-900 transition-colors">Docs</Link>
             <Link href="/login" className="text-sm text-slate-600 hover:text-slate-900 transition-colors">Sign in</Link>
             <Link href="/onboarding" className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors">
               Get started

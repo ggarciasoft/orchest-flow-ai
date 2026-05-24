@@ -12,6 +12,7 @@ export function PublicFooter() {
         </div>
         <nav className="flex items-center gap-5">
           {[
+            { href: '/docs', label: 'Docs' },
             { href: '/terms', label: 'Terms' },
             { href: '/privacy', label: 'Privacy' },
             { href: '/feedback', label: 'Feedback' },
