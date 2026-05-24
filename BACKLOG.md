@@ -1,72 +1,56 @@
 # OrchestAI — Known Gaps & Work Backlog
 
 > Created: 2026-05-23  
-> Status: Items below are **not yet implemented** and block full end-to-end workflow execution.
+> Last updated: 2026-05-24
+
+---
+
+## ✅ Resolved
+
+| Item | Resolution |
+|---|---|
+| No real database — in-memory only | PostgreSQL + EF Core wired; `OrchestAIDbContext`; auto-migration on startup |
+| Designer Save not implemented | `POST /api/workflows/{id}/versions` wired to canvas serialization |
+| JWT auth not persisted in frontend | Auth guard on `(app)/layout.tsx`; `localStorage` token verified |
+| AI nodes require real API key | `LLM_PROVIDER=fake` dev fallback; `.env.example` documented |
+| Workflow definition not loaded into designer | Fetches active version on mount, hydrates ReactFlow canvas |
+| Approval detail page missing | `/approvals/[id]` page with timeline |
+| Swagger not enabled in all envs | Swagger + JWT auth button shown in all environments |
+| Docker Compose all-in-one | Split into `docker-compose.yml` (infra) / `docker-compose.app.yml` / `docker-compose.observability.yml` |
+| HTTP node — only one auth mode | 5 auth types: `none`, `bearer`, `basic`, `api-key`, `oauth2-client-credentials` |
+| No reusable node config system | Node Config Presets — full CRUD backend + frontend `/settings/presets` |
 
 ---
 
 ## 🔴 Critical Gaps (Blocking End-to-End Execution)
 
-### 1. No Real Database — In-Memory Only
-- **Problem:** All repositories (`StubWorkflowRepository`, `StubExecutionRepository`, etc.) use `ConcurrentDictionary` in RAM. All data is lost on every server restart.
-- **Fix:** Wire up PostgreSQL + Entity Framework Core. Create EF Core `DbContext`, implement real repository classes, write and run migrations.
-- **Files to change:**
-  - `packages/OrchestAI.Infrastructure/Repositories/StubRepositories.cs` → replace with real EF implementations
-  - Add `OrchestAI.Infrastructure/Persistence/OrchestAIDbContext.cs`
-  - Add `migrations/` folder
-  - Update `services/OrchestAI.Api/Program.cs` to register real DB context
-
----
-
-### 2. Designer Save Button — Not Implemented
-- **Problem:** The Save button in `WorkflowDesigner.tsx` shows a placeholder `alert('Save workflow coming in next phase!')`. Node/edge layouts designed in the UI are **never persisted**.
-- **Fix:** Serialize current ReactFlow `nodes` + `edges` into the engine's `WorkflowDefinition` format and call `POST /api/workflows/{id}/versions`, then optionally activate the new version.
-- **Files to change:**
-  - `apps/web/src/components/designer/WorkflowDesigner.tsx` — implement `handleSave()`
-  - `apps/web/src/lib/api.ts` — add `api.workflows.saveVersion(id, definition)`
-  - Add unit test for save flow
-
----
-
-### 3. JWT Auth Not Persisted in Frontend
-- **Problem:** The login page calls `setToken(token)` but the `api.ts` client reads from `localStorage`. Need to verify the token is properly stored and sent on all requests, especially after page refresh.
-- **Fix:** Confirm `setToken` writes to `localStorage` and that `apiFetch` reads it correctly. Add an auth guard/middleware to redirect unauthenticated users.
-- **Files to check:**
-  - `apps/web/src/lib/auth.ts`
-  - `apps/web/src/lib/api.ts`
-  - `apps/web/src/app/(app)/layout.tsx` — add auth guard
+### 1. Workflow Execution Queue is In-Memory
+- **Problem:** `InMemoryExecutionQueue` uses .NET Channels. Doesn't survive restarts, no horizontal scaling.
+- **Fix (future):** RabbitMQ / Azure Service Bus / Redis Streams. In-memory is acceptable for single-process MVP.
 
 ---
 
 ## 🟡 Important Gaps (Partial Functionality)
 
-### 4. AI Nodes Require Real OpenAI API Key
-- **Problem:** `ContractRiskAnalysisNode` and `ExecutiveSummaryNode` call `OpenAILLMProvider` which requires a valid `OPENAI_API_KEY`. Without it, AI node execution will fail at runtime.
-- **Fix:** Document required env vars. Add fallback to `FakeLLMProvider` in dev/local mode via config flag.
-- **Files to change:**
-  - `services/OrchestAI.Api/Program.cs` — env-based provider selection
-  - Add `.env.example` at repo root
+### 2. No Workflow Trigger Types
+- **Problem:** Workflows can only be triggered manually via API. No webhook triggers, no cron/schedule support.
+- **Proposed fix:** Add a `TriggerType` enum (manual, webhook, cron) to `Workflow`. For webhooks, generate a unique inbound URL per workflow. For cron, store a cron expression and run on a background timer.
 
----
+### 3. No Execution Retry / Backoff
+- **Problem:** If a node fails (e.g. HTTP 503), the whole execution fails. There's no automatic retry.
+- **Proposed fix:** `NodeConfigDefinition` already supports `RetryPolicy`-style config. Add `RetryAttempts` + `RetryBackoffMs` config fields to the engine and honor them in `WorkflowEngine`.
 
-### 5. Workflow Execution Queue is In-Memory
-- **Problem:** `InMemoryExecutionQueue` uses .NET Channels. Works within a single process but doesn't survive restarts and doesn't support horizontal scaling.
-- **Fix (future):** Replace with a real message broker (RabbitMQ, Azure Service Bus, or Redis Streams) for production use. For MVP, in-memory is acceptable **only if** the server stays running.
+### 4. No Real-Time Execution Log Streaming
+- **Problem:** Execution status only shows on polling refresh. No live node-by-node updates.
+- **Proposed fix:** SignalR hub or SSE endpoint streaming `NodeExecution` updates as they happen.
 
----
+### 5. No Role-Based Access Control (RBAC)
+- **Problem:** All authenticated users have full access to all workflows/executions in the tenant. No per-workflow permissions, no "viewer" vs "editor" vs "admin" distinction.
+- **Proposed fix:** Add `Role` field to `User`; guard controller endpoints with role claims.
 
-### 6. Workflow Definition Not Loaded into Designer
-- **Problem:** When opening an existing workflow in the designer (`/workflows/{id}/designer`), the canvas starts empty. The existing definition (nodes/edges) from the active version is never fetched and rendered.
-- **Fix:** On designer mount, fetch `GET /api/workflows/{id}` + active version definition and hydrate the ReactFlow canvas.
-- **Files to change:**
-  - `apps/web/src/app/(app)/workflows/[id]/designer/page.tsx`
-  - `apps/web/src/components/designer/WorkflowDesigner.tsx` — accept `initialDefinition` prop
-
----
-
-### 7. No Approval Workflow Page for Specific Execution
-- **Problem:** The approval inbox shows pending approvals but clicking one doesn't link to the specific execution context.
-- **Fix:** Add a detail view per approval with execution timeline context.
+### 6. Tenant Onboarding Flow Missing
+- **Problem:** There's no UI or guided flow for creating a new tenant or inviting team members.
+- **Proposed fix:** `/onboarding` page and `POST /api/tenants` + `POST /api/tenants/{id}/invite` endpoints.
 
 ---
 
@@ -74,31 +58,32 @@
 
 | Feature | Status |
 |---|---|
-| User login (JWT) | ✅ Works |
-| Workflow create (name + description) | ✅ Works |
-| Workflow list | ✅ Works |
-| Node registry + catalog | ✅ Works |
-| Drag nodes onto canvas | ✅ Works |
-| Delete nodes (keyboard / right-click / drawer) | ✅ Works |
-| Execution engine logic (node graph walking) | ✅ Works (in-process) |
-| Execution enqueue + worker pickup | ✅ Works (in-memory, same process) |
-| Approval approve/reject API | ✅ Works |
-| All backend unit tests | ✅ 125/125 passing |
-| All frontend unit tests | ✅ 24/24 passing |
-| Node count | ✅ 19 nodes (7 → 19) |
-| Code comments (XML/JSDoc) | ✅ All backend + frontend files commented |
-| Node deletion in designer | ✅ Keyboard, right-click, drawer button |
-| /workflows/new page | ✅ Fixed (was 404) |
+| User login (JWT) | ✅ |
+| Workflow create / list / save | ✅ |
+| Node registry + catalog (19 nodes) | ✅ |
+| Designer drag, save, load, delete | ✅ |
+| Execution engine (node graph walking) | ✅ |
+| Execution enqueue + worker pickup | ✅ in-memory |
+| Approval inbox + detail page | ✅ |
+| HTTP node — all 5 auth types | ✅ |
+| Node Config Presets (backend + frontend) | ✅ |
+| PostgreSQL + EF Core + migrations | ✅ |
+| Auto-migrate on startup | ✅ |
+| Swagger + JWT auth button | ✅ all envs |
+| Docker Compose split (3 files) | ✅ |
+| Backend unit tests | ✅ **173 / 173** |
+| Frontend unit tests | ✅ **29 / 29** |
+| XML / JSDoc docs on all public APIs | ✅ |
 
 ---
 
 ## Suggested Priority Order
 
-1. **Implement Save in Designer** — quickest win, unblocks real workflow design
-2. **Load existing definition into Designer** — needed to edit saved workflows
-3. **Wire up PostgreSQL** — needed for persistence across restarts
-4. **Auth guard on frontend** — prevent unauthenticated access
-5. **OpenAI key config + fallback** — needed to test AI nodes end-to-end
+1. **Workflow trigger types** — webhook + cron triggers unlock real automation
+2. **Execution retry / backoff** — makes integrations production-safe
+3. **Real-time execution log streaming** — major UX improvement for debugging
+4. **RBAC** — required before multi-user teams can safely share a tenant
+5. **Tenant onboarding UI** — needed for self-serve sign-up
 6. **Replace in-memory queue** — production readiness only
 
 ---
