@@ -84,7 +84,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+// RBAC authorization policies — enforces role hierarchy across all controller endpoints
+builder.Services.AddAuthorization(options =>
+{
+    // ViewerOrAbove: any authenticated user with a recognized role may read resources
+    options.AddPolicy("ViewerOrAbove", policy =>
+        policy.RequireRole("Viewer", "Editor", "Admin", "Approver"));
+
+    // EditorOrAbove: Editor and Admin roles may create/update/delete resources
+    options.AddPolicy("EditorOrAbove", policy =>
+        policy.RequireRole("Editor", "Admin"));
+
+    // AdminOnly: only Admin role may manage users, tenants, and system settings
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireRole("Admin"));
+});
 // Allow any origin with credentials for SignalR WebSocket connections
 builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
     p.SetIsOriginAllowed(_ => true).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));

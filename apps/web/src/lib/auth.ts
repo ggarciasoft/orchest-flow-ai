@@ -35,3 +35,47 @@ export function clearToken() {
 export function isAuthenticated(): boolean {
   return !!getToken();
 }
+
+/**
+ * Known user roles in the system, ordered from lowest to highest privilege.
+ */
+export type UserRole = 'Viewer' | 'Editor' | 'Admin' | 'Approver';
+
+/**
+ * Decodes a JWT token payload without verifying the signature.
+ * Used client-side to read claims already validated by the server.
+ *
+ * @param token - The JWT token string
+ * @returns Decoded payload object, or null if the token is malformed
+ */
+export function decodeJwt(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    // Base64url decode — pad to a multiple of 4 chars
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '=='.slice(0, (4 - (base64.length % 4)) % 4);
+    return JSON.parse(atob(padded)) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Extracts the user role from the stored JWT token.
+ * Returns null when not authenticated or when the role claim is absent.
+ *
+ * @returns The user's role string, or null if unavailable
+ */
+export function getRoleFromToken(): UserRole | null {
+  const token = getToken();
+  if (!token) return null;
+  const payload = decodeJwt(token);
+  if (!payload) return null;
+  // ASP.NET Core serialises ClaimTypes.Role as the long URN or as 'role'
+  const role =
+    (payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] as string) ??
+    (payload['role'] as string) ??
+    null;
+  return (role as UserRole) ?? null;
+}

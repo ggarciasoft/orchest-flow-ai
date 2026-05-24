@@ -40,7 +40,7 @@ public sealed class WorkflowsController : ControllerBase
     /// <param name="page">Page number (1-based).</param>
     /// <param name="pageSize">Maximum results per page.</param>
     /// <response code="200">Paged list of workflows.</response>
-    [HttpGet]
+    [HttpGet, Authorize(Policy = "ViewerOrAbove")]
     public async Task<ActionResult<PagedResponse<WorkflowResponse>>> List([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
     {
         var items = await _workflows.ListAsync(TenantId, search, page, pageSize, ct);
@@ -56,7 +56,7 @@ public sealed class WorkflowsController : ControllerBase
     /// <param name="req">Workflow name, description, and initial node/edge definition.</param>
     /// <response code="201">Workflow created and initial version activated.</response>
     /// <response code="400">Invalid request body.</response>
-    [HttpPost]
+    [HttpPost, Authorize(Policy = "EditorOrAbove")]
     public async Task<ActionResult<WorkflowResponse>> Create([FromBody] CreateWorkflowRequest req, CancellationToken ct)
     {
         var workflow = Workflow.Create(TenantId, req.Name, req.Description, UserId, (OrchestAI.Domain.Enums.TriggerType)(int)req.TriggerType, req.WebhookSecret, req.CronExpression);
@@ -78,7 +78,7 @@ public sealed class WorkflowsController : ControllerBase
     /// <param name="id">The workflow id.</param>
     /// <response code="200">Workflow found.</response>
     /// <response code="404">Workflow not found or belongs to a different tenant.</response>
-    [HttpGet("{id}")]
+    [HttpGet("{id}"), Authorize(Policy = "ViewerOrAbove")]
     public async Task<ActionResult<WorkflowResponse>> Get(Guid id, CancellationToken ct)
     {
         var w = await _workflows.GetAsync(id, TenantId, ct);
@@ -96,7 +96,7 @@ public sealed class WorkflowsController : ControllerBase
     /// <response code="202">Execution enqueued successfully.</response>
     /// <response code="400">Workflow has no active version.</response>
     /// <response code="404">Workflow not found.</response>
-    [HttpPost("{id}/execute")]
+    [HttpPost("{id}/execute"), Authorize(Policy = "EditorOrAbove")]
     public async Task<ActionResult<WorkflowExecutionResponse>> Execute(Guid id, [FromBody] ExecuteWorkflowRequest req, CancellationToken ct)
     {
         var workflow = await _workflows.GetAsync(id, TenantId, ct);
@@ -119,7 +119,7 @@ public sealed class WorkflowsController : ControllerBase
     /// <param name="id">The workflow id to validate.</param>
     /// <response code="200">Validation result with isValid flag and error list.</response>
     /// <response code="400">No active version or malformed definition JSON.</response>
-    [HttpPost("{id}/validate")]
+    [HttpPost("{id}/validate"), Authorize(Policy = "ViewerOrAbove")]
     public async Task<ActionResult> Validate(Guid id, CancellationToken ct)
     {
         var activeVersion = await _workflows.GetActiveVersionAsync(id, ct);
@@ -137,7 +137,7 @@ public sealed class WorkflowsController : ControllerBase
     /// <param name="id">The workflow id.</param>
     /// <response code="200">The active version definition as a JSON object.</response>
     /// <response code="404">Workflow or active version not found.</response>
-    [HttpGet("{id}/versions/active")]
+    [HttpGet("{id}/versions/active"), Authorize(Policy = "ViewerOrAbove")]
     public async Task<ActionResult> GetActiveVersion(Guid id, CancellationToken ct)
     {
         var w = await _workflows.GetAsync(id, TenantId, ct);
@@ -160,7 +160,7 @@ public sealed class WorkflowsController : ControllerBase
     /// <param name="req">The new workflow definition (nodes + edges).</param>
     /// <response code="200">New version created with its id and version number.</response>
     /// <response code="404">Workflow not found.</response>
-    [HttpPost("{id}/versions")]
+    [HttpPost("{id}/versions"), Authorize(Policy = "EditorOrAbove")]
     public async Task<ActionResult> CreateVersion(Guid id, [FromBody] CreateWorkflowVersionRequest req, CancellationToken ct)
     {
         var workflow = await _workflows.GetAsync(id, TenantId, ct);
@@ -179,7 +179,7 @@ public sealed class WorkflowsController : ControllerBase
     /// <param name="id">The workflow id.</param>
     /// <param name="versionId">The version id to activate.</param>
     /// <response code="200">Version activated successfully.</response>
-    [HttpPost("{id}/versions/{versionId}/activate")]
+    [HttpPost("{id}/versions/{versionId}/activate"), Authorize(Policy = "EditorOrAbove")]
     public async Task<ActionResult> ActivateVersion(Guid id, Guid versionId, CancellationToken ct)
     {
         await _workflows.ActivateVersionAsync(versionId, id, ct);

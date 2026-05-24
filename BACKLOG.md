@@ -19,6 +19,7 @@
 | Docker Compose all-in-one | Split into `docker-compose.yml` (infra) / `docker-compose.app.yml` / `docker-compose.observability.yml` |
 | HTTP node — only one auth mode | 5 auth types: `none`, `bearer`, `basic`, `api-key`, `oauth2-client-credentials` |
 | No reusable node config system | Node Config Presets — full CRUD backend + frontend `/settings/presets` |
+| No Role-Based Access Control (RBAC) | Three roles (Viewer/Editor/Admin) enforced via JWT claims and `[Authorize(Policy=...)]` on all controller actions |
 | No Workflow Trigger Types | `TriggerType` enum (Manual/Webhook/Cron) added to domain; `POST /api/webhooks/{id}` endpoint; `CronSchedulerService` background service using Cronos |
 
 ---

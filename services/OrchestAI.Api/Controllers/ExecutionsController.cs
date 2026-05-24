@@ -12,19 +12,19 @@ namespace OrchestAI.Api.Controllers;
 
 /// <summary>
 /// Provides endpoints for managing workflow executions within OrchestAI.
+/// All endpoints are scoped to the authenticated user's tenant via the JWT tenant_id claim.
 /// </summary>
 [ApiController, Route("api/executions"), Authorize]
-/// <summary>
-/// Controller for managing executions of workflows. Supports listing workflow executions,
-/// retrieving details, and obtaining the execution timeline.
-/// </summary>
 public sealed class ExecutionsController : ControllerBase
 {
     private readonly IExecutionRepository _executions;
+
+    /// <summary>Initializes the controller with the execution repository dependency.</summary>
     public ExecutionsController(IExecutionRepository executions) => _executions = executions;
+
+    /// <summary>Extracts the tenant id from the JWT tenant_id claim.</summary>
     private Guid TenantId => Guid.Parse(User.FindFirst("tenant_id")?.Value ?? Guid.Empty.ToString());
 
-    [HttpGet]
     /// <summary>
     /// Retrieves a paginated list of workflow executions for the current tenant,
     /// with optional filtering by status.
@@ -34,6 +34,8 @@ public sealed class ExecutionsController : ControllerBase
     /// <param name="pageSize">Size of the page for pagination.</param>
     /// <param name="ct">Cancellation token for the operation.</param>
     /// <returns>A paginated response containing the list of workflow executions.</returns>
+    /// <response code="200">Paged list of executions.</response>
+    [HttpGet, Authorize(Policy = "ViewerOrAbove")]
     public async Task<ActionResult<PagedResponse<WorkflowExecutionResponse>>> List([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
     {
         var items = await _executions.ListAsync(TenantId, status, page, pageSize, ct);
@@ -41,13 +43,15 @@ public sealed class ExecutionsController : ControllerBase
         return Ok(new PagedResponse<WorkflowExecutionResponse>(result, page, pageSize, result.Count));
     }
 
-    [HttpGet("{id}")]
     /// <summary>
     /// Retrieves details of a specific workflow execution by its ID.
     /// </summary>
     /// <param name="id">The ID of the workflow execution.</param>
     /// <param name="ct">Cancellation token for the operation.</param>
     /// <returns>The details of the workflow execution, or a 404 status code if not found.</returns>
+    /// <response code="200">Execution found.</response>
+    /// <response code="404">Execution not found or belongs to a different tenant.</response>
+    [HttpGet("{id}"), Authorize(Policy = "ViewerOrAbove")]
     public async Task<ActionResult<WorkflowExecutionResponse>> Get(Guid id, CancellationToken ct)
     {
         var e = await _executions.GetAsync(id, ct);
@@ -55,13 +59,15 @@ public sealed class ExecutionsController : ControllerBase
         return Ok(new WorkflowExecutionResponse(e.Id, e.WorkflowId, e.WorkflowVersionId, e.Status.ToString(), e.StartedAt, e.CompletedAt, e.TriggeredBy, e.CorrelationId, e.ErrorMessage));
     }
 
-    [HttpGet("{id}/timeline")]
     /// <summary>
     /// Retrieves the timeline details of a specific workflow execution, including nodes executed.
     /// </summary>
     /// <param name="id">The ID of the workflow execution.</param>
     /// <param name="ct">Cancellation token for the operation.</param>
     /// <returns>The timeline of the workflow execution, or a 404 status code if not found.</returns>
+    /// <response code="200">Execution timeline found.</response>
+    /// <response code="404">Execution not found or belongs to a different tenant.</response>
+    [HttpGet("{id}/timeline"), Authorize(Policy = "ViewerOrAbove")]
     public async Task<ActionResult<ExecutionTimelineResponse>> Timeline(Guid id, CancellationToken ct)
     {
         var e = await _executions.GetAsync(id, ct);

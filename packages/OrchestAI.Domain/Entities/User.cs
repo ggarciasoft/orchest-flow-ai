@@ -40,6 +40,22 @@ public sealed class User
     /// <param name="role">Access role for this user.</param>
     /// <param name="passwordHash">Pre-hashed password (never raw plaintext).</param>
     /// <returns>A new <see cref="User"/> with a generated Id.</returns>
+    /// <summary>
+    /// Creates a new user account for the specified tenant.
+    /// </summary>
+    /// <param name="tenantId">The tenant this user belongs to.</param>
+    /// <param name="email">The user's email address.</param>
+    /// <param name="displayName">Human-readable name shown in the UI.</param>
+    /// <param name="role">Access role for this user.</param>
+    /// <param name="passwordHash">Pre-hashed password (never raw plaintext).</param>
+    /// <returns>A new <see cref="User"/> with a generated Id.</returns>
     public static User Create(Guid tenantId, string email, string displayName, UserRole role, string passwordHash)
         => new() { Id = Guid.NewGuid(), TenantId = tenantId, Email = email, DisplayName = displayName, Role = role, PasswordHash = passwordHash, CreatedAt = DateTime.UtcNow };
+
+    /// <summary>
+    /// Updates the user's role to the specified value.
+    /// Used by admin operations that change access level.
+    /// </summary>
+    /// <param name="role">The new role to assign to this user.</param>
+    public void SetRole(UserRole role) => Role = role;
 }

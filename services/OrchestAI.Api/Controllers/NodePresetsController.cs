@@ -22,7 +22,7 @@ public sealed class NodePresetsController : ControllerBase
         _repository = repository;
     }
 
-    [HttpGet]
+    [HttpGet, Authorize(Policy = "ViewerOrAbove")]
     public async Task<IActionResult> ListPresets([FromQuery] Guid tenantId, [FromQuery] string? nodeType, CancellationToken ct)
     {
         var presets = await _repository.ListByNodeTypeAsync(tenantId, nodeType, ct);
@@ -30,7 +30,7 @@ public sealed class NodePresetsController : ControllerBase
         return Ok(responses);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id}"), Authorize(Policy = "ViewerOrAbove")]
     public async Task<IActionResult> GetPreset(Guid id, [FromQuery] Guid tenantId, CancellationToken ct)
     {
         var preset = await _repository.GetAsync(id, tenantId, ct);
@@ -39,7 +39,7 @@ public sealed class NodePresetsController : ControllerBase
         return Ok(new PresetResponse(preset.Id, preset.Name, preset.NodeType, preset.ConfigJson, preset.CreatedAt));
     }
 
-    [HttpPost]
+    [HttpPost, Authorize(Policy = "EditorOrAbove")]
     public async Task<IActionResult> CreatePreset(CreatePresetRequest request, [FromQuery] Guid tenantId, CancellationToken ct)
     {
         var preset = NodePreset.Create(tenantId, request.Name, request.NodeType, request.ConfigJson);
@@ -47,7 +47,7 @@ public sealed class NodePresetsController : ControllerBase
         return CreatedAtAction(nameof(GetPreset), new { id = created.Id, tenantId }, new PresetResponse(created.Id, created.Name, created.NodeType, created.ConfigJson, created.CreatedAt));
     }
 
-    [HttpPut("{id}")]
+    [HttpPut("{id}"), Authorize(Policy = "EditorOrAbove")]
     public async Task<IActionResult> UpdatePreset(Guid id, [FromQuery] Guid tenantId, UpdatePresetRequest request, CancellationToken ct)
     {
         var preset = await _repository.GetAsync(id, tenantId, ct);
@@ -59,7 +59,7 @@ public sealed class NodePresetsController : ControllerBase
         return Ok(new PresetResponse(preset.Id, preset.Name, preset.NodeType, preset.ConfigJson, preset.CreatedAt));
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id}"), Authorize(Policy = "EditorOrAbove")]
     public async Task<IActionResult> DeletePreset(Guid id, [FromQuery] Guid tenantId, CancellationToken ct)
     {
         await _repository.DeleteAsync(id, tenantId, ct);
