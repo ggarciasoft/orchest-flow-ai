@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using OrchestAI.AI.Extensions;
 using OrchestAI.Application.Extensions;
 using OrchestAI.Engine.Extensions;
@@ -19,7 +20,41 @@ builder.Services.AddOrchestAINodes();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c => c.SwaggerDoc("v1", new() { Title = "OrchestAI API", Version = "v1" }));
+
+// Swagger / OpenAPI — available in all environments for ease of development
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "OrchestAI API",
+        Version = "v1",
+        Description = "REST API for the OrchestAI workflow automation platform.\n\n" +
+                      "Use `POST /api/auth/login` to obtain a JWT token, then click **Authorize** and enter `Bearer <token>`.",
+        Contact = new OpenApiContact { Name = "OrchestAI", Url = new Uri("https://github.com/ggarciasoft/orchestai") }
+    });
+
+    // Enable JWT Bearer auth button in Swagger UI
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter your JWT token. Example: **Bearer eyJ...**"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 var jwtKey = builder.Configuration["Auth:JwtSigningKey"] ?? "dev-signing-key-change-in-production-32chars";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -40,7 +75,17 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAn
 var app = builder.Build();
 app.UseCorrelationId();
 app.UseCors();
-if (app.Environment.IsDevelopment()) { app.UseSwagger(); app.UseSwaggerUI(); }
+
+// Swagger UI — always enabled (not just Development) so the API is explorable locally and in staging
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "OrchestAI API v1");
+    c.RoutePrefix = "swagger"; // accessible at /swagger
+    c.DocumentTitle = "OrchestAI API";
+    c.DisplayRequestDuration();
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
