@@ -139,7 +139,7 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson 
     setSaving(true);
     setSavedAt(null);
     try {
-      // Build the definition object matching OrchestAI.Engine.Models.WorkflowDefinition
+      // Build the definition object matching OrchestFlowAI.Engine.Models.WorkflowDefinition
       const definition = {
         id: workflow.id,
         name: workflow.name,

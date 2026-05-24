@@ -1,4 +1,4 @@
-# OrchestAI — Known Gaps & Work Backlog
+# OrchestFlowAI — Known Gaps & Work Backlog
 
 > Created: 2026-05-23  
 > Last updated: 2026-05-24
@@ -9,7 +9,7 @@
 
 | Item | Resolution |
 |---|---|
-| No real database — in-memory only | PostgreSQL + EF Core wired; `OrchestAIDbContext`; auto-migration on startup |
+| No real database — in-memory only | PostgreSQL + EF Core wired; `OrchestFlowAIDbContext`; auto-migration on startup |
 | Designer Save not implemented | `POST /api/workflows/{id}/versions` wired to canvas serialization |
 | JWT auth not persisted in frontend | Auth guard on `(app)/layout.tsx`; `localStorage` token verified |
 | AI nodes require real API key | `LLM_PROVIDER=fake` dev fallback; `.env.example` documented |

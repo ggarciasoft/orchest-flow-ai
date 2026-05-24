@@ -12,7 +12,7 @@ Responses are JSON. Errors follow [RFC 7807 Problem Details](https://www.rfc-edi
 
 ```json
 {
-  "type": "https://orchestai.dev/errors/validation",
+  "type": "https://OrchestFlowAI.dev/errors/validation",
   "title": "Validation failed",
   "status": 400,
   "detail": "definition.nodes[2].config.expression is required",

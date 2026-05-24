@@ -115,7 +115,7 @@ Schema:
 
 ## 4. Prompt Templates
 
-Prompts live in code (initially) under `services/OrchestAI.AI/Prompts/` as versioned templates.
+Prompts live in code (initially) under `services/OrchestFlowAI.AI/Prompts/` as versioned templates.
 
 ```csharp
 public static class ContractRiskPrompt
@@ -228,13 +228,13 @@ The `IAIUsageRecorder` is injected into nodes; the AI Runtime calls it transpare
 Provider configuration is read from environment / config:
 
 ```
-ORCHESTAI_LLM__DEFAULT_PROVIDER=openai
-ORCHESTAI_LLM__DEFAULT_MODEL=gpt-4o-mini
-ORCHESTAI_LLM__OPENAI__API_KEY=...
-ORCHESTAI_LLM__AZURE__ENDPOINT=https://...
-ORCHESTAI_LLM__AZURE__API_KEY=...
-ORCHESTAI_LLM__ANTHROPIC__API_KEY=...
-ORCHESTAI_LLM__FALLBACKS=azure-openai,anthropic
+OrchestFlowAI_LLM__DEFAULT_PROVIDER=openai
+OrchestFlowAI_LLM__DEFAULT_MODEL=gpt-4o-mini
+OrchestFlowAI_LLM__OPENAI__API_KEY=...
+OrchestFlowAI_LLM__AZURE__ENDPOINT=https://...
+OrchestFlowAI_LLM__AZURE__API_KEY=...
+OrchestFlowAI_LLM__ANTHROPIC__API_KEY=...
+OrchestFlowAI_LLM__FALLBACKS=azure-openai,anthropic
 ```
 
 Per-tenant overrides live in DB (`tenant_settings`) and take precedence over platform defaults.

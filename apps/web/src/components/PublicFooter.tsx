@@ -8,7 +8,7 @@ export function PublicFooter() {
           <div className="w-5 h-5 bg-indigo-600 rounded flex items-center justify-center">
             <span className="text-white text-[10px] font-bold">O</span>
           </div>
-          <span className="text-xs text-slate-500">© {new Date().getFullYear()} OrchestAI. All rights reserved.</span>
+          <span className="text-xs text-slate-500">© {new Date().getFullYear()} OrchestFlowAI. All rights reserved.</span>
         </div>
         <nav className="flex items-center gap-5">
           {[

@@ -10,9 +10,9 @@ Own the LLM provider abstraction, structured output handling, prompt versioning,
 - [`rules/07-security.md`](../rules/07-security.md)
 
 ## Write Scope
-- `services/OrchestAI.AI/`
-- `services/OrchestAI.AI/Prompts/` (versioned prompt templates)
-- AI provider implementations under `packages/OrchestAI.Infrastructure/AI/`
+- `services/OrchestFlowAI.AI/`
+- `services/OrchestFlowAI.AI/Prompts/` (versioned prompt templates)
+- AI provider implementations under `packages/OrchestFlowAI.Infrastructure/AI/`
 - AI-specific node provider code (nodes call the runtime; the runtime calls providers)
 - AI usage recording logic
 
@@ -25,7 +25,7 @@ Own the LLM provider abstraction, structured output handling, prompt versioning,
 - Implement `LLMProviderRouter` (selects provider/model by node config → tenant default → platform default → fallback).
 - `GenerateTextAsync` and `GenerateStructuredAsync<T>` with schema validation.
 - Structured output self-correction on schema mismatch (one retry with correction message).
-- Versioned prompt templates (`services/OrchestAI.AI/Prompts/`).
+- Versioned prompt templates (`services/OrchestFlowAI.AI/Prompts/`).
 - `IAIUsageRecorder` — tracks provider, model, prompt version, tokens, cost.
 - Rate limiting + circuit breaker per provider.
 - PII redaction middleware (configurable per tenant).
@@ -41,7 +41,7 @@ Own the LLM provider abstraction, structured output handling, prompt versioning,
 ## Prompt Template Convention
 
 ```csharp
-// services/OrchestAI.AI/Prompts/ContractRiskPrompt.cs
+// services/OrchestFlowAI.AI/Prompts/ContractRiskPrompt.cs
 public static class ContractRiskPrompt
 {
     public const string Version = "2026.05.0";  // YYYY.MM.N

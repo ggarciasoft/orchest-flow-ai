@@ -1,8 +1,8 @@
-using OrchestAI.SDK.Context;
-using OrchestAI.SDK.Interfaces;
-using OrchestAI.SDK.Models;
+using OrchestFlowAI.SDK.Context;
+using OrchestFlowAI.SDK.Interfaces;
+using OrchestFlowAI.SDK.Models;
 using System.Text.Json;
-namespace OrchestAI.Nodes.Human;
+namespace OrchestFlowAI.Nodes.Human;
 
 /// <summary>
 /// Pauses workflow execution and creates a human approval request.

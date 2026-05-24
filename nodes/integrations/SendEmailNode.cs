@@ -1,9 +1,9 @@
 using System.Net.Mail;
-using OrchestAI.SDK.Context;
-using OrchestAI.SDK.Interfaces;
-using OrchestAI.SDK.Models;
+using OrchestFlowAI.SDK.Context;
+using OrchestFlowAI.SDK.Interfaces;
+using OrchestFlowAI.SDK.Models;
 
-namespace OrchestAI.Nodes.Integrations;
+namespace OrchestFlowAI.Nodes.Integrations;
 
 /// <summary>
 /// Sends an email via SMTP with subject and body supporting {{placeholder}} substitution from node inputs.

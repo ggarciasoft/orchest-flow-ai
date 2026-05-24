@@ -1,7 +1,7 @@
 # AgentFlow Enterprise — AI Project Documentation
 
 > Working name: **AgentFlow Enterprise**  
-> Alternative names: **OrchestAI**, **AgentBridge**, **FlowMind**  
+> Alternative names: **OrchestFlowAI**, **AgentBridge**, **FlowMind**  
 > Purpose: Open-source enterprise AI workflow platform for orchestrating agents, tools, human approvals, documents, and business automation.
 
 ---

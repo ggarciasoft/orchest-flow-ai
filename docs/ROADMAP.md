@@ -1,6 +1,6 @@
 # Roadmap
 
-OrchestAI is delivered in numbered phases. Each phase has deliverables and acceptance criteria. **MVP = Phases 0–8.** Future phases are roadmap, not commitments.
+OrchestFlowAI is delivered in numbered phases. Each phase has deliverables and acceptance criteria. **MVP = Phases 0–8.** Future phases are roadmap, not commitments.
 
 ---
 
@@ -9,7 +9,7 @@ OrchestAI is delivered in numbered phases. Each phase has deliverables and accep
 **Deliverables**
 - Monorepo skeleton.
 - Top-level README + docs folder.
-- `OrchestAI.sln` and base project structure.
+- `OrchestFlowAI.sln` and base project structure.
 - Docker Compose skeleton.
 - Coding conventions, `.editorconfig`, lint configs.
 - CI pipeline (build + test + lint).

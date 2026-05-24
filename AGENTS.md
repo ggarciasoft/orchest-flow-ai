@@ -39,5 +39,5 @@ All agents are bound by [`rules/`](./rules/).
 
 | Layer | Test command | Test location |
 |---|---|---|
-| Backend (.NET) | `dotnet test` | `tests/OrchestAI.Tests/` |
+| Backend (.NET) | `dotnet test` | `tests/OrchestFlowAI.Tests/` |
 | Frontend | `npm test` | `src/**/__tests__/` |

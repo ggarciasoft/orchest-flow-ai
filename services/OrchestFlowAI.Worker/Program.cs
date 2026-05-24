@@ -1,0 +1,20 @@
+using Microsoft.Extensions.Hosting;
+using OrchestFlowAI.AI.Extensions;
+using OrchestFlowAI.Application.Extensions;
+using OrchestFlowAI.Engine.Extensions;
+using OrchestFlowAI.Infrastructure.Extensions;
+using OrchestFlowAI.Nodes;
+using OrchestFlowAI.Worker.Workers;
+
+var builder = Host.CreateApplicationBuilder(args);
+builder.Services.AddOrchestFlowAIApplication();
+builder.Services.AddOrchestFlowAIInfrastructure(builder.Configuration);
+builder.Services.AddOrchestFlowAIAI(builder.Configuration);
+builder.Services.AddOrchestFlowAIEngine();
+builder.Services.AddOrchestFlowAINodes();
+builder.Services.AddHostedService<ExecutionWorker>();
+builder.Services.AddHostedService<ResumeWorker>();
+builder.Services.AddHostedService<CronSchedulerService>();
+builder.Services.AddSingleton(TimeProvider.System);
+var host = builder.Build();
+host.Run();

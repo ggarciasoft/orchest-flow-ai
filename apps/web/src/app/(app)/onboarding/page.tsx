@@ -85,7 +85,7 @@ export default function OnboardingPage() {
         {step === 1 && (
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-slate-900">Name your workspace</h2>
-            <p className="text-sm text-slate-500">This is your team&apos;s home in OrchestAI. You can change it later.</p>
+            <p className="text-sm text-slate-500">This is your team&apos;s home in OrchestFlowAI. You can change it later.</p>
             <label className="block">
               <span className="text-sm font-medium text-slate-700">Workspace name</span>
               <input

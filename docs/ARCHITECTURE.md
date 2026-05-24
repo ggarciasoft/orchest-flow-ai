@@ -1,6 +1,6 @@
 # Architecture
 
-This document explains how OrchestAI is structured, why each piece exists, and how data flows through the system.
+This document explains how OrchestFlowAI is structured, why each piece exists, and how data flows through the system.
 
 ---
 
@@ -14,7 +14,7 @@ This document explains how OrchestAI is structured, why each piece exists, and h
                                          │ HTTPS (REST)
                                          ▼
                        ┌─────────────────────────────────────┐
-                       │         OrchestAI.Api (.NET)        │
+                       │         OrchestFlowAI.Api (.NET)        │
                        │  Workflows · Executions · Approvals  │
                        │  Documents · Node Catalog · Auth     │
                        └────────┬─────────────────┬──────────┘
@@ -28,7 +28,7 @@ This document explains how OrchestAI is structured, why each piece exists, and h
                               │
                               ▼
                        ┌─────────────────────────────────────┐
-                       │       OrchestAI.Worker (.NET)        │
+                       │       OrchestFlowAI.Worker (.NET)        │
                        │   Engine · Node Registry · Retries  │
                        │   Pause/Resume · State Persistence  │
                        └────────┬──────────────────┬────────┘
@@ -76,7 +76,7 @@ This document explains how OrchestAI is structured, why each piece exists, and h
 
 ## 3. Projects and Responsibilities
 
-### `services/OrchestAI.Api`
+### `services/OrchestFlowAI.Api`
 
 REST API consumed by the web app.
 
@@ -93,7 +93,7 @@ Responsibilities:
 
 Endpoint catalog → [`API.md`](./API.md).
 
-### `services/OrchestAI.Worker`
+### `services/OrchestFlowAI.Worker`
 
 Background workflow execution service.
 
@@ -107,7 +107,7 @@ Responsibilities:
 - Resume workflows when approvals arrive.
 - Publish execution events.
 
-### `services/OrchestAI.AI`
+### `services/OrchestFlowAI.AI`
 
 AI runtime — may start as a module inside Worker, can graduate to its own service.
 
@@ -122,7 +122,7 @@ Responsibilities:
 
 Detail → [`AI-RUNTIME.md`](./AI-RUNTIME.md).
 
-### `packages/OrchestAI.Engine`
+### `packages/OrchestFlowAI.Engine`
 
 Core workflow runtime.
 
@@ -137,7 +137,7 @@ Responsibilities:
 
 Detail → [`WORKFLOW-ENGINE.md`](./WORKFLOW-ENGINE.md).
 
-### `packages/OrchestAI.SDK`
+### `packages/OrchestFlowAI.SDK`
 
 Developer SDK for creating nodes.
 
@@ -151,11 +151,11 @@ Responsibilities:
 
 Detail → [`NODE-SDK.md`](./NODE-SDK.md).
 
-### `packages/OrchestAI.Contracts`
+### `packages/OrchestFlowAI.Contracts`
 
 Shared DTOs, events, API request/response models, enums. Pure POCOs.
 
-### `packages/OrchestAI.Domain`
+### `packages/OrchestFlowAI.Domain`
 
 Pure domain entities and rules. Entities include:
 
@@ -166,11 +166,11 @@ Pure domain entities and rules. Entities include:
 - `AIUsageLog`, `AuditLog`
 - `Tenant`, `User`
 
-### `packages/OrchestAI.Application`
+### `packages/OrchestFlowAI.Application`
 
 Use cases (CQRS-style commands/queries). Owns orchestration around Domain + Engine.
 
-### `packages/OrchestAI.Infrastructure`
+### `packages/OrchestFlowAI.Infrastructure`
 
 Concrete adapters:
 
@@ -181,13 +181,13 @@ Concrete adapters:
 - Email provider (post-MVP)
 - Logging/tracing adapters
 
-### `packages/OrchestAI.Observability`
+### `packages/OrchestFlowAI.Observability`
 
 Cross-cutting observability helpers — correlation IDs, OpenTelemetry config, structured logging helpers, AI usage tracking abstractions.
 
 ### `nodes/*`
 
-Node implementations grouped by category. Each node is a small project (or folder) that depends on `OrchestAI.SDK`.
+Node implementations grouped by category. Each node is a small project (or folder) that depends on `OrchestFlowAI.SDK`.
 
 ### `apps/web`
 
@@ -302,7 +302,7 @@ Pending → Processing → Done
 ```
 
 ### Registration
-- `CONNECTION_STRING` set → `PostgresExecutionQueue` registered as `IPersistentExecutionQueue` (scoped, depends on `OrchestAIDbContext`)
+- `CONNECTION_STRING` set → `PostgresExecutionQueue` registered as `IPersistentExecutionQueue` (scoped, depends on `OrchestFlowAIDbContext`)
 - No `CONNECTION_STRING` → `StubExecutionQueue` registered as `IPersistentExecutionQueue` (singleton)
 
 ### Table schema

@@ -12,15 +12,15 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: orchestai
-      POSTGRES_USER: orchestai
-      POSTGRES_PASSWORD: orchestai
+      POSTGRES_DB: OrchestFlowAI
+      POSTGRES_USER: OrchestFlowAI
+      POSTGRES_PASSWORD: OrchestFlowAI
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U orchestai"]
+      test: ["CMD-SHELL", "pg_isready -U OrchestFlowAI"]
       interval: 5s
       timeout: 5s
       retries: 5

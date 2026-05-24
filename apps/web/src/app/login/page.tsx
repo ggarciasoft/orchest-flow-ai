@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 import { setToken } from '@/lib/auth';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('demo@orchestai.local');
+  const [email, setEmail] = useState('demo@OrchestFlowAI.local');
   const [password, setPassword] = useState('password');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,7 +31,7 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-10 h-10 bg-indigo-600 rounded-xl mb-4">
             <span className="text-white font-bold text-lg">O</span>
           </div>
-          <h1 className="text-xl font-semibold text-slate-900">OrchestAI</h1>
+          <h1 className="text-xl font-semibold text-slate-900">OrchestFlowAI</h1>
           <p className="text-sm text-slate-500 mt-1">Sign in to your workspace</p>
         </div>
 

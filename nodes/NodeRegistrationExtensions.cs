@@ -1,18 +1,18 @@
 using Microsoft.Extensions.DependencyInjection;
-using OrchestAI.Engine.Registry;
-using OrchestAI.Nodes.Integrations;
-using OrchestAI.Nodes.AI;
-using OrchestAI.Nodes.Documents;
-using OrchestAI.Nodes.Human;
-using OrchestAI.Nodes.Logic;
-using OrchestAI.Nodes.Data;
-using OrchestAI.Nodes.System;
-using OrchestAI.SDK.Interfaces;
-namespace OrchestAI.Nodes;
+using OrchestFlowAI.Engine.Registry;
+using OrchestFlowAI.Nodes.Integrations;
+using OrchestFlowAI.Nodes.AI;
+using OrchestFlowAI.Nodes.Documents;
+using OrchestFlowAI.Nodes.Human;
+using OrchestFlowAI.Nodes.Logic;
+using OrchestFlowAI.Nodes.Data;
+using OrchestFlowAI.Nodes.System;
+using OrchestFlowAI.SDK.Interfaces;
+namespace OrchestFlowAI.Nodes;
 
 public static class NodeRegistrationExtensions
 {
-    public static IServiceCollection AddOrchestAINodes(this IServiceCollection services)
+    public static IServiceCollection AddOrchestFlowAINodes(this IServiceCollection services)
     {
         // Register nodes + descriptors
         RegisterNode<SystemStartNode, SystemStartNodeDescriptor>(services);

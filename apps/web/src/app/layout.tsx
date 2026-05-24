@@ -4,7 +4,7 @@ import './globals.css';
 import { Providers } from '@/components/providers';
 import { CookieBanner } from '@/components/CookieBanner';
 const inter = Inter({ subsets: ['latin'] });
-export const metadata: Metadata = { title: 'OrchestAI', description: 'Enterprise AI Workflow Platform' };
+export const metadata: Metadata = { title: 'OrchestFlowAI', description: 'Enterprise AI Workflow Platform' };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">

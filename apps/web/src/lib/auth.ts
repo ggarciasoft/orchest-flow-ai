@@ -7,7 +7,7 @@
  * @returns The JWT token string, or null if not authenticated
  */
 export function getToken(): string | null {
-  return typeof window !== 'undefined' ? localStorage.getItem('orchestai_token') : null;
+  return typeof window !== 'undefined' ? localStorage.getItem('OrchestFlowAI_token') : null;
 }
 
 /**
@@ -16,14 +16,14 @@ export function getToken(): string | null {
  * @param token - The JWT token returned by the auth API
  */
 export function setToken(token: string) {
-  localStorage.setItem('orchestai_token', token);
+  localStorage.setItem('OrchestFlowAI_token', token);
 }
 
 /**
  * Removes the JWT auth token from localStorage, effectively logging the user out.
  */
 export function clearToken() {
-  localStorage.removeItem('orchestai_token');
+  localStorage.removeItem('OrchestFlowAI_token');
 }
 
 /**

@@ -1,10 +1,10 @@
-# OrchestAI
+# OrchestFlowAI
 
 <!-- Status & Build -->
-[![Status](https://img.shields.io/badge/status-active%20development-yellow?style=flat-square)](https://github.com/ggarciasoft/orchestai)
-[![Backend Tests](https://img.shields.io/badge/backend%20tests-125%20passing-brightgreen?style=flat-square&logo=dotnet)](./tests/OrchestAI.Tests)
+[![Status](https://img.shields.io/badge/status-active%20development-yellow?style=flat-square)](https://github.com/ggarciasoft/OrchestFlowAI)
+[![Backend Tests](https://img.shields.io/badge/backend%20tests-125%20passing-brightgreen?style=flat-square&logo=dotnet)](./tests/OrchestFlowAI.Tests)
 [![Frontend Tests](https://img.shields.io/badge/frontend%20tests-24%20passing-brightgreen?style=flat-square&logo=jest)](./apps/web)
-[![Last Commit](https://img.shields.io/github/last-commit/ggarciasoft/orchestai?style=flat-square)](https://github.com/ggarciasoft/orchestai/commits/main)
+[![Last Commit](https://img.shields.io/github/last-commit/ggarciasoft/OrchestFlowAI?style=flat-square)](https://github.com/ggarciasoft/OrchestFlowAI/commits/main)
 
 <!-- Stack -->
 [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com)
@@ -20,7 +20,7 @@
 
 > Open-source enterprise AI workflow platform for orchestrating agents, tools, human approvals, documents, and business automation.
 
-OrchestAI is a modular platform that lets teams build AI-driven business workflows using reusable nodes. Workflows are stored as **data**, executed by a backend **engine**, and surfaced through a **visual designer**.
+OrchestFlowAI is a modular platform that lets teams build AI-driven business workflows using reusable nodes. Workflows are stored as **data**, executed by a backend **engine**, and surfaced through a **visual designer**.
 
 ---
 
@@ -43,7 +43,7 @@ OrchestAI is a modular platform that lets teams build AI-driven business workflo
 
 ---
 
-## 🎯 What OrchestAI Does
+## 🎯 What OrchestFlowAI Does
 
 - **Visual workflow design** — drag-and-drop nodes on a canvas (React Flow). Connect, configure, and delete nodes.
 - **Async execution** — a worker service runs workflows, persists state, retries, and resumes after human decisions.
@@ -141,21 +141,21 @@ Full catalog with inputs/outputs/config: [`docs/NODES.md`](./docs/NODES.md)
 ## 📂 Repository Layout
 
 ```
-orchestai/
+OrchestFlowAI/
 ├── apps/
 │   └── web/                    # Next.js frontend (designer, pages, auth)
 ├── services/
-│   ├── OrchestAI.Api/          # REST API (.NET 9)
-│   ├── OrchestAI.Worker/       # Background workflow executor
-│   └── OrchestAI.AI/           # LLM abstraction + providers
+│   ├── OrchestFlowAI.Api/          # REST API (.NET 9)
+│   ├── OrchestFlowAI.Worker/       # Background workflow executor
+│   └── OrchestFlowAI.AI/           # LLM abstraction + providers
 ├── packages/
-│   ├── OrchestAI.Domain/       # Entities + domain logic
-│   ├── OrchestAI.Application/  # Abstractions (interfaces)
-│   ├── OrchestAI.Infrastructure/ # Repos, queue, storage, auth
-│   ├── OrchestAI.Contracts/    # Request/response DTOs
-│   ├── OrchestAI.Engine/       # Workflow execution engine
-│   ├── OrchestAI.SDK/          # Node authoring SDK + test helpers
-│   └── OrchestAI.Observability/ # Middleware, logging
+│   ├── OrchestFlowAI.Domain/       # Entities + domain logic
+│   ├── OrchestFlowAI.Application/  # Abstractions (interfaces)
+│   ├── OrchestFlowAI.Infrastructure/ # Repos, queue, storage, auth
+│   ├── OrchestFlowAI.Contracts/    # Request/response DTOs
+│   ├── OrchestFlowAI.Engine/       # Workflow execution engine
+│   ├── OrchestFlowAI.SDK/          # Node authoring SDK + test helpers
+│   └── OrchestFlowAI.Observability/ # Middleware, logging
 ├── nodes/
 │   ├── ai/                     # AI nodes
 │   ├── data/                   # Data transformation nodes
@@ -165,7 +165,7 @@ orchestai/
 │   ├── logic/                  # Control flow nodes
 │   └── system/                 # Start/End nodes
 ├── tests/
-│   └── OrchestAI.Tests/        # xUnit test project (125 tests)
+│   └── OrchestFlowAI.Tests/        # xUnit test project (125 tests)
 ├── docs/                       # Architecture, API, nodes, setup docs
 ├── rules/                      # Coding rules by domain
 ├── AGENTS.md                   # AI agent roles and rules
@@ -201,11 +201,11 @@ orchestai/
 
 ### Option A — Local dev (no Docker, in-memory DB)
 ```bash
-git clone https://github.com/ggarciasoft/orchestai.git
-cd orchestai
+git clone https://github.com/ggarciasoft/OrchestFlowAI.git
+cd OrchestFlowAI
 
 # Backend API (runs at http://localhost:5080 — Swagger at /swagger)
-cd services/OrchestAI.Api && dotnet run
+cd services/OrchestFlowAI.Api && dotnet run
 
 # Frontend (runs at http://localhost:3000)
 cd apps/web && npm install && npm run dev
@@ -217,7 +217,7 @@ cd apps/web && npm install && npm run dev
 docker compose up -d
 
 # Set your connection string and run the API
-CONNECTION_STRING="Host=localhost;Database=orchestai;Username=orchestai;Password=orchestai" dotnet run --project services/OrchestAI.Api
+CONNECTION_STRING="Host=localhost;Database=OrchestFlowAI;Username=OrchestFlowAI;Password=OrchestFlowAI" dotnet run --project services/OrchestFlowAI.Api
 ```
 
 ### Option C — Full Docker stack
@@ -232,7 +232,7 @@ docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
 ### Run tests
 ```bash
 # Backend (125 tests)
-cd tests/OrchestAI.Tests && dotnet test
+cd tests/OrchestFlowAI.Tests && dotnet test
 
 # Frontend (26 tests)
 cd apps/web && npm test

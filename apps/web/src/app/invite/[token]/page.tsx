@@ -68,7 +68,7 @@ export default function AcceptInvitePage() {
         </div>
 
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Join your team on OrchestAI</h2>
+          <h2 className="text-2xl font-bold text-slate-900">Join your team on OrchestFlowAI</h2>
           <p className="text-slate-500 text-sm mt-1">Set a password to complete your registration.</p>
         </div>
 

@@ -6,7 +6,7 @@ export default function PrivacyPage() {
     <div className="min-h-screen bg-white flex flex-col">
       <header className="border-b border-slate-200">
         <div className="max-w-3xl mx-auto px-6 h-14 flex items-center">
-          <Link href="/" className="text-sm font-semibold text-slate-900 hover:text-indigo-600 transition-colors">← OrchestAI</Link>
+          <Link href="/" className="text-sm font-semibold text-slate-900 hover:text-indigo-600 transition-colors">← OrchestFlowAI</Link>
         </div>
       </header>
       <main className="flex-1 max-w-3xl mx-auto px-6 py-12 w-full">
@@ -31,11 +31,11 @@ export default function PrivacyPage() {
           </section>
           <section>
             <h2 className="text-base font-semibold text-slate-900 mb-2">5. Your Rights</h2>
-            <p>You have the right to access, correct, or request deletion of your personal data. Submit requests to <a href="mailto:feedback@orchestai.local" className="text-indigo-600 hover:underline">feedback@orchestai.local</a>.</p>
+            <p>You have the right to access, correct, or request deletion of your personal data. Submit requests to <a href="mailto:feedback@OrchestFlowAI.local" className="text-indigo-600 hover:underline">feedback@OrchestFlowAI.local</a>.</p>
           </section>
           <section>
             <h2 className="text-base font-semibold text-slate-900 mb-2">6. Contact</h2>
-            <p>For privacy-related inquiries, contact us at <a href="mailto:feedback@orchestai.local" className="text-indigo-600 hover:underline">feedback@orchestai.local</a>.</p>
+            <p>For privacy-related inquiries, contact us at <a href="mailto:feedback@OrchestFlowAI.local" className="text-indigo-600 hover:underline">feedback@OrchestFlowAI.local</a>.</p>
           </section>
         </div>
       </main>

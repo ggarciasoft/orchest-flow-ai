@@ -2,7 +2,7 @@
 
 ## Product Vision
 
-OrchestAI is an open-source enterprise AI workflow platform. It lets organizations orchestrate AI agents, tools, document processing, human approvals, and integrations through reusable, composable nodes.
+OrchestFlowAI is an open-source enterprise AI workflow platform. It lets organizations orchestrate AI agents, tools, document processing, human approvals, and integrations through reusable, composable nodes.
 
 The platform treats workflows as **data**, not code. A workflow definition is a graph (nodes + edges + configuration) that the engine executes. Nodes are reusable, stateless units of work that can be authored independently by teams or third parties.
 
@@ -15,7 +15,7 @@ Most "AI app" tools today either:
 - Wrap a chatbot around an LLM (no orchestration, no audit, no enterprise integration), or
 - Force engineers to wire up bespoke code per use case (no reuse, no visual design, no business-user accessibility).
 
-OrchestAI sits between those poles: **a workflow runtime where AI is one node type among many**, with the auditability, modularity, and governance enterprises require.
+OrchestFlowAI sits between those poles: **a workflow runtime where AI is one node type among many**, with the auditability, modularity, and governance enterprises require.
 
 ## Core Principles
 
@@ -67,7 +67,7 @@ The MVP focuses on **one** strong business workflow — Contract Review — to p
 
 ## Non-Goals (MVP)
 
-OrchestAI **will not** ship the following in MVP. They are deliberately deferred:
+OrchestFlowAI **will not** ship the following in MVP. They are deliberately deferred:
 
 - Full plugin marketplace
 - Complex multi-agent orchestration

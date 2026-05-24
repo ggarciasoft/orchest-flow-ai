@@ -14,7 +14,7 @@ Own backend architecture, enforce clean boundaries, and record architectural dec
 - `docs/ARCHITECTURE.md`
 - `docs/adr/` (Architecture Decision Records)
 - Top-level project/solution structure
-- `OrchestAI.Domain`, `OrchestAI.Application`, `OrchestAI.Contracts` package structures
+- `OrchestFlowAI.Domain`, `OrchestFlowAI.Application`, `OrchestFlowAI.Contracts` package structures
 
 ## Responsibilities
 - Define and enforce Clean Architecture boundaries:

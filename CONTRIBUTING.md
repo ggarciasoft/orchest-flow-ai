@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for your interest in OrchestAI. This guide gets you from clone to merged PR.
+Thanks for your interest in OrchestFlowAI. This guide gets you from clone to merged PR.
 
 ---
 
@@ -60,7 +60,7 @@ Follow the skill in [`docs/NODE-SDK.md`](./docs/NODE-SDK.md) §10:
 
 1. Use the `ILLMProvider` abstraction; don't call providers directly.
 2. Prefer structured output (`GenerateStructuredAsync<T>`).
-3. Add a versioned prompt template under `services/OrchestAI.AI/Prompts/`.
+3. Add a versioned prompt template under `services/OrchestFlowAI.AI/Prompts/`.
 4. Track usage (the runtime helper does this for you).
 5. Store model/provider/prompt-version metadata on the node execution.
 6. Add tests with a fake provider.
@@ -119,9 +119,9 @@ What else was considered, and why we passed.
 Run before opening a PR:
 
 ```bash
-dotnet test OrchestAI.sln
-pnpm --filter @orchestai/web test
-pnpm --filter @orchestai/web test:e2e   # if you touched flows covered by E2E
+dotnet test OrchestFlowAI.sln
+pnpm --filter @OrchestFlowAI/web test
+pnpm --filter @OrchestFlowAI/web test:e2e   # if you touched flows covered by E2E
 ```
 
 CI will run the same.

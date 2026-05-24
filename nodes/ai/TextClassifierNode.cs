@@ -1,11 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
-using OrchestAI.AI.Abstractions;
-using OrchestAI.AI.Routing;
-using OrchestAI.SDK.Context;
-using OrchestAI.SDK.Interfaces;
-using OrchestAI.SDK.Models;
+using OrchestFlowAI.AI.Abstractions;
+using OrchestFlowAI.AI.Routing;
+using OrchestFlowAI.SDK.Context;
+using OrchestFlowAI.SDK.Interfaces;
+using OrchestFlowAI.SDK.Models;
 
-namespace OrchestAI.Nodes.AI;
+namespace OrchestFlowAI.Nodes.AI;
 
 /// <summary>
 /// Classifies input text into one of the configured categories using an LLM.

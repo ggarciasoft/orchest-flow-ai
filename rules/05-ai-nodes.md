@@ -4,7 +4,7 @@
 
 2. **Track token usage.** Every LLM call records prompt tokens, completion tokens, total tokens, and estimated cost via `IAIUsageRecorder`. The AI Runtime handles this transparently — node authors must not bypass it.
 
-3. **Version all prompts.** Prompt templates live in `services/OrchestAI.AI/Prompts/` and carry a version string (`YYYY.MM.N`). Changes to a prompt bump the version. The version is stored in `ai_usage_logs.prompt_version`.
+3. **Version all prompts.** Prompt templates live in `services/OrchestFlowAI.AI/Prompts/` and carry a version string (`YYYY.MM.N`). Changes to a prompt bump the version. The version is stored in `ai_usage_logs.prompt_version`.
 
 4. **Structured output is mandatory for business decisions.** Any AI output that drives a workflow decision (condition, routing, risk level, classification) must use `GenerateStructuredAsync<T>` with a JSON schema. Schema validation is required.
 

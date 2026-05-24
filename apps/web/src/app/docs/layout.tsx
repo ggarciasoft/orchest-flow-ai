@@ -13,7 +13,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
             <div className="w-6 h-6 bg-indigo-600 rounded flex items-center justify-center">
               <span className="text-white text-[10px] font-bold">O</span>
             </div>
-            <span className="text-sm font-semibold text-slate-900">OrchestAI</span>
+            <span className="text-sm font-semibold text-slate-900">OrchestFlowAI</span>
           </Link>
           <span className="text-slate-300">/</span>
           <span className="text-sm text-slate-600 flex items-center gap-1.5"><BookOpen size={14} />Docs</span>

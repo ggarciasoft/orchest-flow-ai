@@ -7,7 +7,7 @@ export default function DocsIndexPage() {
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-semibold text-slate-900">Documentation</h1>
-        <p className="text-sm text-slate-500 mt-1">Everything you need to build, run, and operate OrchestAI.</p>
+        <p className="text-sm text-slate-500 mt-1">Everything you need to build, run, and operate OrchestFlowAI.</p>
       </div>
 
       <div className="space-y-8">

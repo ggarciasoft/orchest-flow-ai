@@ -1,6 +1,6 @@
 # Observability
 
-OrchestAI is built to be debuggable in production. Every execution must be traceable end-to-end.
+OrchestFlowAI is built to be debuggable in production. Every execution must be traceable end-to-end.
 
 ---
 
@@ -64,16 +64,16 @@ OrchestAI is built to be debuggable in production. Every execution must be trace
 
 Counters / histograms (Prometheus naming):
 
-- `orchestai_workflow_executions_started_total{tenant,workflow,status}`
-- `orchestai_workflow_executions_duration_seconds{tenant,workflow,status}`
-- `orchestai_node_executions_total{node_type,status}`
-- `orchestai_node_execution_duration_seconds{node_type}`
-- `orchestai_node_retries_total{node_type}`
-- `orchestai_approvals_pending` (gauge)
-- `orchestai_llm_calls_total{provider,model,outcome}`
-- `orchestai_llm_tokens_total{provider,model,type}` (type=`prompt|completion`)
-- `orchestai_llm_cost_usd_total{provider,model}`
-- `orchestai_http_requests_total{method,route,status}`
+- `OrchestFlowAI_workflow_executions_started_total{tenant,workflow,status}`
+- `OrchestFlowAI_workflow_executions_duration_seconds{tenant,workflow,status}`
+- `OrchestFlowAI_node_executions_total{node_type,status}`
+- `OrchestFlowAI_node_execution_duration_seconds{node_type}`
+- `OrchestFlowAI_node_retries_total{node_type}`
+- `OrchestFlowAI_approvals_pending` (gauge)
+- `OrchestFlowAI_llm_calls_total{provider,model,outcome}`
+- `OrchestFlowAI_llm_tokens_total{provider,model,type}` (type=`prompt|completion`)
+- `OrchestFlowAI_llm_cost_usd_total{provider,model}`
+- `OrchestFlowAI_http_requests_total{method,route,status}`
 
 ---
 
@@ -101,7 +101,7 @@ Every LLM call writes to `ai_usage_logs`. Aggregations:
 - Per tenant (in dashboard)
 - Per model/provider (in admin settings)
 
-Cost estimation uses provider rate tables defined in `OrchestAI.AI` and updated periodically.
+Cost estimation uses provider rate tables defined in `OrchestFlowAI.AI` and updated periodically.
 
 ---
 

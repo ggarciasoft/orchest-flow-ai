@@ -11,9 +11,9 @@ Build and maintain the workflow runtime — graph execution, state transitions, 
 - [`rules/02-backend.md`](../rules/02-backend.md)
 
 ## Write Scope
-- `packages/OrchestAI.Engine/`
-- Engine-related use cases in `packages/OrchestAI.Application/`
-- Engine tests in `tests/OrchestAI.Engine.Tests/`
+- `packages/OrchestFlowAI.Engine/`
+- Engine-related use cases in `packages/OrchestFlowAI.Application/`
+- Engine tests in `tests/OrchestFlowAI.Engine.Tests/`
 
 ## Responsibilities
 - Implement `IWorkflowEngine` (`ValidateAsync`, `RunAsync`, `ResumeAsync`).

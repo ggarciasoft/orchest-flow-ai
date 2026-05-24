@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>OrchestFlowAI.Engine</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\OrchestFlowAI.Domain\OrchestFlowAI.Domain.csproj" />
+    <ProjectReference Include="..\OrchestFlowAI.SDK\OrchestFlowAI.SDK.csproj" />
+    <ProjectReference Include="..\OrchestFlowAI.Contracts\OrchestFlowAI.Contracts.csproj" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.5" />
+  </ItemGroup>
+</Project>

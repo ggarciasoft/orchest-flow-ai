@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>OrchestFlowAI.Api</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\packages\OrchestFlowAI.Application\OrchestFlowAI.Application.csproj" />
+    <ProjectReference Include="..\..\packages\OrchestFlowAI.Infrastructure\OrchestFlowAI.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\packages\OrchestFlowAI.Contracts\OrchestFlowAI.Contracts.csproj" />
+    <ProjectReference Include="..\..\packages\OrchestFlowAI.Observability\OrchestFlowAI.Observability.csproj" />
+    <ProjectReference Include="..\..\packages\OrchestFlowAI.Engine\OrchestFlowAI.Engine.csproj" />
+    <ProjectReference Include="..\..\packages\OrchestFlowAI.SDK\OrchestFlowAI.SDK.csproj" />
+    <ProjectReference Include="..\OrchestFlowAI.AI\OrchestFlowAI.AI.csproj" />
+    <ProjectReference Include="..\..\nodes\OrchestFlowAI.Nodes.csproj" />
+    <ProjectReference Include="..\..\packages\OrchestFlowAI.SDK\OrchestFlowAI.SDK.csproj" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.5" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.3.1" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="MediatR" Version="12.4.1" />
+  </ItemGroup>
+</Project>

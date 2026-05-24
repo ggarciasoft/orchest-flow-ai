@@ -39,6 +39,6 @@
 
 16. **Every .NET code change requires unit tests.** Before committing any backend change:
     - Run `dotnet test` and confirm **0 failures**
-    - Add `<ClassName>Tests.cs` in `tests/OrchestAI.Tests/` for every new class
+    - Add `<ClassName>Tests.cs` in `tests/OrchestFlowAI.Tests/` for every new class
     - Update existing tests impacted by the change
     - Use xUnit + Moq + FluentAssertions. No bare `Assert`.

@@ -23,7 +23,7 @@ Own local development experience, packaging, infrastructure, CI/CD, and observab
 - `docker compose up -d` must bring up Postgres + Redis in under 30 seconds.
 - `docker compose --profile full up --build` brings up the entire stack.
 - `docker compose --profile with-otel up --build` adds OTel collector, Tempo, Prometheus, Grafana.
-- Seed command: `dotnet run --project services/OrchestAI.Api -- seed demo`
+- Seed command: `dotnet run --project services/OrchestFlowAI.Api -- seed demo`
 - DB migrations run automatically on Api startup in dev; explicit command for production.
 
 ### CI/CD
@@ -32,7 +32,7 @@ Own local development experience, packaging, infrastructure, CI/CD, and observab
 - Fail fast: lint and build before tests.
 
 ### Migrations
-- Migrations live in `OrchestAI.Infrastructure/Persistence/Migrations/`.
+- Migrations live in `OrchestFlowAI.Infrastructure/Persistence/Migrations/`.
 - Forward-only in production.
 - Production deploy includes migration step before service startup.
 
@@ -60,11 +60,11 @@ docker compose --profile full up --build
 docker compose --profile full --profile with-otel up --build
 
 # Migrations
-dotnet run --project services/OrchestAI.Api -- db update
+dotnet run --project services/OrchestFlowAI.Api -- db update
 
 # Seed
-dotnet run --project services/OrchestAI.Api -- seed demo
+dotnet run --project services/OrchestFlowAI.Api -- seed demo
 
 # Regenerate FE API client
-pnpm --filter @orchestai/web codegen
+pnpm --filter @OrchestFlowAI/web codegen
 ```

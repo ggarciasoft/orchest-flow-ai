@@ -20,7 +20,7 @@ export default function FeedbackPage() {
     <div className="min-h-screen bg-[#f8fafc] flex flex-col">
       <header className="border-b border-slate-200 bg-white">
         <div className="max-w-3xl mx-auto px-6 h-14 flex items-center">
-          <Link href="/" className="text-sm font-semibold text-slate-900 hover:text-indigo-600 transition-colors">← OrchestAI</Link>
+          <Link href="/" className="text-sm font-semibold text-slate-900 hover:text-indigo-600 transition-colors">← OrchestFlowAI</Link>
         </div>
       </header>
       <main className="flex-1 flex items-center justify-center px-6 py-12">
@@ -35,7 +35,7 @@ export default function FeedbackPage() {
           ) : (
             <div className="bg-white border border-slate-200 rounded-xl p-8">
               <h1 className="text-xl font-semibold text-slate-900 mb-1">Send us feedback</h1>
-              <p className="text-sm text-slate-500 mb-6">We&apos;d love to hear what you think about OrchestAI.</p>
+              <p className="text-sm text-slate-500 mb-6">We&apos;d love to hear what you think about OrchestFlowAI.</p>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Name</label>

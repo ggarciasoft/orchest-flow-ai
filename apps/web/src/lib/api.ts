@@ -2,7 +2,7 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:5080';
 
 /**
- * Core HTTP client for all OrchestAI API requests.
+ * Core HTTP client for all OrchestFlowAI API requests.
  * Automatically attaches the JWT auth token from localStorage and parses JSON responses.
  * Throws an Error with the API's detail/title message on non-2xx responses.
  *
@@ -13,7 +13,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:5080'
  */
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   // Read token from localStorage — null on server-side rendering
-  const token = typeof window !== 'undefined' ? localStorage.getItem('orchestai_token') : null;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('OrchestFlowAI_token') : null;
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
@@ -32,7 +32,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
-/** All OrchestAI API methods organized by resource domain. */
+/** All OrchestFlowAI API methods organized by resource domain. */
 /**
  * Node configuration presets — reusable named config sets.
  */
@@ -120,7 +120,7 @@ export const api = {
     upload: (file: File) => {
       const form = new FormData();
       form.append('file', file);
-      const token = typeof window !== 'undefined' ? localStorage.getItem('orchestai_token') : null;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('OrchestFlowAI_token') : null;
       return fetch(`${API_BASE}/api/documents/upload`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},

@@ -1,6 +1,6 @@
 # Node Catalog
 
-This is the canonical list of node types in OrchestAI. **MVP** nodes ship in the first release; the rest are roadmap.
+This is the canonical list of node types in OrchestFlowAI. **MVP** nodes ship in the first release; the rest are roadmap.
 
 Each entry has:
 - `type` — unique id

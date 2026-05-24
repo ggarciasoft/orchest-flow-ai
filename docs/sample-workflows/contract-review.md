@@ -1,6 +1,6 @@
 # Contract Review Workflow (MVP Sample)
 
-This is the canonical end-to-end demo for the OrchestAI MVP. It exercises every architectural pillar: workflow-as-data, node SDK, engine, AI runtime, structured outputs, human approval, persistence, and timeline visibility.
+This is the canonical end-to-end demo for the OrchestFlowAI MVP. It exercises every architectural pillar: workflow-as-data, node SDK, engine, AI runtime, structured outputs, human approval, persistence, and timeline visibility.
 
 ---
 

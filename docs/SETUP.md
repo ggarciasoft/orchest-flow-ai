@@ -21,25 +21,25 @@ This document gets a new developer from clone → running demo in under 10 minut
 
 ```bash
 # 1. Clone
-git clone https://github.com/<org>/orchestai.git
-cd orchestai
+git clone https://github.com/<org>/OrchestFlowAI.git
+cd OrchestFlowAI
 
 # 2. Copy environment template
 cp .env.example .env
-# Edit .env: at minimum, set ORCHESTAI_LLM__OPENAI__API_KEY=...
+# Edit .env: at minimum, set OrchestFlowAI_LLM__OPENAI__API_KEY=...
 
 # 3. Bring up infrastructure (Postgres, Redis)
 docker compose up -d postgres redis
 
 # 4. Apply migrations
-dotnet run --project services/OrchestAI.Api -- db update
+dotnet run --project services/OrchestFlowAI.Api -- db update
 
 # 5. Restore + build backend
-dotnet build OrchestAI.sln
+dotnet build OrchestFlowAI.sln
 
 # 6. Install + build frontend
 pnpm install --frozen-lockfile
-pnpm --filter @orchestai/web build
+pnpm --filter @OrchestFlowAI/web build
 ```
 
 ---
@@ -50,20 +50,20 @@ Open three terminals (or use the provided `Procfile` / `tmuxinator` config):
 
 ```bash
 # Terminal A — API
-dotnet run --project services/OrchestAI.Api
+dotnet run --project services/OrchestFlowAI.Api
 
 # Terminal B — Worker
-dotnet run --project services/OrchestAI.Worker
+dotnet run --project services/OrchestFlowAI.Worker
 
 # Terminal C — Frontend
-pnpm --filter @orchestai/web dev
+pnpm --filter @OrchestFlowAI/web dev
 ```
 
 Now open:
 
 - API:        `http://localhost:5080`
 - Frontend:   `http://localhost:3000`
-- Postgres:   `localhost:5432` (user `orchestai`, db `orchestai`)
+- Postgres:   `localhost:5432` (user `OrchestFlowAI`, db `OrchestFlowAI`)
 - Redis:      `localhost:6379`
 
 ---
@@ -108,12 +108,12 @@ docker compose -f docker-compose.yml -f docker-compose.app.yml -f docker-compose
 ## 5. Seed Data
 
 ```bash
-dotnet run --project services/OrchestAI.Api -- seed demo
+dotnet run --project services/OrchestFlowAI.Api -- seed demo
 ```
 
 Creates:
 - A demo tenant
-- A demo admin user (`demo@orchestai.local` / `password`)
+- A demo admin user (`demo@OrchestFlowAI.local` / `password`)
 - The Contract Review workflow at version 1 (active)
 - A sample contract PDF in `samples/contract-review-workflow/sample-contract.pdf`
 
@@ -135,27 +135,27 @@ Creates:
 
 ```env
 # Database
-ORCHESTAI_DB__CONNECTION_STRING=Host=localhost;Database=orchestai;Username=orchestai;Password=orchestai
+OrchestFlowAI_DB__CONNECTION_STRING=Host=localhost;Database=OrchestFlowAI;Username=OrchestFlowAI;Password=OrchestFlowAI
 
 # Redis (optional in MVP)
-ORCHESTAI_REDIS__CONNECTION_STRING=localhost:6379
+OrchestFlowAI_REDIS__CONNECTION_STRING=localhost:6379
 
 # AI
-ORCHESTAI_LLM__DEFAULT_PROVIDER=openai
-ORCHESTAI_LLM__DEFAULT_MODEL=gpt-4o-mini
-ORCHESTAI_LLM__OPENAI__API_KEY=sk-...
-ORCHESTAI_LLM__AZURE__ENDPOINT=
-ORCHESTAI_LLM__AZURE__API_KEY=
-ORCHESTAI_LLM__ANTHROPIC__API_KEY=
-ORCHESTAI_LLM__FALLBACKS=
+OrchestFlowAI_LLM__DEFAULT_PROVIDER=openai
+OrchestFlowAI_LLM__DEFAULT_MODEL=gpt-4o-mini
+OrchestFlowAI_LLM__OPENAI__API_KEY=sk-...
+OrchestFlowAI_LLM__AZURE__ENDPOINT=
+OrchestFlowAI_LLM__AZURE__API_KEY=
+OrchestFlowAI_LLM__ANTHROPIC__API_KEY=
+OrchestFlowAI_LLM__FALLBACKS=
 
 # Auth
-ORCHESTAI_AUTH__JWT_SIGNING_KEY=devdevdevdevdevdevdevdev    # 32+ bytes
-ORCHESTAI_AUTH__JWT_ISSUER=orchestai
-ORCHESTAI_AUTH__JWT_AUDIENCE=orchestai-web
+OrchestFlowAI_AUTH__JWT_SIGNING_KEY=devdevdevdevdevdevdevdev    # 32+ bytes
+OrchestFlowAI_AUTH__JWT_ISSUER=OrchestFlowAI
+OrchestFlowAI_AUTH__JWT_AUDIENCE=OrchestFlowAI-web
 
 # Storage
-ORCHESTAI_STORAGE__ROOT=./data/uploads
+OrchestFlowAI_STORAGE__ROOT=./data/uploads
 
 # Web
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5080
@@ -167,11 +167,11 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:5080
 
 ```bash
 # Backend
-dotnet test OrchestAI.sln
+dotnet test OrchestFlowAI.sln
 
 # Frontend
-pnpm --filter @orchestai/web test
-pnpm --filter @orchestai/web test:e2e   # Playwright (requires the stack running)
+pnpm --filter @OrchestFlowAI/web test
+pnpm --filter @OrchestFlowAI/web test:e2e   # Playwright (requires the stack running)
 ```
 
 ---
@@ -180,20 +180,20 @@ pnpm --filter @orchestai/web test:e2e   # Playwright (requires the stack running
 
 | Task                                    | Command                                                                       |
 | --------------------------------------- | ----------------------------------------------------------------------------- |
-| Add a database migration                | `dotnet ef migrations add <Name> --project OrchestAI.Infrastructure`         |
-| Update DB                               | `dotnet run --project services/OrchestAI.Api -- db update`                    |
-| Regenerate OpenAPI client (FE)          | `pnpm --filter @orchestai/web codegen`                                        |
+| Add a database migration                | `dotnet ef migrations add <Name> --project OrchestFlowAI.Infrastructure`         |
+| Update DB                               | `dotnet run --project services/OrchestFlowAI.Api -- db update`                    |
+| Regenerate OpenAPI client (FE)          | `pnpm --filter @OrchestFlowAI/web codegen`                                        |
 | Format / lint                           | `dotnet format` · `pnpm lint` · `pnpm format`                                 |
-| Seed demo data                          | `dotnet run --project services/OrchestAI.Api -- seed demo`                    |
-| Reset local DB                          | `docker compose down -v postgres && docker compose up -d postgres && dotnet run --project services/OrchestAI.Api -- db update && dotnet run --project services/OrchestAI.Api -- seed demo` |
+| Seed demo data                          | `dotnet run --project services/OrchestFlowAI.Api -- seed demo`                    |
+| Reset local DB                          | `docker compose down -v postgres && docker compose up -d postgres && dotnet run --project services/OrchestFlowAI.Api -- db update && dotnet run --project services/OrchestFlowAI.Api -- seed demo` |
 
 ---
 
 ## 10. Troubleshooting
 
 - **Postgres "role does not exist"** → recreate the Docker volume (`docker compose down -v postgres`).
-- **`401` from `/api/auth/login`** → verify `ORCHESTAI_AUTH__JWT_SIGNING_KEY` is at least 32 bytes and matches across services.
-- **AI calls fail with `401`** → check `ORCHESTAI_LLM__OPENAI__API_KEY`; logs will redact the key value.
+- **`401` from `/api/auth/login`** → verify `OrchestFlowAI_AUTH__JWT_SIGNING_KEY` is at least 32 bytes and matches across services.
+- **AI calls fail with `401`** → check `OrchestFlowAI_LLM__OPENAI__API_KEY`; logs will redact the key value.
 - **Worker not picking up executions** → confirm Redis is running (or that the Postgres-only queue path is enabled in MVP).
 - **Frontend can't reach API** → check `NEXT_PUBLIC_API_BASE_URL` and CORS allowlist in API config.
 
@@ -202,14 +202,14 @@ pnpm --filter @orchestai/web test:e2e   # Playwright (requires the stack running
 ## 11. IDE Setup
 
 - **VS Code:** install the C# Dev Kit, ESLint, Prettier, Tailwind CSS extensions.
-- **Rider:** open `OrchestAI.sln` for backend; open `apps/web` separately or via the JS plugin.
+- **Rider:** open `OrchestFlowAI.sln` for backend; open `apps/web` separately or via the JS plugin.
 - Recommended `.editorconfig` is checked in; honor it.
 
 ---
 
 ## 12. Tenant Onboarding Flow
 
-OrchestAI provides a guided onboarding experience for creating a new workspace and inviting team members.
+OrchestFlowAI provides a guided onboarding experience for creating a new workspace and inviting team members.
 
 ### Onboarding Steps
 

@@ -2,7 +2,7 @@
 
 PostgreSQL is the system of record. Redis (optional in MVP) is used for queueing and caching.
 
-This document describes the MVP schema. Indexes, constraints, and migrations are owned by `OrchestAI.Infrastructure`.
+This document describes the MVP schema. Indexes, constraints, and migrations are owned by `OrchestFlowAI.Infrastructure`.
 
 ---
 
@@ -187,7 +187,7 @@ Indexes: `(tenant_id, created_at desc)`, `(workflow_execution_id)`.
 
 ## 4. Migrations
 
-- Migrations live in `OrchestAI.Infrastructure/Persistence/Migrations/`.
+- Migrations live in `OrchestFlowAI.Infrastructure/Persistence/Migrations/`.
 - Use EF Core migrations or a runner like FluentMigrator (decision recorded as ADR).
 - Migrations are forward-only in production; backfills are explicit data scripts.
 

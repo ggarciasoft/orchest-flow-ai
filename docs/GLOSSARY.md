@@ -1,6 +1,6 @@
 # Glossary
 
-A shared vocabulary for OrchestAI. If you find a term used inconsistently, fix it here and in the relevant doc.
+A shared vocabulary for OrchestFlowAI. If you find a term used inconsistently, fix it here and in the relevant doc.
 
 | Term                          | Meaning                                                                                                  |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------- |

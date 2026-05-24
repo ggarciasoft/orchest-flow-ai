@@ -34,7 +34,7 @@ describe('AcceptInvitePage', () => {
 
   it('renders the password form', () => {
     render(<AcceptInvitePage />);
-    expect(screen.getByText('Join your team on OrchestAI')).toBeInTheDocument();
+    expect(screen.getByText('Join your team on OrchestFlowAI')).toBeInTheDocument();
     expect(screen.getByLabelText('Password')).toBeInTheDocument();
     expect(screen.getByLabelText('Confirm password')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();

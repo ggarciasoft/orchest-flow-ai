@@ -1,11 +1,11 @@
 using System.Net.Http;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
-using OrchestAI.SDK.Context;
-using OrchestAI.SDK.Interfaces;
-using OrchestAI.SDK.Models;
+using OrchestFlowAI.SDK.Context;
+using OrchestFlowAI.SDK.Interfaces;
+using OrchestFlowAI.SDK.Models;
 
-namespace OrchestAI.Nodes.Integrations;
+namespace OrchestFlowAI.Nodes.Integrations;
 
 /// <summary>
 /// POSTs a JSON payload containing execution context and optional node inputs to a configured URL.

@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>OrchestFlowAI.Worker</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>OrchestFlowAI.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Cronos" Version="0.13.0" />
+    <ProjectReference Include="..\..\packages\OrchestFlowAI.Application\OrchestFlowAI.Application.csproj" />
+    <ProjectReference Include="..\..\packages\OrchestFlowAI.Infrastructure\OrchestFlowAI.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\packages\OrchestFlowAI.Engine\OrchestFlowAI.Engine.csproj" />
+    <ProjectReference Include="..\..\packages\OrchestFlowAI.SDK\OrchestFlowAI.SDK.csproj" />
+    <ProjectReference Include="..\OrchestFlowAI.AI\OrchestFlowAI.AI.csproj" />
+    <ProjectReference Include="..\..\nodes\OrchestFlowAI.Nodes.csproj" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
+    <PackageReference Include="MediatR" Version="12.4.1" />
+    <PackageReference Include="OpenAI" Version="2.2.0" />
+  </ItemGroup>
+</Project>

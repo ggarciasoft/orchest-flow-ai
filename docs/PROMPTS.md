@@ -1,13 +1,13 @@
 # Bootstrap Prompts for AI Coding Tools
 
-Drop these prompts into Cursor, Antigravity, Claude Code, Codex, or any AI coding tool to kick off work on OrchestAI consistently with the architecture.
+Drop these prompts into Cursor, Antigravity, Claude Code, Codex, or any AI coding tool to kick off work on OrchestFlowAI consistently with the architecture.
 
 ---
 
 ## 1. Senior Architect / Full-Stack Bootstrap
 
 ```
-You are a senior software architect and full-stack engineer helping build OrchestAI
+You are a senior software architect and full-stack engineer helping build OrchestFlowAI
 (open-source enterprise AI workflow platform). The system lets users create custom
 workflows using reusable nodes. Workflows are stored as data, executed by a backend
 workflow engine, and can include AI, document, logic, integration, and human approval
@@ -72,9 +72,9 @@ Rules:
 ## 2. UI/UX Design Prompt
 
 ```
-Design a modern enterprise SaaS web application UI for a product called OrchestAI.
+Design a modern enterprise SaaS web application UI for a product called OrchestFlowAI.
 
-OrchestAI is an AI workflow automation platform where business users and technical
+OrchestFlowAI is an AI workflow automation platform where business users and technical
 teams can create workflows using visual nodes. Workflows include AI analysis,
 document processing, conditions, human approvals, and integrations.
 
@@ -140,7 +140,7 @@ Implementation target: Next.js + Tailwind + shadcn/ui + React Flow.
 ## 3. New-Node Prompt
 
 ```
-Add a new OrchestAI node:
+Add a new OrchestFlowAI node:
 
 Type: <category>.<kebab-name>
 Display name: <…>
@@ -191,7 +191,7 @@ Add an AI capability: <name>.
 Constraints:
 - Use ILLMProvider (no direct provider SDK calls in nodes).
 - Prefer GenerateStructuredAsync<T> with a JSON Schema.
-- Define a versioned prompt template under services/OrchestAI.AI/Prompts/.
+- Define a versioned prompt template under services/OrchestFlowAI.AI/Prompts/.
 - Record usage (provider, model, prompt_version, tokens, cost).
 - Add tests with a FakeLLMProvider.
 - Document the prompt and its expected schema.
@@ -202,7 +202,7 @@ Constraints:
 ## 6. Documentation Pass Prompt
 
 ```
-Update OrchestAI documentation for the change described.
+Update OrchestFlowAI documentation for the change described.
 
 Touch:
 - docs/<relevant doc> for the concept.

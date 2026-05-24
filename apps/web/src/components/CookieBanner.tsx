@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Cookie } from 'lucide-react';
 
-const STORAGE_KEY = 'orchestai_cookie_consent';
+const STORAGE_KEY = 'OrchestFlowAI_cookie_consent';
 
 export function CookieBanner() {
   const [visible, setVisible] = useState(false);

@@ -9,7 +9,7 @@ Own the developer experience for creating, registering, and testing workflow nod
 - [`rules/04-nodes.md`](../rules/04-nodes.md)
 
 ## Write Scope
-- `packages/OrchestAI.SDK/`
+- `packages/OrchestFlowAI.SDK/`
 - Node implementations under `nodes/`
 - `docs/NODE-SDK.md`
 - `docs/NODES.md`

@@ -55,10 +55,10 @@
 16. **New files require tests:**
     | New file type | Required test file |
     |---|---|
-    | `.cs` class or service | `tests/OrchestAI.Tests/<Namespace>/<ClassName>Tests.cs` |
+    | `.cs` class or service | `tests/OrchestFlowAI.Tests/<Namespace>/<ClassName>Tests.cs` |
     | `.tsx` component or page | `src/**/__tests__/<ComponentName>.test.tsx` |
     | `.ts` lib/utility | `src/lib/__tests__/<filename>.test.ts` |
-    | `.cs` node (`IWorkflowNode`) | `tests/OrchestAI.Tests/NodeTests/<NodeName>Tests.cs` |
+    | `.cs` node (`IWorkflowNode`) | `tests/OrchestFlowAI.Tests/NodeTests/<NodeName>Tests.cs` |
 
 17. **Test coverage gates (per PR):**
     - New classes/components must have ≥ 1 happy-path test and ≥ 1 edge-case or error-path test.

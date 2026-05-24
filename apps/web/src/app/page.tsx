@@ -19,7 +19,7 @@ export default function HomePage() {
             <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center">
               <span className="text-white text-xs font-bold">O</span>
             </div>
-            <span className="text-sm font-semibold text-slate-900">OrchestAI</span>
+            <span className="text-sm font-semibold text-slate-900">OrchestFlowAI</span>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/docs" className="text-sm text-slate-600 hover:text-slate-900 transition-colors">Docs</Link>

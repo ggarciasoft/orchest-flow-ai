@@ -1,2 +1,0 @@
-namespace OrchestAI.SDK.Models;
-public sealed record NodeConfigDefinition(string Key, string DisplayName, string Description, DataType Type, bool Required, object? DefaultValue = null, IReadOnlyCollection<string>? AllowedValues = null);

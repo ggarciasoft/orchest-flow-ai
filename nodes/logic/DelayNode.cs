@@ -1,8 +1,8 @@
-using OrchestAI.SDK.Context;
-using OrchestAI.SDK.Interfaces;
-using OrchestAI.SDK.Models;
+using OrchestFlowAI.SDK.Context;
+using OrchestFlowAI.SDK.Interfaces;
+using OrchestFlowAI.SDK.Models;
 
-namespace OrchestAI.Nodes.Logic;
+namespace OrchestFlowAI.Nodes.Logic;
 
 /// <summary>
 /// Waits for a configurable duration before passing execution to the next node.

@@ -16,16 +16,16 @@
    - `version` (build SHA or semver)
 
 5. Required metrics (emit from day one):
-   - `orchestai_workflow_executions_started_total`
-   - `orchestai_workflow_executions_duration_seconds`
-   - `orchestai_node_executions_total`
-   - `orchestai_node_execution_duration_seconds`
-   - `orchestai_node_retries_total`
-   - `orchestai_approvals_pending` (gauge)
-   - `orchestai_llm_calls_total`
-   - `orchestai_llm_tokens_total`
-   - `orchestai_llm_cost_usd_total`
-   - `orchestai_http_requests_total`
+   - `OrchestFlowAI_workflow_executions_started_total`
+   - `OrchestFlowAI_workflow_executions_duration_seconds`
+   - `OrchestFlowAI_node_executions_total`
+   - `OrchestFlowAI_node_execution_duration_seconds`
+   - `OrchestFlowAI_node_retries_total`
+   - `OrchestFlowAI_approvals_pending` (gauge)
+   - `OrchestFlowAI_llm_calls_total`
+   - `OrchestFlowAI_llm_tokens_total`
+   - `OrchestFlowAI_llm_cost_usd_total`
+   - `OrchestFlowAI_http_requests_total`
 
 6. OpenTelemetry spans are required for: `http.request`, `workflow.execute`, `node.execute`, `llm.call`. W3C tracecontext propagates over queue message headers.
 
