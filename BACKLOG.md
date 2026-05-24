@@ -37,9 +37,9 @@
 - **Problem:** If a node fails (e.g. HTTP 503), the whole execution fails. There's no automatic retry.
 - **Resolution:** Implemented `RetryPolicy` value object on `Workflow` entity. Engine honors `MaxAttempts` with exponential backoff via `GetDelay(attemptNumber)`. Configure via `RetryMaxAttempts`, `RetryBackoffMs`, `RetryBackoffMultiplier` in create/update workflow requests.
 
-### 4. No Real-Time Execution Log Streaming
+### 4. ~~No Real-Time Execution Log Streaming~~ ✅ RESOLVED
 - **Problem:** Execution status only shows on polling refresh. No live node-by-node updates.
-- **Proposed fix:** SignalR hub or SSE endpoint streaming `NodeExecution` updates as they happen.
+- **Resolution:** Implemented SignalR hub (`ExecutionHub` at `/hubs/execution`). Backend engine calls `IExecutionNotifier` at `NodeStarted`, `NodeCompleted`, `NodeFailed`, and `ExecutionCompleted` lifecycle points. Frontend `useExecutionStream` hook connects, joins the execution group, and accumulates events shown in a live panel on the execution detail page. `StubExecutionNotifier` used when no `CONNECTION_STRING` is configured; `SignalRExecutionNotifier` active otherwise.
 
 ### 5. No Role-Based Access Control (RBAC)
 - **Problem:** All authenticated users have full access to all workflows/executions in the tenant. No per-workflow permissions, no "viewer" vs "editor" vs "admin" distinction.

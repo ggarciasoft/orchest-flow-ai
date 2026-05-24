@@ -408,3 +408,59 @@ delay = BackoffMs * (BackoffMultiplier ^ (attemptNumber - 1))
 ### RetryPolicy.None
 
 The default is RetryPolicy.None (MaxAttempts = 0) — no retry, fail immediately on error.
+
+---
+
+## Real-Time Execution Log Streaming (SignalR)
+
+### Hub Endpoint
+
+```
+/hubs/execution
+```
+
+Implemented in `OrchestAI.Api.Hubs.ExecutionHub`.
+
+### Client Group Names
+
+Each execution has its own SignalR group:
+
+```
+execution:{executionId}
+```
+
+### Hub Methods (Client ? Server)
+
+| Method | Parameters | Description |
+|--------|-----------|-------------|
+| `JoinExecution` | `executionId: string` | Subscribe to events for this execution |
+| `LeaveExecution` | `executionId: string` | Unsubscribe from events for this execution |
+
+### Server-Sent Events (Server ? Client)
+
+| Event | Payload | Trigger |
+|-------|---------|---------|
+| `NodeStarted` | `{ executionId, nodeId, nodeType }` | Before a node begins executing |
+| `NodeCompleted` | `{ executionId, nodeId, nodeType }` | After a node succeeds |
+| `NodeFailed` | `{ executionId, nodeId, nodeType, error }` | After retries are exhausted and node fails |
+| `ExecutionCompleted` | `{ executionId, status }` | When the entire execution finishes (Completed or Failed) |
+
+### IExecutionNotifier
+
+Defined in `OrchestAI.Contracts.Notifications.IExecutionNotifier`. The engine injects it and calls it at each lifecycle point during `RunAsync` and `ResumeAsync`.
+
+| Environment | Implementation |
+|------------|---------------|
+| `CONNECTION_STRING` set | `SignalRExecutionNotifier` (in `OrchestAI.Api`) |
+| No connection string | `StubExecutionNotifier` (no-op, in `OrchestAI.Infrastructure`) |
+
+### Frontend Usage
+
+```typescript
+import { useExecutionStream } from '@/hooks/useExecutionStream';
+
+const { events } = useExecutionStream(executionId);
+// events: ExecutionEvent[] — each has { type, nodeId?, nodeType?, error?, status?, timestamp }
+```
+
+The hook connects to `/hubs/execution`, calls `JoinExecution`, and accumulates events in state. On unmount it calls `LeaveExecution` and stops the connection.

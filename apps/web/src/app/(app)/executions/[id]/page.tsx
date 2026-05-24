@@ -3,7 +3,11 @@ import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { statusColor, formatDate } from '@/lib/utils';
+import { useExecutionStream } from '@/hooks/useExecutionStream';
 
+/**
+ * ExecutionDetailPage - shows execution metadata, node timeline, and a live SignalR event log.
+ */
 export default function ExecutionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: exec } = useQuery({
@@ -16,6 +20,8 @@ export default function ExecutionDetailPage() {
     queryFn: () => api.executions.timeline(id),
     refetchInterval: 3000,
   });
+
+  const { events } = useExecutionStream(id ?? '');
 
   if (!exec) return (
     <div className="p-8 space-y-4">
@@ -30,14 +36,14 @@ export default function ExecutionDetailPage() {
           <h2 className="text-2xl font-bold">Execution Timeline</h2>
           <p className="font-mono text-sm text-gray-400 mt-1">{exec.id}</p>
         </div>
-        <span className={`text-sm px-3 py-1.5 rounded-full font-semibold ${statusColor(exec.status)}`}>{exec.status}</span>
+        <span className={\	ext-sm px-3 py-1.5 rounded-full font-semibold \\}>{exec.status}</span>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: 'Started', value: formatDate(exec.startedAt) },
           { label: 'Completed', value: formatDate(exec.completedAt) },
-          { label: 'Correlation ID', value: exec.correlationId?.slice(0, 16) + '…' },
+          { label: 'Correlation ID', value: exec.correlationId?.slice(0, 16) + '...' },
         ].map(({ label, value }) => (
           <div key={label} className="bg-white border rounded-xl p-4">
             <p className="text-xs text-gray-400">{label}</p>
@@ -59,7 +65,7 @@ export default function ExecutionDetailPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-medium text-sm">{n.nodeId}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${statusColor(n.status)}`}>{n.status}</span>
+                  <span className={\	ext-xs px-2 py-0.5 rounded-full font-medium shrink-0 \\}>{n.status}</span>
                 </div>
                 <p className="text-xs text-gray-400 font-mono mt-0.5">{n.nodeType}</p>
                 <div className="flex gap-4 mt-1 text-xs text-gray-400">
@@ -72,8 +78,31 @@ export default function ExecutionDetailPage() {
             </div>
           ))}
           {!timeline?.nodes.length && (
-            <p className="text-sm text-gray-400 text-center py-6">No node executions yet — refreshing every 3s…</p>
+            <p className="text-sm text-gray-400 text-center py-6">No node executions yet - refreshing every 3s...</p>
           )}
+        </div>
+      </div>
+
+      <div className="bg-white border rounded-xl">
+        <div className="p-5 border-b flex items-center justify-between">
+          <h3 className="font-semibold">Live Event Log</h3>
+          <span className="text-xs text-gray-400">{events.length} event{events.length !== 1 ? 's' : ''}</span>
+        </div>
+        <div className="p-4 space-y-2 font-mono text-xs max-h-64 overflow-y-auto">
+          {events.length === 0 && (
+            <p className="text-gray-400 text-center py-4">Waiting for live events...</p>
+          )}
+          {events.map((evt, i) => (
+            <div key={i} className="flex items-start gap-3">
+              <span className="text-gray-400 shrink-0">{new Date(evt.timestamp).toLocaleTimeString()}</span>
+              <span className={\shrink-0 font-semibold \\}>{evt.type}</span>
+              <span className="text-gray-600 truncate">
+                {evt.nodeType && <span>{evt.nodeType}</span>}
+                {evt.error && <span className="text-red-500"> - {evt.error}</span>}
+                {evt.status && <span> - {evt.status}</span>}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

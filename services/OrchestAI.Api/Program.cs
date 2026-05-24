@@ -4,9 +4,14 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using OrchestAI.AI.Extensions;
+using OrchestAI.Api.Hubs;
+using OrchestAI.Api.Notifications;
+using OrchestAI.Application.Abstractions;
+using OrchestAI.Contracts.Notifications;
 using OrchestAI.Application.Extensions;
 using OrchestAI.Engine.Extensions;
 using OrchestAI.Infrastructure.Extensions;
+using OrchestAI.Infrastructure.Notifications;
 using OrchestAI.Nodes;
 using OrchestAI.Observability;
 
@@ -18,6 +23,15 @@ builder.Services.AddOrchestAIAI(builder.Configuration);
 builder.Services.AddOrchestAIEngine();
 builder.Services.AddOrchestAINodes();
 //builder.Services.AddOrchestAIObservability();
+
+builder.Services.AddSignalR();
+
+// Override IExecutionNotifier with SignalR when CONNECTION_STRING is set
+// (Infrastructure registers StubExecutionNotifier as the default; last registration wins)
+var _notifierCs = builder.Configuration.GetConnectionString("Default")
+    ?? Environment.GetEnvironmentVariable("CONNECTION_STRING");
+if (!string.IsNullOrWhiteSpace(_notifierCs))
+    builder.Services.AddScoped<IExecutionNotifier, SignalRExecutionNotifier>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -71,7 +85,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
-builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+// Allow any origin with credentials for SignalR WebSocket connections
+builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
+    p.SetIsOriginAllowed(_ => true).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 
 var app = builder.Build();
 app.UseCorrelationId();
@@ -90,6 +106,7 @@ app.UseSwaggerUI(c =>
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<ExecutionHub>("/hubs/execution");
 
 // Auto-apply EF Core migrations and seed dev data on startup when PostgreSQL is configured
 using (var scope = app.Services.CreateScope())

@@ -8,6 +8,7 @@
   <ItemGroup>
     <ProjectReference Include="..\OrchestAI.Domain\OrchestAI.Domain.csproj" />
     <ProjectReference Include="..\OrchestAI.SDK\OrchestAI.SDK.csproj" />
+    <ProjectReference Include="..\OrchestAI.Contracts\OrchestAI.Contracts.csproj" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.5" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.5" />
   </ItemGroup>

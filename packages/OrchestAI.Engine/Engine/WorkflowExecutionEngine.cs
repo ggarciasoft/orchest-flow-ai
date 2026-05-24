@@ -1,4 +1,5 @@
 using System.Text.Json;
+using OrchestAI.Contracts.Notifications;
 using OrchestAI.Domain.Entities;
 using OrchestAI.Domain.ValueObjects;
 using OrchestAI.Engine.Conditions;
@@ -20,15 +21,17 @@ public sealed class WorkflowExecutionEngine : IWorkflowEngine
 {
     private readonly IServiceProvider _services;
     private readonly INodeRegistry _registry;
+    private readonly IExecutionNotifier _notifier;
     private readonly WorkflowValidator _validator;
     private readonly ExpressionEvaluator _evaluator;
     private readonly ILogger<WorkflowExecutionEngine> _logger;
     private static readonly JsonSerializerOptions _jsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public WorkflowExecutionEngine(IServiceProvider services, INodeRegistry registry, ILogger<WorkflowExecutionEngine> logger)
+    public WorkflowExecutionEngine(IServiceProvider services, INodeRegistry registry, IExecutionNotifier notifier, ILogger<WorkflowExecutionEngine> logger)
     {
         _services = services;
         _registry = registry;
+        _notifier = notifier;
         _validator = new WorkflowValidator();
         _evaluator = new ExpressionEvaluator();
         _logger = logger;
@@ -96,6 +99,8 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
 
             var ctx = BuildContext(executionId, execution, nodeInputs, config, nodeOutputs, inputs, step, scope.ServiceProvider, ct);
 
+            await _notifier.NotifyNodeStarted(executionId, nodeExec.Id, current.Type, ct);
+
             NodeExecutionResult result;
             try { result = await node.ExecuteAsync(ctx, ct); }
             catch (Exception ex)
@@ -141,9 +146,11 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
                 case SDK.Models.NodeExecutionStatus.Failed:
                     nodeExec.Fail(result.ErrorMessage ?? "error");
                     await execRepo.UpdateNodeExecutionAsync(nodeExec, ct);
+                    await _notifier.NotifyNodeFailed(executionId, nodeExec.Id, current.Type, result.ErrorMessage ?? "error", ct);
                     // Mark execution as failed — retries have already been exhausted by the while loop above
                     execution.Fail(result.ErrorMessage ?? "error");
                     await execRepo.UpdateExecutionAsync(execution, ct);
+                    await _notifier.NotifyExecutionCompleted(executionId, "Failed", ct);
                     return;
 
                 case SDK.Models.NodeExecutionStatus.Skipped:
@@ -154,6 +161,7 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
                 default:
                     nodeExec.Succeed(JsonSerializer.Serialize(result.Outputs));
                     await execRepo.UpdateNodeExecutionAsync(nodeExec, ct);
+                    await _notifier.NotifyNodeCompleted(executionId, nodeExec.Id, current.Type, ct);
                     nodeOutputs[current.Id] = result.Outputs;
                     break;
             }
@@ -162,6 +170,7 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
             {
                 execution.Complete(JsonSerializer.Serialize(nodeOutputs));
                 await execRepo.UpdateExecutionAsync(execution, ct);
+                await _notifier.NotifyExecutionCompleted(executionId, "Completed", ct);
                 _logger.LogInformation("Execution {ExecutionId} completed", executionId);
                 return;
             }
@@ -171,6 +180,7 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
 
         execution.Complete(null);
         await execRepo.UpdateExecutionAsync(execution, ct);
+        await _notifier.NotifyExecutionCompleted(executionId, "Completed", ct);
     }
 
     /// <summary>

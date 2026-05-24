@@ -2,11 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OrchestAI.Application.Abstractions;
+using OrchestAI.Contracts.Notifications;
 using OrchestAI.Infrastructure.Auth;
 using OrchestAI.Infrastructure.Persistence;
 using OrchestAI.Infrastructure.Queue;
 using OrchestAI.Infrastructure.Repositories;
 using OrchestAI.Infrastructure.Storage;
+using OrchestAI.Infrastructure.Notifications;
 using StackExchange.Redis;
 
 namespace OrchestAI.Infrastructure.Extensions;
@@ -41,6 +43,9 @@ public static class InfrastructureServiceExtensions
 
         services.AddScoped<IDocumentStorage, LocalFileDocumentStorage>();
         services.AddSingleton<JwtTokenService>();
+
+        // Default to stub notifier; API layer will override with SignalR when SignalR is configured
+        services.AddScoped<IExecutionNotifier, StubExecutionNotifier>();
 
         var connectionString = configuration.GetConnectionString("Default")
             ?? Environment.GetEnvironmentVariable("CONNECTION_STRING");

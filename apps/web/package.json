@@ -10,6 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@microsoft/signalr": "^10.0.0",
     "@tanstack/react-query": "^5.100.13",
     "@xyflow/react": "^12.10.2",
     "class-variance-authority": "^0.7.1",

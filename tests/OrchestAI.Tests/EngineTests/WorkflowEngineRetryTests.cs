@@ -91,7 +91,8 @@ public sealed class WorkflowEngineRetryTests
         var sp = services.BuildServiceProvider();
 
         var logger = NullLogger<WorkflowExecutionEngine>.Instance;
-        var engine = new WorkflowExecutionEngine(sp, registryMock.Object, logger);
+        var stubNotifier = new OrchestAI.Infrastructure.Notifications.StubExecutionNotifier();
+        var engine = new WorkflowExecutionEngine(sp, registryMock.Object, stubNotifier, logger);
         return (engine, repoMock, nodeMock);
     }
 
