@@ -1,7 +1,7 @@
 # OrchestFlowAI — Known Gaps & Work Backlog
 
-> Created: 2026-05-23  
-> Last updated: 2026-05-25
+> Created: 2026-05-23
+> Last updated: 2026-05-26
 
 ---
 
@@ -20,44 +20,73 @@
 | HTTP node — only one auth mode | 5 auth types: `none`, `bearer`, `basic`, `api-key`, `oauth2-client-credentials` |
 | No reusable node config system | Node Config Presets — full CRUD backend + frontend `/settings/presets` |
 | No Role-Based Access Control (RBAC) | Three roles (Viewer/Editor/Admin) enforced via JWT claims and `[Authorize(Policy=...)]` on all controller actions |
-| No Workflow Trigger Types | `TriggerType` enum (Manual/Webhook/Cron) added to domain; `POST /api/webhooks/{id}` endpoint; `CronSchedulerService` background service using Cronos |
+| No Workflow Trigger Types | `TriggerType` enum (Manual/Webhook/Cron); `POST /api/webhooks/{id}`; `CronSchedulerService` using Cronos |
+| Workflow Execution Queue is In-Memory | `PostgresExecutionQueue` backed by DB table; SELECT FOR UPDATE SKIP LOCKED; falls back to stub |
+| No Execution Retry / Backoff | `RetryPolicy` value object on `Workflow`; engine retries with exponential backoff |
+| No Real-Time Execution Log Streaming | SignalR hub `ExecutionHub`; `IExecutionNotifier` at node lifecycle points; `useExecutionStream` hook |
+| Tenant Onboarding Flow Missing | `/onboarding` 3-step UI; invite flow; `TenantInvite` entity; `/invite/[token]` page |
+| No public landing page | `/` landing page with hero, features, CTA |
+| No site footer | `PublicFooter` component on all public pages |
+| No cookie consent banner | `CookieBanner` with `localStorage` persistence |
+| No Terms / Privacy pages | `/terms` and `/privacy` static pages |
+| No Feedback page | `/feedback` page with form (backend stub) |
+| No public documentation page | `/docs` section rendering existing markdown files |
+| Expired JWT token not handled | `isTokenExpired()` in `auth.ts`; `apiFetch` redirects on 401 or pre-flight expiry |
+| No Gmail integration node | `integrations.gmail.read` node — OAuth2 refresh token flow, structured email output |
+| No ForEach / loop node | `logic.foreach` fan-out node — expands JSON array into `item_0..N` + `count` + `firstItem` |
+| Gmail credentials stored in workflow config | Gmail OAuth2 credential vault: `GmailCredential` entity, `IGmailCredentialRepository`, `/api/gmail/auth/start` → callback → DB store |
+| Credential Name was a plain text field | Dropdown in designer populated from `/api/gmail/credentials` + "Connect Gmail" link |
+| AI node model field was plain text | `OptionsSource: "llm-models"` on all AI node descriptors; `/api/nodes/models` endpoint; dropdown in designer |
+| OpenAI API key only configurable via env var | Settings page: API key (masked), default model, test connection; `PlatformSetting` entity; hot-reload via `OpenAIApiKeyHolder` |
 
 ---
 
-## 🔴 Critical Gaps (Blocking End-to-End Execution)
+## 🔴 Critical / High Priority
 
-### 1. ~~Workflow Execution Queue is In-Memory~~ ✅ RESOLVED
-- **Problem:** `InMemoryExecutionQueue` uses .NET Channels. Doesn't survive restarts, no horizontal scaling.
-- **Resolution:** Implemented `PostgresExecutionQueue` backed by the `ExecutionQueue` table in PostgreSQL. Uses SELECT FOR UPDATE SKIP LOCKED for atomic multi-worker dequeue. Registered as `IPersistentExecutionQueue`. Falls back to `StubExecutionQueue` (in-memory, `ConcurrentQueue`) when no `CONNECTION_STRING` is set.
+### 1. Plain-text secrets in workflow config JSON
+- **Problem:** Node config (including API keys pasted into HTTP nodes, refresh tokens, etc.) is stored as plain JSON in `WorkflowVersion.DefinitionJson`. Anyone with DB access can read all secrets.
+- **Proposed fix:** Secret vault — encrypt sensitive fields at rest; reference secrets by name in config rather than embedding values.
+
+### 2. ForEach is fan-out only — no true per-item subgraph loop
+- **Problem:** `logic.foreach` outputs `item_0..item_N` which only works for a fixed number of items wired at design time. Can't loop over 50 emails without 50 wired branches.
+- **Proposed fix:** Engine-level loop support — ForEach drives a subgraph in a repeat-until pattern; downstream nodes execute once per item.
 
 ---
 
-## 🟡 Important Gaps (Partial Functionality)
+## 🟡 Important Gaps
 
-### 3. ~~No Execution Retry / Backoff~~ ✅ RESOLVED
-- **Problem:** If a node fails (e.g. HTTP 503), the whole execution fails. There's no automatic retry.
-- **Resolution:** Implemented `RetryPolicy` value object on `Workflow` entity. Engine honors `MaxAttempts` with exponential backoff via `GetDelay(attemptNumber)`. Configure via `RetryMaxAttempts`, `RetryBackoffMs`, `RetryBackoffMultiplier` in create/update workflow requests.
+### 3. Workflow versioning UI
+- **Problem:** The designer always saves a new version and activates it. There's no way to browse version history, compare versions, or roll back.
+- **Proposed fix:** Version history panel in designer or workflow detail page.
 
-### 4. ~~No Real-Time Execution Log Streaming~~ ✅ RESOLVED
-- **Problem:** Execution status only shows on polling refresh. No live node-by-node updates.
-- **Resolution:** Implemented SignalR hub (`ExecutionHub` at `/hubs/execution`). Backend engine calls `IExecutionNotifier` at `NodeStarted`, `NodeCompleted`, `NodeFailed`, and `ExecutionCompleted` lifecycle points. Frontend `useExecutionStream` hook connects, joins the execution group, and accumulates events shown in a live panel on the execution detail page. `StubExecutionNotifier` used when no `CONNECTION_STRING` is configured; `SignalRExecutionNotifier` active otherwise.
+### 4. Execution input UI
+- **Problem:** "Run" from the workflow list fires with an empty `{}` input. No way to pass input values to `system.start` outputs at run time.
+- **Proposed fix:** "Run workflow" dialog with dynamic input fields derived from the node config.
 
-### 5. No Role-Based Access Control (RBAC)
-- **Problem:** All authenticated users have full access to all workflows/executions in the tenant. No per-workflow permissions, no "viewer" vs "editor" vs "admin" distinction.
-- **Proposed fix:** Add `Role` field to `User`; guard controller endpoints with role claims.
+### 5. Feedback endpoint not wired
+- **Problem:** `/feedback` page form submits but `POST /api/feedback` is a TODO stub — nothing is stored or sent.
+- **Proposed fix:** Store in DB or forward to email/webhook.
 
-### ~~6. Tenant Onboarding Flow Missing~~ ✅ RESOLVED
-- **Problem:** There's no UI or guided flow for creating a new tenant or inviting team members.
-- **Resolution:** Implemented in `feat: tenant onboarding flow and team invite`.
-  - `POST /api/tenants` — create tenant (AdminOnly)
-  - `GET /api/tenants/{id}` — get tenant info (ViewerOrAbove)
-  - `POST /api/tenants/{id}/invite` — invite user by email (AdminOnly)
-  - `POST /api/tenants/{id}/invite/accept` — accept invite, creates user account
-  - `/onboarding` page — 3-step guided UI
-  - `/invite/[tenantId]` page — accept invite and set password
-  - `TenantInvite` domain entity with expiry and acceptance logic
-  - EF migration `AddTenantInvites`
-  - Full unit test coverage (backend + frontend)
+### 6. Settings page — additional LLM providers
+- **Problem:** Only OpenAI is configurable via UI. Anthropic, Azure OpenAI, and Ollama are not yet supported.
+- **Proposed fix:** Add provider cards to Settings page for each; extend `AIServiceExtensions` with conditional registration.
+
+### 7. Gmail credential connect flow requires knowing client credentials
+- **Problem:** The "Connect Gmail account" prompt in the designer asks for clientId + clientSecret inline. Ideally credentials are pre-registered in Settings.
+- **Proposed fix:** Move Gmail OAuth2 app config (clientId/clientSecret) to Settings page; connect flow just picks an account.
+
+---
+
+## 🟢 Nice to Have
+
+| Item | Notes |
+|---|---|
+| Workflow search / filter on list | Backend search param exists; UI only has basic text filter |
+| Node execution output viewer | Show raw input/output JSON per node in execution timeline |
+| Dark mode | Tailwind dark: classes not yet wired |
+| Webhook node — inbound signature verification | `WebhookOutNode` exists; inbound webhook validation (HMAC) not enforced |
+| Multi-tenant admin panel | No super-admin view across tenants |
+| Export/import workflow definitions | Download/upload workflow JSON |
 
 ---
 
@@ -65,67 +94,28 @@
 
 | Feature | Status |
 |---|---|
-| User login (JWT) | ✅ |
-| Workflow create / list / save | ✅ |
-| Node registry + catalog (19 nodes) | ✅ |
+| User login (JWT) + auto-redirect on expiry | ✅ |
+| Workflow create / list / save / activate | ✅ |
+| Node registry + catalog (23 nodes) | ✅ |
 | Designer drag, save, load, delete | ✅ |
 | Execution engine (node graph walking) | ✅ |
-| Execution enqueue + worker pickup | ✅ in-memory |
+| Execution enqueue + PostgreSQL worker queue | ✅ |
 | Approval inbox + detail page | ✅ |
 | HTTP node — all 5 auth types | ✅ |
 | Node Config Presets (backend + frontend) | ✅ |
 | PostgreSQL + EF Core + migrations | ✅ |
-| Auto-migrate on startup | ✅ |
-| Swagger + JWT auth button | ✅ all envs |
-| Docker Compose split (3 files) | ✅ |
+| SignalR real-time execution streaming | ✅ |
+| RBAC (Viewer / Editor / Admin) | ✅ |
+| Tenant onboarding + invite flow | ✅ |
+| Gmail OAuth2 credential vault | ✅ |
+| Credential Name dropdown in designer | ✅ |
+| LLM model dropdown on all AI nodes | ✅ |
+| OpenAI API key via Settings page (hot-reload) | ✅ |
+| ForEachNode (fan-out) + GmailReadNode | ✅ |
 | Backend unit tests | ✅ **316 / 316** |
 | Frontend unit tests | ✅ **62 / 62** |
 | XML / JSDoc docs on all public APIs | ✅ |
 
 ---
 
-## 🟡 Marketing / Public-Facing
-
-### ~~7. No public landing page~~ ✅ RESOLVED
-- **Problem:** The app has no marketing/home page. Visitors who aren't logged in see nothing meaningful.
-- **Resolution:** Added `/` landing page (outside the `(app)` route group) with hero section, feature highlights, and CTA to sign up or sign in.
-
-### ~~8. No site footer~~ ✅ RESOLVED
-- **Problem:** No footer exists on any page (public or app). Missing legal/nav links.
-- **Resolution:** Added `PublicFooter` component with links to Terms, Privacy, and Feedback. Shown on landing page, terms, privacy, and feedback pages.
-
-### ~~9. No cookie consent banner~~ ✅ RESOLVED
-- **Problem:** No GDPR/cookie consent popup. Required for EU compliance and any analytics use.
-- **Resolution:** Added `CookieBanner` component that appears on first visit, stores consent in `localStorage`, and disappears on accept/decline. Injected in root layout. Links to Privacy Policy.
-
-### ~~10. No Terms of Service / Privacy Policy pages~~ ✅ RESOLVED
-- **Problem:** Footer links to Terms and Privacy have no destination pages.
-- **Resolution:** Added `/terms` and `/privacy` static pages with appropriate placeholder content.
-
-### ~~11. No Feedback page/link~~ ✅ RESOLVED
-- **Problem:** No feedback channel from within the product.
-- **Resolution:** Added `/feedback` page with name, email, and message form. Shows success state on submit. Backend wiring via TODO comment for `POST /api/feedback`.
-
-### 12. ~~No public documentation page~~ ✅ RESOLVED
-- **Problem:** The project has rich docs in `/docs/*.md` but no user-facing documentation site.
-- **Resolution:** Added `/docs` section in the Next.js app rendering existing markdown files as styled pages. Sidebar with categories, `react-markdown` + `remark-gfm` renderer, `@tailwindcss/typography` prose styles.
-
----
-
-## Suggested Priority Order
-
-1. ~~Workflow trigger types~~ ✅
-2. ~~Execution retry / backoff~~ ✅
-3. ~~Real-time execution log streaming~~ ✅
-4. ~~RBAC~~ ✅
-5. ~~Tenant onboarding UI~~ ✅
-6. ~~Replace in-memory queue~~ ✅
-7. **Public landing page** — first impression for new users
-8. **Footer + legal pages** (Terms, Privacy) — compliance baseline
-9. **Cookie consent banner** — GDPR compliance
-10. **Feedback page** — user engagement
-
----
-
 _Update this file as items are resolved._
-
