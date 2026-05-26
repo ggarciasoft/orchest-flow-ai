@@ -26,6 +26,8 @@
    - `test:` — tests only
    - `perf:` — performance improvement
 
+7. **Every commit must be pushed immediately.** Do not accumulate local commits. `git push` after every `git commit`.
+
 7. Commits should be small and focused. Squash on merge if requested by the reviewer.
 
 8. Branch naming:
