@@ -264,3 +264,18 @@ Stores per-tenant runtime-configurable key-value pairs (e.g. LLM API keys, defau
 | UpdatedAt | TIMESTAMPTZ | Last updated |
 
 Unique index: (TenantId, Key).
+
+## Secrets
+
+Stores per-tenant encrypted named values for the Secret Vault.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| Id | UUID | PK |
+| TenantId | UUID | Tenant scope |
+| Name | VARCHAR(200) | Friendly name (e.g. "openai-key") |
+| EncryptedValue | TEXT | AES-256-CBC encrypted; never returned to clients |
+| CreatedAt | TIMESTAMPTZ | Created timestamp |
+| UpdatedAt | TIMESTAMPTZ | Last updated |
+
+Unique index: (TenantId, Name).

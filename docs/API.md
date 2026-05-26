@@ -306,3 +306,12 @@ Set credentialName: "my-gmail" in the node config instead of providing clientId/
 | GET | /api/settings | JWT | Get platform settings (keys masked) |
 | PUT | /api/settings | JWT | Update settings; empty values ignored |
 | POST | /api/settings/test/openai | JWT | Test OpenAI connection |
+
+### Secrets
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | /api/secrets | JWT | List secret names (no values) |
+| POST | /api/secrets | JWT | Create secret |
+| PUT | /api/secrets/{id} | JWT | Update secret |
+| DELETE | /api/secrets/{id} | JWT | Delete secret |

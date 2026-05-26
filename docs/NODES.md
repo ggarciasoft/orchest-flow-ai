@@ -423,3 +423,9 @@ A **preset** is a saved, reusable set of configuration values for a specific nod
 
 Presets are **tenant-scoped** � each tenant has its own isolated library. Presets are not shared across tenants.
 
+
+## Secret References in Node Config
+
+Any string config field in a node can reference a secret from the vault using the {{secret:name}} syntax. The engine resolves these before passing config to the node.
+
+Example: set piKey to {{secret:openai-key}} and the engine will substitute the decrypted value at runtime. Secrets are managed via the Settings page or the /api/secrets endpoints.
