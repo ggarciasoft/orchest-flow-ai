@@ -234,9 +234,9 @@ public sealed class DatabaseExecuteNodeTests
     [Fact]
     public async Task ExecuteAsync_TemplateInParameters_ResolvesInputBeforeProviderCheck()
     {
-        // Template {{responseBody}} in parameters JSON should be resolved from NodeInputs.
-        // Proves the inputs path is reached by failing on DB_UNKNOWN_PROVIDER (not DB_MISSING_CONNECTION),
-        // since connectionString is supplied via input.
+        // Template {{responseBody}} in parameters resolves from upstream NodeOutputs (HTTP node scenario).
+        // Even without a direct edge, BuildLookup merges all NodeOutputs so the value is found.
+        // Fails on DB_UNKNOWN_PROVIDER (not DB_MISSING_CONNECTION) — proves resolution happened.
         var ctx = new TestContextBuilder()
             .WithConfig(new()
             {
@@ -244,10 +244,13 @@ public sealed class DatabaseExecuteNodeTests
                 ["statement"] = "INSERT INTO test_table (data_value) VALUES (@data_value)",
                 ["parameters"] = "{\"data_value\": \"{{responseBody}}\"}"
             })
-            .WithInputs(new() { ["connectionString"] = "fake", ["responseBody"] = "hello world" })
+            .WithInputs(new() { ["connectionString"] = "fake" })
+            .WithNodeOutputs(new()
+            {
+                ["http-node-1"] = new Dictionary<string, object?> { ["responseBody"] = "hello world", ["statusCode"] = 200 }
+            })
             .Build();
 
-        // Must fail on unknown provider, NOT on missing connection — proves inputs were accepted
         var act = () => _node.ExecuteAsync(ctx, CancellationToken.None);
         await act.Should().ThrowAsync<NodeExecutionException>()
             .Where(e => e.Code == "DB_UNKNOWN_PROVIDER");

@@ -46,7 +46,7 @@ public sealed class DatabaseQueryNode : IWorkflowNode
 
         // Bind named parameters from JSON object, e.g. {"userId": "abc", "status": "active"}
         if (!string.IsNullOrWhiteSpace(parametersJson))
-            BindParameters(command, parametersJson, ctx.NodeInputs);
+            BindParameters(command, parametersJson, BuildLookup(ctx));
 
         try
         {
@@ -75,6 +75,21 @@ public sealed class DatabaseQueryNode : IWorkflowNode
             "mysql" or "mariadb" => new MySqlConnector.MySqlConnection(connectionString),
             _ => throw new NodeExecutionException("DB_UNKNOWN_PROVIDER", $"Unknown provider '{provider}'. Use postgresql, sqlserver, or mysql.", retryable: false)
         };
+
+    /// <summary>
+    /// Builds a flat lookup of all values available to this node:
+    /// workflow inputs, directly-wired NodeInputs, and all upstream NodeOutputs.
+    /// This ensures {{key}} templates resolve regardless of direct edge wiring.
+    /// </summary>
+    private static Dictionary<string, object?> BuildLookup(WorkflowExecutionContext ctx)
+    {
+        var lookup = new Dictionary<string, object?>(ctx.WorkflowInputs);
+        foreach (var kv in ctx.NodeInputs) lookup[kv.Key] = kv.Value;
+        foreach (var nodeOutputs in ctx.NodeOutputs.Values)
+            foreach (var kv in nodeOutputs)
+                lookup.TryAdd(kv.Key, kv.Value);
+        return lookup;
+    }
 
     private static void BindParameters(DbCommand command, string parametersJson, IReadOnlyDictionary<string, object?> inputs)
     {

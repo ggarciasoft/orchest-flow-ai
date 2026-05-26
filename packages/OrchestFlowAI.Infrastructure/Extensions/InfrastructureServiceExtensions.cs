@@ -26,7 +26,7 @@ public static class InfrastructureServiceExtensions
     public static IServiceCollection AddOrchestFlowAIInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         // Queue — Redis when REDIS_URL is set, otherwise in-memory
-        var redisUrl = Environment.GetEnvironmentVariable("REDIS_URL");
+        var redisUrl = configuration["Redis:Url"] ?? Environment.GetEnvironmentVariable("REDIS_URL");
         if (!string.IsNullOrEmpty(redisUrl))
         {
             services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisUrl));
