@@ -6,10 +6,12 @@ using OrchestFlowAI.SDK.Models;
 namespace OrchestFlowAI.Nodes.Logic;
 
 /// <summary>
-/// Fan-out node that expands a JSON array into indexed outputs (item_0..N), plus count, firstItem, and items.
-/// Because the engine does not support sub-graph looping, all items are expanded inline.
-/// Downstream nodes that need per-item processing should be wired to individual item_N outputs
-/// or consume the full <c>items</c> JSON array.
+/// Iterates a JSON array. Supports two modes:
+/// <list type="bullet">
+/// <item><b>Fan-out mode (default)</b>: expands the array into indexed outputs (item_0..N) for static wiring.</item>
+/// <item><b>Loop mode</b> (<c>loopMode=true</c>): emits <c>_foreach_items</c> so the engine executes downstream
+/// nodes once per item and collects results. Wire a <c>logic.foreach.end</c> node at the end of the loop body.</item>
+/// </list>
 /// </summary>
 public sealed class ForEachNode : IWorkflowNode
 {
@@ -42,6 +44,15 @@ public sealed class ForEachNode : IWorkflowNode
         outputs["count"] = capped.Count;
         outputs["items"] = JsonSerializer.Serialize(capped);
         outputs["firstItem"] = capped.Count > 0 ? capped[0].GetRawText() : null;
+
+        // Loop mode: signal the engine to iterate the loop body per item
+        var loopMode = ctx.GetConfig<bool?>("loopMode") ?? false;
+        if (loopMode)
+        {
+            outputs["_foreach_items"] = JsonSerializer.Serialize(capped);
+            outputs["_foreach_loop_mode"] = (object?)true;
+            // Still emit fan-out for convenience / backward compat
+        }
 
         for (var i = 0; i < capped.Count; i++)
         {
@@ -118,12 +129,15 @@ public sealed class ForEachNodeDescriptor : IWorkflowNodeDescriptor
         new NodeOutputDefinition("firstItem", "First Item", "JSON string of the first item (convenience output).", DataType.String),
         new NodeOutputDefinition("item_0", "Item 0", "JSON string of the first item.", DataType.String),
         new NodeOutputDefinition("item_1", "Item 1", "JSON string of the second item.", DataType.String),
-        new NodeOutputDefinition("item_2", "Item 2", "JSON string of the third item.", DataType.String)
+        new NodeOutputDefinition("item_2", "Item 2", "JSON string of the third item.", DataType.String),
+        new NodeOutputDefinition("_foreach_items", "ForEach Items (loop mode)", "JSON array emitted when loopMode=true; consumed by the engine to run per-item subgraph iteration.", DataType.String),
+        new NodeOutputDefinition("results", "Results (loop mode)", "Collected per-item outputs after the engine finishes looping (replaces _foreach_items in nodeOutputs).", DataType.Json)
     };
     /// <inheritdoc />
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
         new NodeConfigDefinition("itemVariable", "Item Variable", "Name prefix for per-item outputs (default: item).", DataType.String, Required: false, DefaultValue: "item"),
-        new NodeConfigDefinition("maxItems", "Max Items", "Maximum number of items to expand (default: 50, max: 200).", DataType.Number, Required: false, DefaultValue: 50)
+        new NodeConfigDefinition("maxItems", "Max Items", "Maximum number of items to expand (default: 50, max: 200).", DataType.Number, Required: false, DefaultValue: 50),
+        new NodeConfigDefinition("loopMode", "Loop Mode", "When true, the engine executes downstream nodes once per item instead of fan-out. Requires a logic.foreach.end node at the end of the loop body.", DataType.Boolean, Required: false, DefaultValue: false)
     };
 }

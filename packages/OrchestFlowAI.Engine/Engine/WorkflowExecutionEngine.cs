@@ -93,6 +93,11 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
             var nodeInputs = ResolveInputs(current.Id, def.Edges, nodeOutputs, inputs);
             var config = current.Config.ToDictionary(kv => kv.Key, kv => (object?)kv.Value);
 
+            // Resolve {{secret:name}} placeholders before passing config to the node
+            var secretService = scope.ServiceProvider.GetService<ISecretResolver>();
+            if (secretService != null)
+                config = await secretService.ResolveConfigAsync(config, execution.TenantId, ct);
+
             var nodeExec = NodeExecution.Create(executionId, current.Id, current.Type, step);
             nodeExec.Start(JsonSerializer.Serialize(nodeInputs));
             await execRepo.CreateNodeExecutionAsync(nodeExec, ct);
@@ -175,6 +180,95 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
                 return;
             }
 
+            // ForEach loop mode: if this node emitted _foreach_items, run the body subgraph once per item
+            if (current.Type == "logic.foreach"
+                && nodeOutputs.TryGetValue(current.Id, out var feOutputs)
+                && feOutputs.TryGetValue("_foreach_items", out var feItemsRaw)
+                && feItemsRaw != null)
+            {
+                var itemsJson = feItemsRaw.ToString()!;
+                var feItems = JsonSerializer.Deserialize<List<JsonElement>>(itemsJson, _jsonOpts) ?? new();
+                var loopResults = new List<Dictionary<string, object?>>(); 
+
+                // Find body start (first node after ForEach)
+                var bodyStart = ResolveNextNode(current.Id, def.Edges, nodeMap, result.Outputs, nodeOutputs);
+
+                foreach (var (item, idx) in feItems.Select((x, i) => (x, i)))
+                {
+                    // Clone nodeOutputs, inject current item as ForEach outputs
+                    var iterOutputs = new Dictionary<string, IReadOnlyDictionary<string, object?>>(nodeOutputs);
+                    iterOutputs[current.Id] = new Dictionary<string, object?>
+                    {
+                        ["item"] = item.GetRawText(),
+                        ["index"] = (object?)idx,
+                        ["total"] = feItems.Count
+                    };
+
+                    var iterNode = bodyStart;
+                    Dictionary<string, object?>? lastIterOutputs = null;
+                    while (iterNode != null && iterNode.Type != "logic.foreach.end")
+                    {
+                        var iterNodeImpl = _registry.GetNode(iterNode.Type);
+                        if (iterNodeImpl == null) break;
+
+                        var iterInputs = ResolveInputs(iterNode.Id, def.Edges, iterOutputs, inputs);
+                        var iterConfig = iterNode.Config.ToDictionary(kv => kv.Key, kv => (object?)kv.Value);
+                        var iterCtx = BuildContext(executionId, execution, iterInputs, iterConfig, iterOutputs, inputs, ++step, scope.ServiceProvider, ct);
+
+                        NodeExecutionResult iterResult;
+                        try { iterResult = await iterNodeImpl.ExecuteAsync(iterCtx, ct); }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "ForEach body node {NodeType} threw on item {Idx}", iterNode.Type, idx);
+                            break;
+                        }
+
+                        if (iterResult.Status == SDK.Models.NodeExecutionStatus.Succeeded)
+                        {
+                            iterOutputs[iterNode.Id] = iterResult.Outputs;
+                            lastIterOutputs = new Dictionary<string, object?>(iterResult.Outputs);
+                        }
+                        else break;
+
+                        iterNode = ResolveNextNode(iterNode.Id, def.Edges, nodeMap,
+                            iterResult.Outputs.ToDictionary(kv => kv.Key, kv => kv.Value), iterOutputs);
+                    }
+
+                    // Collect outputs from foreach.end node (passthrough) or last body node
+                    if (iterNode != null && iterNode.Type == "logic.foreach.end")
+                    {
+                        var endInputs = ResolveInputs(iterNode.Id, def.Edges, iterOutputs, inputs);
+                        var endResult = new Dictionary<string, object?>(endInputs);
+                        loopResults.Add(endResult);
+                    }
+                    else if (lastIterOutputs != null)
+                    {
+                        loopResults.Add(lastIterOutputs);
+                    }
+                }
+
+                // Replace ForEach outputs with collected results
+                nodeOutputs[current.Id] = new Dictionary<string, object?>
+                {
+                    ["results"] = JsonSerializer.Serialize(loopResults),
+                    ["count"] = feItems.Count
+                };
+
+                // Advance past the foreach.end node
+                var scanNode = ResolveNextNode(current.Id, def.Edges, nodeMap, result.Outputs, nodeOutputs);
+                while (scanNode != null && scanNode.Type != "logic.foreach.end")
+                    scanNode = ResolveNextNode(scanNode.Id, def.Edges, nodeMap,
+                        nodeOutputs.TryGetValue(scanNode.Id, out var sOut)
+                            ? sOut.ToDictionary(kv => kv.Key, kv => kv.Value)
+                            : new Dictionary<string, object?>(), nodeOutputs);
+
+                current = scanNode != null
+                    ? ResolveNextNode(scanNode.Id, def.Edges, nodeMap,
+                        nodeOutputs[current.Id].ToDictionary(kv => kv.Key, kv => kv.Value), nodeOutputs)
+                    : null;
+                continue; // skip normal ResolveNextNode
+            }
+
             current = ResolveNextNode(current.Id, def.Edges, nodeMap, result.Outputs, nodeOutputs);
         }
 
@@ -231,6 +325,11 @@ public async Task ResumeAsync(Guid executionId, ResumeSignal signal, Cancellatio
 
             var nodeInputs = ResolveInputs(current.Id, def.Edges, nodeOutputs, inputs);
             var config = current.Config.ToDictionary(kv => kv.Key, kv => (object?)kv.Value);
+
+            // Resolve {{secret:name}} placeholders before passing config to the node
+            var secretService2 = scope.ServiceProvider.GetService<ISecretResolver>();
+            if (secretService2 != null)
+                config = await secretService2.ResolveConfigAsync(config, execution.TenantId, ct);
 
             var ne2 = NodeExecution.Create(executionId, current.Id, current.Type, step);
             ne2.Start(JsonSerializer.Serialize(nodeInputs));

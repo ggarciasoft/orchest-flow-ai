@@ -238,6 +238,19 @@ export const api = {
     testOpenAI: () =>
       apiFetch<{ success: boolean; message: string }>('/api/settings/test/openai', { method: 'POST' }),
   },
+  /** Secret vault endpoints — encrypted named values for use in node config as {{secret:name}}. */
+  secrets: {
+    /** Lists secrets for the tenant (names only, never values). */
+    list: () => apiFetch<SecretSummary[]>('/api/secrets'),
+    /** Creates a new secret. */
+    create: (name: string, value: string) =>
+      apiFetch<{ id: string; name: string; createdAt: string }>('/api/secrets', { method: 'POST', body: JSON.stringify({ name, value }) }),
+    /** Updates a secret's value or name. */
+    update: (id: string, data: { name?: string; value?: string }) =>
+      apiFetch<void>(`/api/secrets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    /** Deletes a secret. */
+    delete: (id: string) => apiFetch<void>(`/api/secrets/${id}`, { method: 'DELETE' }),
+  },
 };
 
 // ---- Type Definitions ----
@@ -282,5 +295,8 @@ export interface TenantResponse { id: string; name: string; createdAt: string; }
 export interface TenantInviteResponse { id: string; tenantId: string; email: string; role: string; token: string; expiresAt: string; }
 
 /** Summary of a saved Gmail credential (no secrets). */
+/** Summary of a saved secret (name only, never the value). */
+export interface SecretSummary { id: string; name: string; createdAt: string; updatedAt: string; }
+
 export interface GmailCredentialSummary { id: string; name: string; email: string | null; createdAt: string; updatedAt: string; }
 

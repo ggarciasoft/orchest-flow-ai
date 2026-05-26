@@ -290,6 +290,34 @@ public sealed class EfGmailCredentialRepository : IGmailCredentialRepository
     }
 }
 
+/// <summary>EF Core implementation of <see cref="ISecretRepository"/>.</summary>
+public sealed class EfSecretRepository : ISecretRepository
+{
+    private readonly OrchestFlowAIDbContext _db;
+    public EfSecretRepository(OrchestFlowAIDbContext db) => _db = db;
+
+    public async Task<IReadOnlyList<Secret>> ListAsync(Guid tenantId, CancellationToken ct = default)
+        => await _db.Secrets.AsNoTracking().Where(s => s.TenantId == tenantId).OrderBy(s => s.Name).ToListAsync(ct);
+
+    public Task<Secret?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default)
+        => _db.Secrets.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id && s.TenantId == tenantId, ct);
+
+    public Task<Secret?> GetByNameAsync(string name, Guid tenantId, CancellationToken ct = default)
+        => _db.Secrets.AsNoTracking().FirstOrDefaultAsync(s => s.Name == name && s.TenantId == tenantId, ct);
+
+    public async Task<Secret> CreateAsync(Secret secret, CancellationToken ct = default)
+    { _db.Secrets.Add(secret); await _db.SaveChangesAsync(ct); return secret; }
+
+    public async Task UpdateAsync(Secret secret, CancellationToken ct = default)
+    { _db.Secrets.Update(secret); await _db.SaveChangesAsync(ct); }
+
+    public async Task DeleteAsync(Guid id, Guid tenantId, CancellationToken ct = default)
+    {
+        var s = await _db.Secrets.FirstOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId, ct);
+        if (s != null) { _db.Secrets.Remove(s); await _db.SaveChangesAsync(ct); }
+    }
+}
+
 /// <summary>EF Core implementation of <see cref="IPlatformSettingsRepository"/>.</summary>
 public sealed class EfPlatformSettingsRepository : IPlatformSettingsRepository
 {

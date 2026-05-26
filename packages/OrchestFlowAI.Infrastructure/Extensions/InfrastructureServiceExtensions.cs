@@ -9,6 +9,7 @@ using OrchestFlowAI.Infrastructure.Queue;
 using OrchestFlowAI.Infrastructure.Repositories;
 using OrchestFlowAI.Infrastructure.Storage;
 using OrchestFlowAI.Infrastructure.Notifications;
+using OrchestFlowAI.Infrastructure.Security;
 using OrchestFlowAI.Infrastructure.Settings;
 using StackExchange.Redis;
 
@@ -72,7 +73,7 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<IGmailCredentialRepository, EfGmailCredentialRepository>();
             services.AddScoped<OrchestFlowAI.Engine.IEngineExecutionRepository, EfEngineExecutionRepository>();
             services.AddScoped<IPlatformSettingsRepository, EfPlatformSettingsRepository>();
-            // Persistent queue backed by PostgreSQL
+            services.AddScoped<ISecretRepository, EfSecretRepository>();
             services.AddScoped<IPersistentExecutionQueue, PostgresExecutionQueue>();
         }
         else
@@ -91,12 +92,21 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<IGmailCredentialRepository, StubGmailCredentialRepository>();
             services.AddScoped<OrchestFlowAI.Engine.IEngineExecutionRepository, StubEngineExecutionRepository>();
             services.AddScoped<IPlatformSettingsRepository, StubPlatformSettingsRepository>();
-            // In-memory stub persistent queue — no DB required
-            services.AddSingleton<IPersistentExecutionQueue, StubExecutionQueue>();
+            services.AddScoped<ISecretRepository, StubSecretRepository>();
+            // In-memory stub persistent queue
         }
 
         // Platform settings service — singleton with in-memory cache, backed by DB
         services.AddSingleton<IPlatformSettingsService, PlatformSettingsService>();
+
+        // Encryption + secret resolution
+        var masterKey = configuration["Encryption:MasterKey"]
+            ?? Environment.GetEnvironmentVariable("ENCRYPTION_MASTER_KEY")
+            ?? "dev-encryption-key-change-in-production";
+        services.AddSingleton<IEncryptionService>(new AesEncryptionService(masterKey));
+        services.AddSingleton<SecretService>();
+        services.AddSingleton<ISecretService>(sp => sp.GetRequiredService<SecretService>());
+        services.AddSingleton<OrchestFlowAI.Engine.ISecretResolver>(sp => sp.GetRequiredService<SecretService>());
 
         return services;
     }

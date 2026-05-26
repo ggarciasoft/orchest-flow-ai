@@ -248,3 +248,26 @@ public sealed class StubPlatformSettingsRepository : IPlatformSettingsRepository
         return Task.CompletedTask;
     }
 }
+
+public sealed class StubSecretRepository : ISecretRepository
+{
+    private readonly List<Secret> _store = new();
+
+    public Task<IReadOnlyList<Secret>> ListAsync(Guid tenantId, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<Secret>>(_store.Where(s => s.TenantId == tenantId).OrderBy(s => s.Name).ToList());
+
+    public Task<Secret?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default)
+        => Task.FromResult(_store.FirstOrDefault(s => s.Id == id && s.TenantId == tenantId));
+
+    public Task<Secret?> GetByNameAsync(string name, Guid tenantId, CancellationToken ct = default)
+        => Task.FromResult(_store.FirstOrDefault(s => s.Name == name && s.TenantId == tenantId));
+
+    public Task<Secret> CreateAsync(Secret secret, CancellationToken ct = default)
+    { _store.Add(secret); return Task.FromResult(secret); }
+
+    public Task UpdateAsync(Secret secret, CancellationToken ct = default)
+    { var i = _store.FindIndex(s => s.Id == secret.Id); if (i >= 0) _store[i] = secret; return Task.CompletedTask; }
+
+    public Task DeleteAsync(Guid id, Guid tenantId, CancellationToken ct = default)
+    { _store.RemoveAll(s => s.Id == id && s.TenantId == tenantId); return Task.CompletedTask; }
+}

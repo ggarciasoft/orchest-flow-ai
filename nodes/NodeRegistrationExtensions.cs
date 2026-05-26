@@ -35,6 +35,7 @@ RegisterNode<TranslationNode, TranslationNodeDescriptor>(services);
 
         // Wire into registry after DI container is built
         RegisterNode<ForEachNode, ForEachNodeDescriptor>(services);
+        RegisterNode<ForEachEndNode, ForEachEndNodeDescriptor>(services);
         RegisterNode<GmailReadNode, GmailReadNodeDescriptor>(services);
         RegisterNode<HttpRequestNode, HttpRequestNodeDescriptor>(services);
         RegisterNode<SlackNotifyNode, SlackNotifyNodeDescriptor>(services);
