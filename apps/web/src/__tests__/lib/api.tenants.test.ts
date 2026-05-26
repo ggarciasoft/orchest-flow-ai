@@ -21,9 +21,11 @@ afterEach(() => {
 
 /** Helper to mock fetch with a JSON response. */
 function mockFetch(body: unknown, status = 200) {
+  const bodyText = JSON.stringify(body);
   global.fetch = jest.fn().mockResolvedValue({
     ok: status >= 200 && status < 300,
     status,
+    text: async () => bodyText,
     json: async () => body,
   } as Response);
 }
@@ -75,6 +77,7 @@ describe('api.tenants', () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: false,
       status: 400,
+      text: async () => JSON.stringify({ detail: 'Name too short' }),
       json: async () => ({ detail: 'Name too short' }),
     } as Response);
 

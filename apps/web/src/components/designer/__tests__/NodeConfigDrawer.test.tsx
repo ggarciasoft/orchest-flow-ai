@@ -78,9 +78,10 @@ describe('NodeConfigDrawer', () => {
     expect(screen.getAllByText(/URL/).length).toBeGreaterThan(0);
   });
 
-  it('shows authentication section for HTTP nodes', () => {
+  it('shows auth type field for HTTP nodes', () => {
     render(<NodeConfigDrawer {...defaultProps} />);
-    expect(screen.getByText('Authentication')).toBeInTheDocument();
+    // Auth Type field comes from the descriptor configuration — no separate heading
+    expect(screen.getByText('Auth Type')).toBeInTheDocument();
   });
 
   it('renders preset selector', async () => {
