@@ -20,6 +20,8 @@ interface Props {
   nodeCatalog: NodeDescriptor[];
   /** Optional existing definition JSON to hydrate the canvas on load. */
   initialDefinitionJson?: string;
+  /** Active version number to display in the toolbar. */
+  activeVersionNumber?: number;
 }
 
 /** Maps node categories to their canvas background colors. */
@@ -39,7 +41,7 @@ interface ContextMenu { x: number; y: number; nodeId: string; }
  * @param nodeCatalog - Available node types from /api/nodes
  * @param initialDefinitionJson - Optional saved definition to restore on mount
  */
-export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson }: Props) {
+export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson, activeVersionNumber }: Props) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -201,7 +203,7 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson 
       <div className="flex-1 flex flex-col min-w-0">
         <div className="flex items-center justify-between px-5 py-3 border-b bg-white shrink-0">
           <div>
-            <h2 className="font-semibold text-gray-900">{workflow.name}</h2>
+            <div className="flex items-center gap-2"><h2 className="font-semibold text-gray-900">{workflow.name}</h2>{activeVersionNumber != null && (<span className="text-xs text-slate-500 border border-slate-200 rounded px-2 py-0.5 bg-slate-50">v{activeVersionNumber}</span>)}</div>
             <p className="text-xs text-gray-400">
               Click a node to configure · Right-click or <kbd className="text-xs bg-gray-100 border rounded px-1">Del</kbd> to delete
               {savedAt && <span className="ml-3 text-green-600">✓ Saved at {savedAt}</span>}
@@ -279,4 +281,5 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson 
     </div>
   );
 }
+
 

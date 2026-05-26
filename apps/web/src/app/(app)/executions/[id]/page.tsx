@@ -39,15 +39,18 @@ export default function ExecutionDetailPage() {
       </Link>
       <PageHeader
         title="Execution Timeline"
-        subtitle={exec.id}
+        subtitle={[exec.workflowName ?? exec.workflowId.slice(0, 12) + '\u2026', exec.versionNumber != null ? `v${exec.versionNumber}` : null].filter(Boolean).join(' \u00b7 ')}
         action={<Badge variant={statusVariant(exec.status)}>{exec.status}</Badge>}
       />
 
       <div className="grid grid-cols-3 gap-4">
         {[
+          { label: 'Workflow', value: exec.workflowName ?? exec.workflowId.slice(0, 16) + '…' },
+          { label: 'Version', value: exec.versionNumber != null ? `v${exec.versionNumber}` : '—' },
           { label: 'Started', value: formatDate(exec.startedAt) },
-          { label: 'Completed', value: formatDate(exec.completedAt) },
-          { label: 'Correlation ID', value: exec.correlationId?.slice(0, 16) + '...' },
+          { label: 'Completed', value: exec.completedAt ? formatDate(exec.completedAt) : '—' },
+          { label: 'Correlation ID', value: exec.correlationId?.slice(0, 16) + '…' },
+          { label: 'Execution ID', value: exec.id.slice(0, 16) + '…' },
         ].map(({ label, value }) => (
           <div key={label} className="bg-white border border-slate-200 rounded-xl p-4">
             <p className="text-xs text-slate-400">{label}</p>

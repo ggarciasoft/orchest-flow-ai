@@ -46,6 +46,7 @@ export default function DesignerPage() {
       workflow={workflow}
       nodeCatalog={catalog.nodes}
       initialDefinitionJson={activeVersion?.definitionJson}
+      activeVersionNumber={workflow.activeVersion ?? activeVersion?.versionNumber}
     />
   );
 }
