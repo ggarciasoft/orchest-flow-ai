@@ -27,13 +27,28 @@ export function clearToken() {
 }
 
 /**
- * Checks whether the user currently has a stored auth token.
- * Does not validate token expiry — use server-side validation for that.
+ * Checks whether the stored JWT token has expired by reading the `exp` claim.
+ * Returns true when there is no token, the token is malformed, or it is past its expiry time.
  *
- * @returns True if a token is present in localStorage, false otherwise
+ * @returns True if the token is absent or expired, false if it is still valid
+ */
+export function isTokenExpired(): boolean {
+  const token = getToken();
+  if (!token) return true;
+  const payload = decodeJwt(token);
+  if (!payload) return true;
+  const exp = payload['exp'];
+  if (typeof exp !== 'number') return false; // no exp claim → treat as non-expiring
+  return Date.now() / 1000 > exp;
+}
+
+/**
+ * Checks whether the user currently has a stored, non-expired auth token.
+ *
+ * @returns True if a valid, unexpired token is present in localStorage, false otherwise
  */
 export function isAuthenticated(): boolean {
-  return !!getToken();
+  return !!getToken() && !isTokenExpired();
 }
 
 /**

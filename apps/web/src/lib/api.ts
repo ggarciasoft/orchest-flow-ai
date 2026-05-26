@@ -1,5 +1,17 @@
+import { isTokenExpired } from './auth';
+
 /** Base URL for all API requests. Configurable via NEXT_PUBLIC_API_BASE_URL env var. */
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:5080';
+
+/**
+ * Clears the stored token and redirects the browser to the login page.
+ * Safe to call on server side (no-op when window is unavailable).
+ */
+function redirectToLogin(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem('OrchestFlowAI_token');
+  window.location.replace('/login');
+}
 
 /**
  * Core HTTP client for all OrchestFlowAI API requests.
@@ -14,6 +26,14 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:5080'
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   // Read token from localStorage — null on server-side rendering
   const token = typeof window !== 'undefined' ? localStorage.getItem('OrchestFlowAI_token') : null;
+
+  // If a token exists but is already expired, redirect immediately without making a request
+  if (typeof window !== 'undefined' && token && isTokenExpired()) {
+    redirectToLogin();
+    // Return a promise that never resolves — the page will redirect before any caller handles it
+    return new Promise<T>(() => {});
+  }
+
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
@@ -23,6 +43,11 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     },
   });
   if (!res.ok) {
+    // 401 Unauthorized — token was rejected by the server; clear it and redirect to login
+    if (res.status === 401) {
+      redirectToLogin();
+      return new Promise<T>(() => {});
+    }
     // Extract structured error message from API response if available
     const err = await res.json().catch(() => ({}));
     throw new Error((err as Record<string, string>).detail ?? (err as Record<string, string>).title ?? `HTTP ${res.status}`);

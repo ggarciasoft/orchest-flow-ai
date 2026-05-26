@@ -3,6 +3,11 @@
  * Uses fetch mocking to verify correct endpoint + payload construction.
  */
 
+// Mock auth so isTokenExpired never triggers a redirect in unit tests
+jest.mock('@/lib/auth', () => ({
+  ...jest.requireActual('@/lib/auth'),
+  isTokenExpired: jest.fn(() => false),
+}));
 // Store original fetch
 const originalFetch = global.fetch;
 
@@ -12,6 +17,9 @@ beforeEach(() => {
     value: { getItem: jest.fn(() => 'mock-token'), setItem: jest.fn(), removeItem: jest.fn() },
     writable: true,
   });
+  // Prevent jsdom navigation errors when redirectToLogin calls window.location.replace
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).location = { replace: jest.fn(), href: '' };
 });
 
 afterEach(() => {
