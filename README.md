@@ -2,8 +2,8 @@
 
 <!-- Status & Build -->
 [![Status](https://img.shields.io/badge/status-active%20development-yellow?style=flat-square)](https://github.com/ggarciasoft/OrchestFlowAI)
-[![Backend Tests](https://img.shields.io/badge/backend%20tests-299%20passing-brightgreen?style=flat-square&logo=dotnet)](./tests/OrchestFlowAI.Tests)
-[![Frontend Tests](https://img.shields.io/badge/frontend%20tests-59%20passing-brightgreen?style=flat-square&logo=jest)](./apps/web)
+[![Backend Tests](https://img.shields.io/badge/backend%20tests-316%20passing-brightgreen?style=flat-square&logo=dotnet)](./tests/OrchestFlowAI.Tests)
+[![Frontend Tests](https://img.shields.io/badge/frontend%20tests-62%20passing-brightgreen?style=flat-square&logo=jest)](./apps/web)
 [![Last Commit](https://img.shields.io/github/last-commit/ggarciasoft/OrchestFlowAI?style=flat-square)](https://github.com/ggarciasoft/OrchestFlowAI/commits/main)
 
 <!-- Stack -->
@@ -13,7 +13,7 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev)
 
 <!-- Project Stats -->
-[![Nodes](https://img.shields.io/badge/nodes-19%20built--in-blue?style=flat-square)](./docs/NODES.md)
+[![Nodes](https://img.shields.io/badge/nodes-21%20built--in-blue?style=flat-square)](./docs/NODES.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green?style=flat-square)](./LICENSE)
 
 <!-- TODO: replace static test badges with dynamic CI badges once GitHub Actions is configured -->
@@ -33,7 +33,7 @@ OrchestFlowAI is a modular platform that lets teams build AI-driven business wor
 | Backend API (.NET 9) | ✅ Running — all endpoints implemented |
 | Frontend (Next.js) | ✅ Running — designer, pages, auth |
 | Workflow Engine | ✅ Implemented — graph execution, retries, approvals |
-| Node Library | ✅ **19 nodes** across 6 categories |
+| Node Library | ✅ **21 nodes** across 6 categories |
 | Unit Tests | ✅ **299/299 backend** · **59/59 frontend** passing |
 | Database | ⚠️ In-memory stubs (PostgreSQL not yet wired) |
 | Designer Save | ⚠️ Not yet implemented — see `BACKLOG.md` |
@@ -47,7 +47,7 @@ OrchestFlowAI is a modular platform that lets teams build AI-driven business wor
 
 - **Visual workflow design** — drag-and-drop nodes on a canvas (React Flow). Connect, configure, and delete nodes.
 - **Async execution** — a worker service runs workflows, persists state, retries, and resumes after human decisions.
-- **19 built-in nodes** — logic, AI, integrations, data, documents, human approval, and system nodes.
+- **21 built-in nodes** — logic, AI, integrations, data, documents, human approval, and system nodes.
 - **AI nodes** — classify, extract, translate, summarize, and analyze using a provider-agnostic LLM abstraction.
 - **Human approvals** — first-class node type; workflows pause and resume after approve/reject decisions.
 - **Document processing** — PDF text extraction; OCR and classification planned.
@@ -165,7 +165,7 @@ OrchestFlowAI/
 │   ├── logic/                  # Control flow nodes
 │   └── system/                 # Start/End nodes
 ├── tests/
-│   └── OrchestFlowAI.Tests/        # xUnit test project (299 tests)
+│   └── OrchestFlowAI.Tests/        # xUnit test project (316 tests)
 ├── docs/                       # Architecture, API, nodes, setup docs
 ├── rules/                      # Coding rules by domain
 ├── AGENTS.md                   # AI agent roles and rules
@@ -231,10 +231,10 @@ docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
 
 ### Run tests
 ```bash
-# Backend (299 tests)
+# Backend (316 tests)
 cd tests/OrchestFlowAI.Tests && dotnet test --configuration Release
 
-# Frontend (59 tests)
+# Frontend (62 tests)
 cd apps/web && npm test
 ```
 
@@ -245,3 +245,5 @@ cd apps/web && npm test
 ## 📜 License
 
 TBD (suggested: Apache 2.0 for OSS-friendly enterprise use).
+
+

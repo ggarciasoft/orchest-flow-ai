@@ -27,3 +27,12 @@ These apply to **every agent, every layer, every PR**.
    - `Services` (Api/Worker) → thin composition roots, no business logic
 
 10. **Secrets never live in workflow JSON or logs.** Provider keys, connection strings, and tokens come from environment variables or vault only.
+
+11. **Every code change that affects behavior, APIs, nodes, schema, or UI must update the relevant documentation in the same commit.** Documentation is not optional or deferred. Specific requirements:
+    - New or changed node → `docs/NODES.md`
+    - New or changed API endpoint / response shape → `docs/API.md`
+    - Schema change → `docs/DATABASE.md`
+    - New config field or environment variable → `docs/SETUP.md` + `.env.example`
+    - UI / designer behavior change → `docs/FRONTEND.md`
+    - Test count change → `README.md` badges + `BACKLOG.md`
+    - A commit without matching doc updates is **incomplete**.

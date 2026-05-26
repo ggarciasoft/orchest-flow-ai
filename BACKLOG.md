@@ -78,8 +78,8 @@
 | Auto-migrate on startup | ✅ |
 | Swagger + JWT auth button | ✅ all envs |
 | Docker Compose split (3 files) | ✅ |
-| Backend unit tests | ✅ **299 / 299** |
-| Frontend unit tests | ✅ **59 / 59** |
+| Backend unit tests | ✅ **316 / 316** |
+| Frontend unit tests | ✅ **62 / 62** |
 | XML / JSDoc docs on all public APIs | ✅ |
 
 ---
@@ -128,3 +128,4 @@
 ---
 
 _Update this file as items are resolved._
+

@@ -4,7 +4,14 @@
 
 2. PRs include tests when they change behavior. A behavior change without tests is incomplete.
 
-3. PRs include doc updates when they change user-facing or developer-facing behavior. A behavior change without docs is incomplete.
+3. **PRs include doc updates when they change anything user-facing or developer-facing.** This is non-negotiable:
+   - New node → add to `docs/NODES.md`
+   - New API endpoint or changed response → update `docs/API.md`
+   - Schema change → update `docs/DATABASE.md`
+   - New config field or env var → update `docs/SETUP.md` and `.env.example`
+   - New category, UI component, or designer behavior → update `docs/FRONTEND.md`
+   - Test count changes → update `README.md` badges and `BACKLOG.md`
+   - A code change without the matching doc update is considered **incomplete**.
 
 4. PRs do not mix unrelated changes. One concern per PR. Refactors and features are separate.
 
