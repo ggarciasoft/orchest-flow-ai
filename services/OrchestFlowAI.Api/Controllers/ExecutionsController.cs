@@ -18,9 +18,11 @@ namespace OrchestFlowAI.Api.Controllers;
 public sealed class ExecutionsController : ControllerBase
 {
     private readonly IExecutionRepository _executions;
+    private readonly IWorkflowRepository _workflows;
 
-    /// <summary>Initializes the controller with the execution repository dependency.</summary>
-    public ExecutionsController(IExecutionRepository executions) => _executions = executions;
+    /// <summary>Initializes the controller with execution and workflow repository dependencies.</summary>
+    public ExecutionsController(IExecutionRepository executions, IWorkflowRepository workflows)
+    { _executions = executions; _workflows = workflows; }
 
     /// <summary>Extracts the tenant id from the JWT tenant_id claim.</summary>
     private Guid TenantId => Guid.Parse(User.FindFirst("tenant_id")?.Value ?? Guid.Empty.ToString());
@@ -39,7 +41,32 @@ public sealed class ExecutionsController : ControllerBase
     public async Task<ActionResult<PagedResponse<WorkflowExecutionResponse>>> List([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
     {
         var items = await _executions.ListAsync(TenantId, status, page, pageSize, ct);
-        var result = items.Select(e => new WorkflowExecutionResponse(e.Id, e.WorkflowId, e.WorkflowVersionId, e.Status.ToString(), e.StartedAt, e.CompletedAt, e.TriggeredBy, e.CorrelationId, e.ErrorMessage)).ToList();
+
+        // Batch-fetch distinct workflow metadata to enrich each execution row
+        var workflowIds = items.Select(e => e.WorkflowId).Distinct().ToList();
+        var workflowMap = new Dictionary<Guid, Workflow>();
+        foreach (var wid in workflowIds)
+        {
+            var w = await _workflows.GetAsync(wid, TenantId, ct);
+            if (w != null) workflowMap[wid] = w;
+        }
+
+        // Batch-fetch distinct version metadata
+        var versionIds = items.Select(e => e.WorkflowVersionId).Distinct().ToList();
+        var versionMap = new Dictionary<Guid, int>();
+        foreach (var vid in versionIds)
+        {
+            var v = await _workflows.GetVersionAsync(vid, ct);
+            if (v != null) versionMap[vid] = v.VersionNumber;
+        }
+
+        var result = items.Select(e => new WorkflowExecutionResponse(
+            e.Id, e.WorkflowId, e.WorkflowVersionId, e.Status.ToString(),
+            e.StartedAt, e.CompletedAt, e.TriggeredBy, e.CorrelationId, e.ErrorMessage,
+            workflowMap.TryGetValue(e.WorkflowId, out var wf) ? wf.Name : null,
+            versionMap.TryGetValue(e.WorkflowVersionId, out var vn) ? vn : null
+        )).ToList();
+
         return Ok(new PagedResponse<WorkflowExecutionResponse>(result, page, pageSize, result.Count));
     }
 
@@ -56,7 +83,12 @@ public sealed class ExecutionsController : ControllerBase
     {
         var e = await _executions.GetAsync(id, ct);
         if (e == null || e.TenantId != TenantId) return NotFound();
-        return Ok(new WorkflowExecutionResponse(e.Id, e.WorkflowId, e.WorkflowVersionId, e.Status.ToString(), e.StartedAt, e.CompletedAt, e.TriggeredBy, e.CorrelationId, e.ErrorMessage));
+        var wf = await _workflows.GetAsync(e.WorkflowId, TenantId, ct);
+        var version = await _workflows.GetVersionAsync(e.WorkflowVersionId, ct);
+        return Ok(new WorkflowExecutionResponse(
+            e.Id, e.WorkflowId, e.WorkflowVersionId, e.Status.ToString(),
+            e.StartedAt, e.CompletedAt, e.TriggeredBy, e.CorrelationId, e.ErrorMessage,
+            wf?.Name, version?.VersionNumber));
     }
 
     /// <summary>

@@ -31,8 +31,15 @@ export default function ExecutionsPage() {
           {data.items.map(e => (
             <div key={e.id} className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
               <div>
-                <Link href={`/executions/${e.id}`} className="font-mono text-sm text-slate-900 hover:text-indigo-600 transition-colors">{e.id.slice(0,20)}…</Link>
-                <p className="text-xs text-slate-400 mt-0.5">Workflow: {e.workflowId.slice(0,12)}…</p>
+                <Link href={`/executions/${e.id}`} className="text-sm font-medium text-slate-900 hover:text-indigo-600 transition-colors">
+                  {e.workflowName ?? e.workflowId.slice(0, 12) + '…'}
+                </Link>
+                <div className="flex items-center gap-2 mt-0.5">
+                  {e.versionNumber != null && (
+                    <span className="text-xs text-slate-400 border border-slate-200 rounded px-1.5 py-0.5">v{e.versionNumber}</span>
+                  )}
+                  <span className="font-mono text-xs text-slate-400">{e.id.slice(0, 16)}…</span>
+                </div>
               </div>
               <div className="flex items-center gap-4">
                 <Badge variant={statusVariant(e.status)}>{e.status}</Badge>

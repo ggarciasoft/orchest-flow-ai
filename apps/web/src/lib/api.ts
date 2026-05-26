@@ -198,7 +198,7 @@ export interface User { id: string; email: string; displayName: string; role: st
 export interface Workflow { id: string; name: string; description: string; activeVersion?: number; createdAt: string; updatedAt: string; }
 
 /** A single workflow execution instance. */
-export interface WorkflowExecution { id: string; workflowId: string; workflowVersionId: string; status: string; startedAt: string; completedAt?: string; correlationId: string; errorMessage?: string; }
+export interface WorkflowExecution { id: string; workflowId: string; workflowVersionId: string; status: string; startedAt: string; completedAt?: string; correlationId: string; errorMessage?: string; workflowName?: string; versionNumber?: number; }
 
 /** Execution record for a single node within a workflow run. */
 export interface NodeExecution { id: string; workflowExecutionId: string; nodeId: string; nodeType: string; status: string; startedAt?: string; completedAt?: string; inputJson?: string; outputJson?: string; errorMessage?: string; retryCount: number; step: number; }

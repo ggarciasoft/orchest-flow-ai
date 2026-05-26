@@ -1,2 +1,13 @@
 namespace OrchestFlowAI.Contracts.Responses;
-public sealed record WorkflowExecutionResponse(Guid Id, Guid WorkflowId, Guid WorkflowVersionId, string Status, DateTime StartedAt, DateTime? CompletedAt, Guid? TriggeredBy, string CorrelationId, string? ErrorMessage);
+public sealed record WorkflowExecutionResponse(
+    Guid Id,
+    Guid WorkflowId,
+    Guid WorkflowVersionId,
+    string Status,
+    DateTime StartedAt,
+    DateTime? CompletedAt,
+    Guid? TriggeredBy,
+    string CorrelationId,
+    string? ErrorMessage,
+    string? WorkflowName = null,
+    int? VersionNumber = null);
