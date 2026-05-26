@@ -30,6 +30,8 @@ RegisterNode<TranslationNode, TranslationNodeDescriptor>(services);
         RegisterNode<ExtractPdfTextNode, ExtractPdfTextNodeDescriptor>(services);
         RegisterNode<SetVariableNode, SetVariableNodeDescriptor>(services);
         RegisterNode<JsonTransformNode, JsonTransformNodeDescriptor>(services);
+        RegisterNode<DatabaseQueryNode, DatabaseQueryNodeDescriptor>(services);
+        RegisterNode<DatabaseExecuteNode, DatabaseExecuteNodeDescriptor>(services);
 
         // Wire into registry after DI container is built
         RegisterNode<HttpRequestNode, HttpRequestNodeDescriptor>(services);
