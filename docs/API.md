@@ -1,4 +1,4 @@
-# API Reference
+﻿# API Reference
 
 Base URL (local): `http://localhost:5080`
 Versioning: prefix all endpoints with `/api`. Breaking changes go to `/api/v2`.
@@ -33,7 +33,7 @@ Response:
 ```json
 {
   "items": [
-    { "id": "…", "name": "Contract Review", "activeVersion": 3, "updatedAt": "…" }
+    { "id": "â€¦", "name": "Contract Review", "activeVersion": 3, "updatedAt": "â€¦" }
   ],
   "page": 1, "pageSize": 20, "total": 12
 }
@@ -47,7 +47,7 @@ Body:
 {
   "name": "string",
   "description": "string",
-  "definition": { /* see ARCHITECTURE.md §6 */ }
+  "definition": { /* see ARCHITECTURE.md Â§6 */ }
 }
 ```
 
@@ -57,7 +57,7 @@ Body:
 Get the workflow with its active version definition.
 
 ### `PUT /api/workflows/{workflowId}`
-Update workflow metadata (name/description) — does **not** modify versions.
+Update workflow metadata (name/description) â€” does **not** modify versions.
 
 ### `DELETE /api/workflows/{workflowId}`
 Soft-delete a workflow.
@@ -65,9 +65,9 @@ Soft-delete a workflow.
 ### `POST /api/workflows/{workflowId}/versions`
 Create a new version (drafts a new definition).
 
-Body: `{ "definition": { … } }`
+Body: `{ "definition": { â€¦ } }`
 
-Response: `{ "id": "…", "versionNumber": 2 }`
+Response: `{ "id": "â€¦", "versionNumber": 2 }`
 
 ### `POST /api/workflows/{workflowId}/versions/{versionId}/activate`
 Mark a version as active. Only one active version per workflow.
@@ -101,10 +101,10 @@ Response:
   "workflowId": "uuid",
   "workflowVersionId": "uuid",
   "status": "Running",
-  "startedAt": "…",
+  "startedAt": "â€¦",
   "completedAt": null,
   "triggeredBy": "uuid",
-  "input": { … },
+  "input": { â€¦ },
   "output": null,
   "errorMessage": null
 }
@@ -123,10 +123,10 @@ Response:
       "nodeId": "extractPdf",
       "nodeType": "document.extract-pdf-text",
       "status": "Succeeded",
-      "startedAt": "…",
-      "completedAt": "…",
-      "input": { … },
-      "output": { … },
+      "startedAt": "â€¦",
+      "completedAt": "â€¦",
+      "input": { â€¦ },
+      "output": { â€¦ },
       "errorMessage": null,
       "retryCount": 0
     }
@@ -170,8 +170,8 @@ Both endpoints persist the decision, mark the node execution `Succeeded` with `{
 Multipart upload.
 
 Form fields:
-- `file` — required
-- `meta` — optional JSON string
+- `file` â€” required
+- `meta` â€” optional JSON string
 
 Response:
 ```json
@@ -180,7 +180,7 @@ Response:
   "filename": "contract.pdf",
   "mimeType": "application/pdf",
   "sizeBytes": 123456,
-  "sha256": "…"
+  "sha256": "â€¦"
 }
 ```
 
@@ -203,12 +203,12 @@ Returns all registered node descriptors:
     {
       "type": "document.extract-pdf-text",
       "displayName": "Extract PDF Text",
-      "description": "…",
+      "description": "â€¦",
       "category": "documents",
       "version": "0.1.0",
       "iconKey": "file-pdf",
-      "inputs":  [ { "key": "document", "type": "DocumentRef", "required": true, … } ],
-      "outputs": [ { "key": "text", "type": "String" }, … ],
+      "inputs":  [ { "key": "document", "type": "DocumentRef", "required": true, â€¦ } ],
+      "outputs": [ { "key": "text", "type": "String" }, â€¦ ],
       "configuration": [ { "key": "ocrFallback", "type": "Boolean", "defaultValue": false } ]
     }
   ]
@@ -233,7 +233,7 @@ Service build version.
 
 MVP ships with email/password JWT auth. Endpoints:
 
-- `POST /api/auth/login` → `{ token, user }`
+- `POST /api/auth/login` â†’ `{ token, user }`
 - `POST /api/auth/logout`
 - `GET /api/auth/me`
 
@@ -273,7 +273,28 @@ If the same key is replayed within 24h, the original response is returned withou
 Standard envelope:
 
 ```json
-{ "items": [ … ], "page": 1, "pageSize": 20, "total": 137 }
+{ "items": [ â€¦ ], "page": 1, "pageSize": 20, "total": 137 }
 ```
 
 Default page size 20, max 100.
+
+---
+
+## 11. Gmail Credentials
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | /api/gmail/auth/start | JWT | Start OAuth2 flow; redirects to Google consent screen |
+| GET | /api/gmail/callback | Public | OAuth2 callback; exchanges code for tokens and stores credential |
+| GET | /api/gmail/credentials | JWT | List saved credentials (name, email — no secrets) |
+| DELETE | /api/gmail/credentials/{id} | JWT | Delete a credential |
+
+### Start OAuth flow
+
+GET /api/gmail/auth/start?name=my-gmail&clientId=...&clientSecret=...
+
+Redirects browser to Google. After consent, Google calls /api/gmail/callback which stores the credential.
+
+### Use credential in GmailReadNode
+
+Set credentialName: "my-gmail" in the node config instead of providing clientId/clientSecret/efreshToken inline.

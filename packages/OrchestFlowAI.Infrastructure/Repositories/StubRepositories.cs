@@ -1,4 +1,4 @@
-using OrchestFlowAI.Application.Abstractions;
+﻿using OrchestFlowAI.Application.Abstractions;
 using OrchestFlowAI.Domain.Entities;
 using OrchestFlowAI.Domain.Enums;
 using System.Collections.Concurrent;
@@ -161,7 +161,7 @@ public sealed class StubEngineExecutionRepository : OrchestFlowAI.Engine.IEngine
         return Task.FromResult(l);
     }
     public Task<ApprovalRequest> CreateApprovalAsync(ApprovalRequest approval, CancellationToken ct = default) { _approvals[approval.Id] = approval; return Task.FromResult(approval); }
-    /// <summary>Gets the workflow entity — returns null in stub (retry policy defaults to None).</summary>
+    /// <summary>Gets the workflow entity â€” returns null in stub (retry policy defaults to None).</summary>
     public Task<Workflow?> GetWorkflowAsync(Guid workflowId, CancellationToken ct = default) => Task.FromResult((Workflow?)null);
 }
 
@@ -202,4 +202,28 @@ public sealed class StubTenantInviteRepository : ITenantInviteRepository
         => Task.FromResult(_store.Values.FirstOrDefault(i => i.Token == token));
     public Task<TenantInvite> CreateAsync(TenantInvite invite, CancellationToken ct = default) { _store[invite.Id] = invite; return Task.FromResult(invite); }
     public Task UpdateAsync(TenantInvite invite, CancellationToken ct = default) { _store[invite.Id] = invite; return Task.CompletedTask; }
+}
+
+/// <summary>In-memory stub implementation of <see cref="IGmailCredentialRepository"/>.</summary>
+public sealed class StubGmailCredentialRepository : IGmailCredentialRepository
+{
+    private readonly List<GmailCredential> _store = new();
+
+    public Task<GmailCredential?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default)
+        => Task.FromResult(_store.FirstOrDefault(g => g.Id == id && g.TenantId == tenantId));
+
+    public Task<GmailCredential?> GetByNameAsync(string name, Guid tenantId, CancellationToken ct = default)
+        => Task.FromResult(_store.FirstOrDefault(g => g.Name == name && g.TenantId == tenantId));
+
+    public Task<IReadOnlyList<GmailCredential>> ListAsync(Guid tenantId, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<GmailCredential>>(_store.Where(g => g.TenantId == tenantId).OrderBy(g => g.Name).ToList());
+
+    public Task<GmailCredential> CreateAsync(GmailCredential credential, CancellationToken ct = default)
+    { _store.Add(credential); return Task.FromResult(credential); }
+
+    public Task UpdateAsync(GmailCredential credential, CancellationToken ct = default)
+    { var i = _store.FindIndex(g => g.Id == credential.Id); if (i >= 0) _store[i] = credential; return Task.CompletedTask; }
+
+    public Task DeleteAsync(Guid id, Guid tenantId, CancellationToken ct = default)
+    { _store.RemoveAll(g => g.Id == id && g.TenantId == tenantId); return Task.CompletedTask; }
 }

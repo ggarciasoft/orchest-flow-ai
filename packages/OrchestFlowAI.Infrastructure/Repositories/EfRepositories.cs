@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using OrchestFlowAI.Application.Abstractions;
 using OrchestFlowAI.Domain.Entities;
 using OrchestFlowAI.Domain.Enums;
@@ -83,7 +83,7 @@ public sealed class EfExecutionRepository : IExecutionRepository
     public async Task<IReadOnlyList<WorkflowExecution>> ListAsync(Guid tenantId, string? status, int page, int pageSize, CancellationToken ct = default)
     {
         var q = _db.WorkflowExecutions.AsNoTracking().Where(e => e.TenantId == tenantId);
-        // Parse status string to enum for clean SQL translation — avoid .ToString() in EF LINQ expressions
+        // Parse status string to enum for clean SQL translation â€” avoid .ToString() in EF LINQ expressions
         if (!string.IsNullOrEmpty(status) && Enum.TryParse<OrchestFlowAI.Domain.Enums.ExecutionStatus>(status, ignoreCase: true, out var statusEnum))
             q = q.Where(e => e.Status == statusEnum);
         return await q.OrderByDescending(e => e.StartedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
@@ -199,7 +199,7 @@ public sealed class EfEngineExecutionRepository : OrchestFlowAI.Engine.IEngineEx
     public async Task<ApprovalRequest> CreateApprovalAsync(ApprovalRequest approval, CancellationToken ct = default)
     { _db.ApprovalRequests.Add(approval); await _db.SaveChangesAsync(ct); return approval; }
 
-    /// <summary>Gets the workflow entity by id — used by the engine to read the retry policy.</summary>
+    /// <summary>Gets the workflow entity by id â€” used by the engine to read the retry policy.</summary>
     public Task<Workflow?> GetWorkflowAsync(Guid workflowId, CancellationToken ct = default)
         => _db.Workflows.FindAsync(new object[] { workflowId }, ct).AsTask();
 }
@@ -260,4 +260,32 @@ public sealed class EfTenantInviteRepository : ITenantInviteRepository
 
     public async Task UpdateAsync(TenantInvite invite, CancellationToken ct = default)
     { _db.TenantInvites.Update(invite); await _db.SaveChangesAsync(ct); }
+}
+
+/// <summary>EF Core implementation of <see cref="IGmailCredentialRepository"/>.</summary>
+public sealed class EfGmailCredentialRepository : IGmailCredentialRepository
+{
+    private readonly OrchestFlowAIDbContext _db;
+    public EfGmailCredentialRepository(OrchestFlowAIDbContext db) => _db = db;
+
+    public Task<GmailCredential?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default)
+        => _db.GmailCredentials.AsNoTracking().FirstOrDefaultAsync(g => g.Id == id && g.TenantId == tenantId, ct);
+
+    public Task<GmailCredential?> GetByNameAsync(string name, Guid tenantId, CancellationToken ct = default)
+        => _db.GmailCredentials.AsNoTracking().FirstOrDefaultAsync(g => g.Name == name && g.TenantId == tenantId, ct);
+
+    public async Task<IReadOnlyList<GmailCredential>> ListAsync(Guid tenantId, CancellationToken ct = default)
+        => await _db.GmailCredentials.AsNoTracking().Where(g => g.TenantId == tenantId).OrderBy(g => g.Name).ToListAsync(ct);
+
+    public async Task<GmailCredential> CreateAsync(GmailCredential credential, CancellationToken ct = default)
+    { _db.GmailCredentials.Add(credential); await _db.SaveChangesAsync(ct); return credential; }
+
+    public async Task UpdateAsync(GmailCredential credential, CancellationToken ct = default)
+    { _db.GmailCredentials.Update(credential); await _db.SaveChangesAsync(ct); }
+
+    public async Task DeleteAsync(Guid id, Guid tenantId, CancellationToken ct = default)
+    {
+        var cred = await _db.GmailCredentials.FirstOrDefaultAsync(g => g.Id == id && g.TenantId == tenantId, ct);
+        if (cred != null) { _db.GmailCredentials.Remove(cred); await _db.SaveChangesAsync(ct); }
+    }
 }

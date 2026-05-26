@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
+using OrchestFlowAI.Application.Abstractions;
 using OrchestFlowAI.SDK.Context;
 using OrchestFlowAI.SDK.Interfaces;
 using OrchestFlowAI.SDK.Models;
@@ -22,9 +23,24 @@ public sealed class GmailReadNode : IWorkflowNode
     /// <inheritdoc />
     public async Task<NodeExecutionResult> ExecuteAsync(WorkflowExecutionContext ctx, CancellationToken ct)
     {
-        var clientId = ctx.GetConfig<string>("clientId") ?? throw new InvalidOperationException("clientId config is required");
-        var clientSecret = ctx.GetConfig<string>("clientSecret") ?? throw new InvalidOperationException("clientSecret config is required");
-        var refreshToken = ctx.GetConfig<string>("refreshToken") ?? throw new InvalidOperationException("refreshToken config is required");
+        var clientId = ctx.GetConfig<string>("clientId");
+        var clientSecret = ctx.GetConfig<string>("clientSecret");
+        var refreshToken = ctx.GetConfig<string>("refreshToken");
+
+        var credentialName = ctx.GetConfig<string>("credentialName");
+        if (!string.IsNullOrEmpty(credentialName))
+        {
+            var credRepo = ctx.Services.GetRequiredService<IGmailCredentialRepository>();
+            var cred = await credRepo.GetByNameAsync(credentialName, ctx.TenantId, ct)
+                ?? throw new InvalidOperationException($"Gmail credential '{credentialName}' not found");
+            clientId = cred.ClientId;
+            clientSecret = cred.ClientSecret;
+            refreshToken = cred.RefreshToken;
+        }
+
+        if (string.IsNullOrEmpty(clientId)) throw new InvalidOperationException("clientId config is required");
+        if (string.IsNullOrEmpty(clientSecret)) throw new InvalidOperationException("clientSecret config is required");
+        if (string.IsNullOrEmpty(refreshToken)) throw new InvalidOperationException("refreshToken config is required");
         var query = ctx.GetConfig<string>("query") ?? "is:unread";
         var maxResults = (int)(ctx.GetConfig<double?>("maxResults") ?? 10.0);
         if (maxResults < 1) maxResults = 1;
@@ -229,9 +245,10 @@ public sealed class GmailReadNodeDescriptor : IWorkflowNodeDescriptor
     /// <inheritdoc />
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
-        new NodeConfigDefinition("clientId", "Client ID", "OAuth2 client ID from Google Cloud Console.", DataType.String, Required: true),
-        new NodeConfigDefinition("clientSecret", "Client Secret", "OAuth2 client secret from Google Cloud Console.", DataType.String, Required: true),
-        new NodeConfigDefinition("refreshToken", "Refresh Token", "OAuth2 refresh token with Gmail read scope.", DataType.String, Required: true),
+        new NodeConfigDefinition("credentialName", "Credential Name", "Name of a saved Gmail credential (from /api/gmail/auth/start). If set, clientId/clientSecret/refreshToken are not needed.", DataType.String, Required: false),
+        new NodeConfigDefinition("clientId", "Client ID", "OAuth2 client ID from Google Cloud Console.", DataType.String, Required: false),
+        new NodeConfigDefinition("clientSecret", "Client Secret", "OAuth2 client secret from Google Cloud Console.", DataType.String, Required: false),
+        new NodeConfigDefinition("refreshToken", "Refresh Token", "OAuth2 refresh token with Gmail read scope.", DataType.String, Required: false),
         new NodeConfigDefinition("query", "Query", "Gmail search query (e.g. is:unread, from:someone@example.com).", DataType.String, Required: false, DefaultValue: "is:unread"),
         new NodeConfigDefinition("maxResults", "Max Results", "Maximum emails to retrieve (1-50, default: 10).", DataType.Number, Required: false, DefaultValue: 10)
     };

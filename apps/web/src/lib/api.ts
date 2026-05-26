@@ -1,4 +1,4 @@
-import { isTokenExpired } from './auth';
+﻿import { isTokenExpired } from './auth';
 
 /** Base URL for all API requests. Configurable via NEXT_PUBLIC_API_BASE_URL env var. */
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:5080';
@@ -24,13 +24,13 @@ function redirectToLogin(): void {
  * @throws Error with message from API response body or "HTTP {status}"
  */
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  // Read token from localStorage — null on server-side rendering
+  // Read token from localStorage â€” null on server-side rendering
   const token = typeof window !== 'undefined' ? localStorage.getItem('OrchestFlowAI_token') : null;
 
   // If a token exists but is already expired, redirect immediately without making a request
   if (typeof window !== 'undefined' && token && isTokenExpired()) {
     redirectToLogin();
-    // Return a promise that never resolves — the page will redirect before any caller handles it
+    // Return a promise that never resolves â€” the page will redirect before any caller handles it
     return new Promise<T>(() => {});
   }
 
@@ -43,7 +43,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     },
   });
   if (!res.ok) {
-    // 401 Unauthorized — token was rejected by the server; clear it and redirect to login
+    // 401 Unauthorized â€” token was rejected by the server; clear it and redirect to login
     if (res.status === 401) {
       redirectToLogin();
       return new Promise<T>(() => {});
@@ -52,7 +52,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     const err = await res.json().catch(() => ({}));
     throw new Error((err as Record<string, string>).detail ?? (err as Record<string, string>).title ?? `HTTP ${res.status}`);
   }
-  // 204 No Content or empty body — return undefined rather than attempting to parse
+  // 204 No Content or empty body â€” return undefined rather than attempting to parse
   if (res.status === 204) return undefined as T;
   const text = await res.text();
   if (!text) return undefined as T;
@@ -61,7 +61,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
 
 /** All OrchestFlowAI API methods organized by resource domain. */
 /**
- * Node configuration presets — reusable named config sets.
+ * Node configuration presets â€” reusable named config sets.
  */
 export interface PresetResponse {
   id: string;
@@ -160,7 +160,7 @@ export const api = {
     /** Fetches document metadata by id. */
     get: (id: string) => apiFetch<DocumentMeta>(`/api/documents/${id}`),
   },
-  /** Node catalog endpoint — returns all registered node descriptors. */
+  /** Node catalog endpoint â€” returns all registered node descriptors. */
   nodes: {
     /** Returns the full catalog of available node types from the registry. */
     catalog: () => apiFetch<{ nodes: NodeDescriptor[] }>('/api/nodes/catalog'),
@@ -196,7 +196,7 @@ export const api = {
         body: JSON.stringify({ token, password }),
       }),
   },
-  /** Node configuration presets — reusable named config sets. */
+  /** Node configuration presets â€” reusable named config sets. */
   presets: {
     /** Lists all presets, optionally filtered by node type. */
     list: (nodeType?: string) =>
@@ -211,6 +211,19 @@ export const api = {
       apiFetch<PresetResponse>(`/api/presets/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     /** Deletes a preset. */
     delete: (id: string) => apiFetch<void>(`/api/presets/${id}`, { method: 'DELETE' }),
+  },
+
+  /** Gmail credential management endpoints. */
+  gmail: {
+    /** Starts the Gmail OAuth2 flow. Returns a URL to redirect the browser to. */
+    authStartUrl: (params: { name: string; clientId: string; clientSecret: string }) => {
+      const q = new URLSearchParams({ name: params.name, clientId: params.clientId, clientSecret: params.clientSecret });
+      return `${API_BASE}/api/gmail/auth/start?${q}`;
+    },
+    /** Lists saved Gmail credentials for the tenant (names + emails only). */
+    list: () => apiFetch<GmailCredentialSummary[]>('/api/gmail/credentials'),
+    /** Deletes a Gmail credential by id. */
+    delete: (id: string) => apiFetch<void>(`/api/gmail/credentials/${id}`, { method: 'DELETE' }),
   },
 };
 
@@ -252,5 +265,9 @@ export interface ValidationResult { isValid: boolean; errors: { nodeId: string; 
 /** Tenant workspace metadata. */
 export interface TenantResponse { id: string; name: string; createdAt: string; }
 
-/** Tenant invite response — includes the token for the MVP invite flow. */
+/** Tenant invite response â€” includes the token for the MVP invite flow. */
 export interface TenantInviteResponse { id: string; tenantId: string; email: string; role: string; token: string; expiresAt: string; }
+
+/** Summary of a saved Gmail credential (no secrets). */
+export interface GmailCredentialSummary { id: string; name: string; email: string | null; createdAt: string; updatedAt: string; }
+

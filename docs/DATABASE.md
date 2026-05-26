@@ -1,4 +1,4 @@
-# Database
+﻿# Database
 
 PostgreSQL is the system of record. Redis (optional in MVP) is used for queueing and caching.
 
@@ -32,7 +32,7 @@ This document describes the MVP schema. Indexes, constraints, and migrations are
 | Column      | Type        | Notes                                       |
 | ----------- | ----------- | ------------------------------------------- |
 | id          | uuid PK     |                                             |
-| tenant_id   | uuid FK     | → tenants.id                                |
+| tenant_id   | uuid FK     | â†’ tenants.id                                |
 | email       | citext      | unique within tenant                        |
 | display_name| text        |                                             |
 | role        | text        | `admin` \| `editor` \| `approver` \| `viewer` |
@@ -46,7 +46,7 @@ This document describes the MVP schema. Indexes, constraints, and migrations are
 | tenant_id   | uuid FK     |                             |
 | name        | text        |                             |
 | description | text        |                             |
-| created_by  | uuid FK     | → users.id                  |
+| created_by  | uuid FK     | â†’ users.id                  |
 | created_at  | timestamptz |                             |
 | updated_at  | timestamptz |                             |
 | is_deleted  | boolean     | default false               |
@@ -59,7 +59,7 @@ Index: `(tenant_id, is_deleted)`.
 | Column           | Type        | Notes                                  |
 | ---------------- | ----------- | -------------------------------------- |
 | id               | uuid PK     |                                        |
-| workflow_id      | uuid FK     | → workflows.id                         |
+| workflow_id      | uuid FK     | â†’ workflows.id                         |
 | version_number   | int         |                                        |
 | definition_json  | jsonb       | canonical workflow definition          |
 | is_active        | boolean     | only one active per workflow           |
@@ -79,7 +79,7 @@ Constraints: unique `(workflow_id, version_number)`. Partial unique on `is_activ
 | status                | text        | `Queued|Running|Paused|Completed|Failed|Cancelled` |
 | started_at            | timestamptz |                                                      |
 | completed_at          | timestamptz |                                                      |
-| triggered_by          | uuid FK     | → users.id (nullable for system triggers)            |
+| triggered_by          | uuid FK     | â†’ users.id (nullable for system triggers)            |
 | input_json            | jsonb       |                                                      |
 | output_json           | jsonb       |                                                      |
 | error_message         | text        |                                                      |
@@ -133,7 +133,7 @@ Indexes: `(tenant_id, status, requested_at desc)`.
 | ----------- | ----------- | -------------------------------------- |
 | id          | uuid PK     |                                        |
 | tenant_id   | uuid FK     |                                        |
-| owner_id    | uuid FK     | → users.id                             |
+| owner_id    | uuid FK     | â†’ users.id                             |
 | filename    | text        |                                        |
 | mime_type   | text        |                                        |
 | size_bytes  | bigint      |                                        |
@@ -167,7 +167,7 @@ Indexes: `(tenant_id, created_at desc)`, `(workflow_execution_id)`.
 | id          | uuid PK     |                                                      |
 | tenant_id   | uuid FK     |                                                      |
 | actor_id    | uuid FK     | nullable for system actors                           |
-| action      | text        | `workflow.created`, `execution.started`, …           |
+| action      | text        | `workflow.created`, `execution.started`, â€¦           |
 | target_type | text        |                                                      |
 | target_id   | uuid        |                                                      |
 | payload_json| jsonb       |                                                      |
@@ -177,11 +177,11 @@ Indexes: `(tenant_id, created_at desc)`, `(workflow_execution_id)`.
 
 ## 3. Optional Tables (post-MVP)
 
-- `tenant_settings` — per-tenant config (default model, providers, retention).
-- `prompts` — prompt template storage with versions (currently in code).
-- `knowledge_bases`, `kb_documents`, `kb_chunks`, `kb_embeddings` — for RAG.
-- `integrations` + `integration_credentials` — connector credentials.
-- `agents` — agent configurations.
+- `tenant_settings` â€” per-tenant config (default model, providers, retention).
+- `prompts` â€” prompt template storage with versions (currently in code).
+- `knowledge_bases`, `kb_documents`, `kb_chunks`, `kb_embeddings` â€” for RAG.
+- `integrations` + `integration_credentials` â€” connector credentials.
+- `agents` â€” agent configurations.
 
 ---
 
@@ -190,7 +190,7 @@ Indexes: `(tenant_id, created_at desc)`, `(workflow_execution_id)`.
 - Migrations live in `OrchestFlowAI.Infrastructure/Migrations/`.
 - EF Core migrations are used. The Infrastructure project is both the migrations project and its own startup project for `dotnet ef` commands.
 - Migrations are forward-only in production; backfills are explicit data scripts.
-- Auto-migration runs on API startup with 5 retries (fatal if all retries fail — app will not start with missing tables).
+- Auto-migration runs on API startup with 5 retries (fatal if all retries fail â€” app will not start with missing tables).
 - To add a migration:
   ```sh
   dotnet ef migrations add <Name> \
@@ -211,10 +211,10 @@ Indexes: `(tenant_id, created_at desc)`, `(workflow_execution_id)`.
 
 Primary access patterns to optimize for in MVP:
 
-- "Show executions for workflow X" → `(workflow_id, started_at desc)`
-- "Show pending approvals for tenant T" → `(tenant_id, status, requested_at)`
-- "Show timeline for execution E" → `(workflow_execution_id, step)`
-- "Recent AI usage for tenant T" → `(tenant_id, created_at desc)`
+- "Show executions for workflow X" â†’ `(workflow_id, started_at desc)`
+- "Show pending approvals for tenant T" â†’ `(tenant_id, status, requested_at)`
+- "Show timeline for execution E" â†’ `(workflow_execution_id, step)`
+- "Recent AI usage for tenant T" â†’ `(tenant_id, created_at desc)`
 
 Add indexes only after access patterns are confirmed; avoid speculative ones.
 
@@ -230,3 +230,23 @@ MVP defaults:
 - Audit logs retained indefinitely.
 
 Post-MVP: per-tenant retention policy + automated purge job.
+
+---
+
+## 7. GmailCredentials Table
+
+Stores OAuth2 credentials for Gmail integrations, scoped per tenant.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| Id | UUID PK | |
+| TenantId | UUID | Indexed |
+| Name | VARCHAR(200) | Friendly reference name; unique per tenant |
+| ClientId | VARCHAR(500) | Google OAuth2 client ID |
+| ClientSecret | VARCHAR(500) | Google OAuth2 client secret |
+| RefreshToken | TEXT | Long-lived refresh token |
+| Email | VARCHAR(320) | Gmail address (populated after OAuth callback) |
+| CreatedAt | TIMESTAMPTZ | |
+| UpdatedAt | TIMESTAMPTZ | |
+
+Unique index: (TenantId, Name).

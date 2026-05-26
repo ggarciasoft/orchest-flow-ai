@@ -68,6 +68,7 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<INodePresetRepository, EfNodePresetRepository>();
             services.AddScoped<ITenantRepository, EfTenantRepository>();
             services.AddScoped<ITenantInviteRepository, EfTenantInviteRepository>();
+            services.AddScoped<IGmailCredentialRepository, EfGmailCredentialRepository>();
             services.AddScoped<OrchestFlowAI.Engine.IEngineExecutionRepository, EfEngineExecutionRepository>();
             // Persistent queue backed by PostgreSQL
             services.AddScoped<IPersistentExecutionQueue, PostgresExecutionQueue>();
@@ -85,6 +86,7 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<INodePresetRepository, StubNodePresetRepository>();
             services.AddScoped<ITenantRepository, StubTenantRepository>();
             services.AddScoped<ITenantInviteRepository, StubTenantInviteRepository>();
+            services.AddScoped<IGmailCredentialRepository, StubGmailCredentialRepository>();
             services.AddScoped<OrchestFlowAI.Engine.IEngineExecutionRepository, StubEngineExecutionRepository>();
             // In-memory stub persistent queue — no DB required
             services.AddSingleton<IPersistentExecutionQueue, StubExecutionQueue>();
