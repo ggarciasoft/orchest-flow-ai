@@ -11,7 +11,7 @@ interface Props {
 }
 
 /** Display order for node categories in the palette. */
-const CATEGORY_ORDER = ['system', 'logic', 'human', 'ai', 'documents', 'integrations'];
+const CATEGORY_ORDER = ['system', 'logic', 'human', 'ai', 'documents', 'integrations', 'data'];
 
 /**
  * NodePalette — categorized sidebar listing all available workflow node types.
@@ -24,8 +24,12 @@ export function NodePalette({ catalog, onAddNode }: Props) {
   // Track which categories are expanded; default system and ai open
   const [open, setOpen] = useState<Record<string, boolean>>({ system: true, ai: true, documents: true });
 
-  /** Groups node descriptors from the catalog by their category in predefined order. */
-  const grouped = CATEGORY_ORDER.reduce<Record<string, NodeDescriptor[]>>((acc, cat) => {
+  /** Groups node descriptors by category: known categories first in order, then any unknown ones appended. */
+  const allCategories = [
+    ...CATEGORY_ORDER,
+    ...Array.from(new Set(catalog.map(n => n.category))).filter(c => !CATEGORY_ORDER.includes(c)),
+  ];
+  const grouped = allCategories.reduce<Record<string, NodeDescriptor[]>>((acc, cat) => {
     acc[cat] = catalog.filter(n => n.category === cat);
     return acc;
   }, {});
@@ -33,7 +37,7 @@ export function NodePalette({ catalog, onAddNode }: Props) {
   return (
     <div className="w-64 border-r bg-white overflow-y-auto flex flex-col shrink-0">
       <div className="p-4 border-b"><h3 className="font-semibold text-sm text-gray-700">Node Palette</h3></div>
-      {CATEGORY_ORDER.map(cat => {
+      {allCategories.map(cat => {
         const nodes = grouped[cat] ?? [];
         // Skip categories that have no registered nodes
         if (!nodes.length) return null;
