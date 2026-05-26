@@ -45,7 +45,16 @@ public sealed class WorkflowsController : ControllerBase
     {
         var items = await _workflows.ListAsync(TenantId, search, page, pageSize, ct);
         var total = await _workflows.CountAsync(TenantId, search, ct);
-        var result = items.Select(w => new WorkflowResponse(w.Id, w.Name, w.Description, null, w.CreatedAt, w.UpdatedAt, (OrchestFlowAI.Contracts.TriggerType)(int)w.TriggerType, w.WebhookSecret, w.CronExpression, w.RetryPolicy.MaxAttempts, w.RetryPolicy.BackoffMs, w.RetryPolicy.BackoffMultiplier)).ToList();
+
+        // Batch-fetch active versions so we can show the version number on each row
+        var activeVersionMap = new Dictionary<Guid, int?>();
+        foreach (var w in items)
+        {
+            var v = await _workflows.GetActiveVersionAsync(w.Id, ct);
+            activeVersionMap[w.Id] = v?.VersionNumber;
+        }
+
+        var result = items.Select(w => new WorkflowResponse(w.Id, w.Name, w.Description, activeVersionMap.GetValueOrDefault(w.Id), w.CreatedAt, w.UpdatedAt, (OrchestFlowAI.Contracts.TriggerType)(int)w.TriggerType, w.WebhookSecret, w.CronExpression, w.RetryPolicy.MaxAttempts, w.RetryPolicy.BackoffMs, w.RetryPolicy.BackoffMultiplier)).ToList();
         return Ok(new PagedResponse<WorkflowResponse>(result, page, pageSize, total));
     }
 
