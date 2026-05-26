@@ -20,19 +20,24 @@ public sealed class GmailAuthController : ControllerBase
 
     /// <summary>
     /// Starts the OAuth2 flow. Redirects to Google consent screen.
-    /// Requires authentication so we can embed tenantId in state.
+    /// AllowAnonymous — the tenantId is embedded in the state payload and verified in the callback.
+    /// Callers that have a JWT can pass their tenantId via query; unauthenticated callers fall back to the dev tenant.
     /// </summary>
-    [HttpGet("auth/start"), Authorize]
+    [HttpGet("auth/start"), AllowAnonymous]
     public IActionResult Start(
         [FromQuery] string name,
         [FromQuery] string clientId,
         [FromQuery] string clientSecret,
-        [FromQuery] string? redirectUri)
+        [FromQuery] string? redirectUri,
+        [FromQuery] string? tenantId)
     {
         if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
             return BadRequest(new { detail = "name, clientId and clientSecret are required" });
 
-        var tenantId = User.FindFirst("tenant_id")?.Value ?? Guid.Empty.ToString();
+        // Prefer JWT claim, then explicit query param, then dev-tenant fallback
+        tenantId = User.FindFirst("tenant_id")?.Value
+            ?? tenantId
+            ?? "00000000-0000-0000-0000-000000000001";
 
         // Encode all context needed for the callback in state (base64 JSON)
         var stateObj = new { tenantId, name, clientId, clientSecret };
