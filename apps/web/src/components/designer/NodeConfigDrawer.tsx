@@ -1,7 +1,7 @@
 'use client';
 import type { Node } from '@xyflow/react';
-import type { NodeDescriptor } from '@/lib/api';
-import { X, Trash2, ChevronDown, Plus } from 'lucide-react';
+import type { NodeDescriptor, GmailCredentialSummary } from '@/lib/api';
+import { X, Trash2, Plus, ExternalLink } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { api, PresetResponse } from '@/lib/api';
 
@@ -26,12 +26,34 @@ export function NodeConfigDrawer({ node, catalog, onClose, onDelete, onConfigCha
 const [selectedPreset, setSelectedPreset] = useState<string>('');
 const [presetName, setPresetName] = useState<string>('');
 const [showSavePresetForm, setShowSavePresetForm] = useState<boolean>(false);
+// Dynamic options: keyed by optionsSource string → array of { value, label }
+const [dynamicOptions, setDynamicOptions] = useState<Record<string, { value: string; label: string }[]>>({});
 
 useEffect(() => {
   if (descriptor) {
     api.presets.list(descriptor.type)
       .then(setPresets)
       .catch(err => console.error('Failed to fetch presets:', err));
+
+    // Load dynamic option sources referenced by any config field
+    const sources = [...new Set(
+      descriptor.configuration
+        .map(c => (c as { optionsSource?: string }).optionsSource)
+        .filter((s): s is string => !!s)
+    )];
+    for (const src of sources) {
+      if (src === 'gmail-credentials') {
+        api.gmail.list()
+          .then(creds => setDynamicOptions(prev => ({
+            ...prev,
+            'gmail-credentials': creds.map((c: GmailCredentialSummary) => ({
+              value: c.name,
+              label: c.email ? `${c.name} (${c.email})` : c.name,
+            }))
+          })))
+          .catch(() => {});
+      }
+    }
   }
 }, [descriptor]);
 
@@ -137,6 +159,11 @@ if (!descriptor) return null; // Return early if no descriptor is found
                 const visibleFor = hiddenWhen[cfg.key];
                 if (visibleFor && !visibleFor.includes(authType ?? '')) return null;
 
+                // Dynamic options source (e.g. gmail-credentials fetched from API)
+                const cfgWithSource = cfg as { optionsSource?: string } & typeof cfg;
+                const optsSrc = cfgWithSource.optionsSource;
+                const dynOpts = optsSrc ? (dynamicOptions[optsSrc] ?? []) : null;
+
                 return (
                 <div key={cfg.key}>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -144,8 +171,43 @@ if (!descriptor) return null; // Return early if no descriptor is found
                     {cfg.required && <span className="text-red-500 ml-1">*</span>}
                   </label>
 
-                  {/* Render dropdown or text input based on allowedValues */}
-                  {cfg.allowedValues ? (
+                  {/* Dynamic options source — renders a select + optional connect button */}
+                  {dynOpts !== null ? (
+                    <div className="space-y-1">
+                      <select
+                        className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={String(config[cfg.key] ?? '')}
+                        onChange={e => onConfigChange({ ...config, [cfg.key]: e.target.value })}
+                      >
+                        <option value="">— select —</option>
+                        {dynOpts.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                      {optsSrc === 'gmail-credentials' && (
+                        <a
+                          href={api.gmail.authStartUrl({ name: 'my-gmail', clientId: '', clientSecret: '' })}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline mt-0.5"
+                          onClick={e => {
+                            // Prompt for name/creds before opening
+                            e.preventDefault();
+                            const name = window.prompt('Credential name (e.g. my-gmail):');
+                            if (!name) return;
+                            const clientId = window.prompt('Google OAuth2 Client ID:');
+                            if (!clientId) return;
+                            const clientSecret = window.prompt('Google OAuth2 Client Secret:');
+                            if (!clientSecret) return;
+                            window.open(api.gmail.authStartUrl({ name, clientId, clientSecret }), '_blank');
+                          }}
+                        >
+                          <ExternalLink size={11} /> Connect Gmail account
+                        </a>
+                      )}
+                    </div>
+                  ) : cfg.allowedValues ? (
+                    /* Static allowedValues dropdown */
                     <select
                       className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       value={String(config[cfg.key] ?? cfg.defaultValue ?? '')}
@@ -165,7 +227,9 @@ if (!descriptor) return null; // Return early if no descriptor is found
                   )}
                   <p className="text-xs text-gray-400 mt-0.5">{cfg.description}</p>
                 </div>
-              )})}
+              )})
+            }
+
             </div>
           </div>
         )}

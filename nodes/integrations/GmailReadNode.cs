@@ -245,7 +245,7 @@ public sealed class GmailReadNodeDescriptor : IWorkflowNodeDescriptor
     /// <inheritdoc />
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
-        new NodeConfigDefinition("credentialName", "Credential Name", "Name of a saved Gmail credential (from /api/gmail/auth/start). If set, clientId/clientSecret/refreshToken are not needed.", DataType.String, Required: false),
+        new NodeConfigDefinition("credentialName", "Credential Name", "Name of a saved Gmail credential (from /api/gmail/auth/start). If set, clientId/clientSecret/refreshToken are not needed.", DataType.String, Required: false, OptionsSource: "gmail-credentials"),
         new NodeConfigDefinition("clientId", "Client ID", "OAuth2 client ID from Google Cloud Console.", DataType.String, Required: false),
         new NodeConfigDefinition("clientSecret", "Client Secret", "OAuth2 client secret from Google Cloud Console.", DataType.String, Required: false),
         new NodeConfigDefinition("refreshToken", "Refresh Token", "OAuth2 refresh token with Gmail read scope.", DataType.String, Required: false),
