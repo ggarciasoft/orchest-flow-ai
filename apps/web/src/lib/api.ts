@@ -164,6 +164,8 @@ export const api = {
   nodes: {
     /** Returns the full catalog of available node types from the registry. */
     catalog: () => apiFetch<{ nodes: NodeDescriptor[] }>('/api/nodes/catalog'),
+    /** Returns all available LLM models from registered providers. */
+    models: () => apiFetch<{ models: { value: string; label: string }[] }>('/api/nodes/models'),
   },
   /** Tenant management and invite endpoints. */
   tenants: {

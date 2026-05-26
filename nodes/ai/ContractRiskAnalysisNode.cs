@@ -60,7 +60,7 @@ public sealed class ContractRiskAnalysisNodeDescriptor : IWorkflowNodeDescriptor
     };
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
-        new NodeConfigDefinition("model", "Model", "LLM model to use.", DataType.String, Required: false, DefaultValue: "default"),
+        new NodeConfigDefinition("model", "Model", "LLM model to use.", DataType.String, Required: false, DefaultValue: "default", OptionsSource: "llm-models"),
         new NodeConfigDefinition("riskThreshold", "Risk Threshold", "Minimum risk level to flag.", DataType.Enum, Required: false, DefaultValue: "high", AllowedValues: new[] { "low", "medium", "high" })
     };
 }

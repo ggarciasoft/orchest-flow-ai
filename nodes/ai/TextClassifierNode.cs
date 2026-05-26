@@ -112,7 +112,7 @@ public sealed class TextClassifierNodeDescriptor : IWorkflowNodeDescriptor
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
         new NodeConfigDefinition("categories", "Categories", "Comma-separated category names e.g. 'urgent,normal,low'.", DataType.String, Required: true),
-        new NodeConfigDefinition("model", "Model", "LLM model to use.", DataType.String, Required: false, DefaultValue: "default"),
+        new NodeConfigDefinition("model", "Model", "LLM model to use.", DataType.String, Required: false, DefaultValue: "default", OptionsSource: "llm-models"),
         new NodeConfigDefinition("instructions", "Instructions", "Extra classification guidance.", DataType.String, Required: false)
     };
 }

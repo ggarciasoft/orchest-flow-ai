@@ -84,6 +84,6 @@ public sealed class DataExtractorNodeDescriptor : IWorkflowNodeDescriptor
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
         new NodeConfigDefinition("fields", "Fields", "Comma-separated field names to extract e.g. 'name,date,amount'.", DataType.String, Required: true),
-        new NodeConfigDefinition("model", "Model", "LLM model to use.", DataType.String, Required: false, DefaultValue: "default")
+        new NodeConfigDefinition("model", "Model", "LLM model to use.", DataType.String, Required: false, DefaultValue: "default", OptionsSource: "llm-models")
     };
 }

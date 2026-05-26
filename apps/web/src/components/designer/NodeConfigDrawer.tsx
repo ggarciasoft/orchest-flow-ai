@@ -53,6 +53,14 @@ useEffect(() => {
           })))
           .catch(() => {});
       }
+      if (src === 'llm-models') {
+        api.nodes.models()
+          .then(res => setDynamicOptions(prev => ({
+            ...prev,
+            'llm-models': res.models,
+          })))
+          .catch(() => {});
+      }
     }
   }
 }, [descriptor]);

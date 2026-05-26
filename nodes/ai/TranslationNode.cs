@@ -72,6 +72,6 @@ public sealed class TranslationNodeDescriptor : IWorkflowNodeDescriptor
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
         new NodeConfigDefinition("targetLanguage", "Target Language", "Language to translate into e.g. 'Spanish', 'French'.", DataType.String, Required: true),
-        new NodeConfigDefinition("model", "Model", "LLM model to use.", DataType.String, Required: false, DefaultValue: "default")
+        new NodeConfigDefinition("model", "Model", "LLM model to use.", DataType.String, Required: false, DefaultValue: "default", OptionsSource: "llm-models")
     };
 }

@@ -36,7 +36,7 @@ public sealed class ExecutiveSummaryNodeDescriptor : IWorkflowNodeDescriptor
     public IReadOnlyCollection<NodeOutputDefinition> Outputs => new[] { new NodeOutputDefinition("summary", "Summary", "Generated executive summary.", DataType.String) };
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
-        new NodeConfigDefinition("model", "Model", "LLM model.", DataType.String, Required: false, DefaultValue: "default"),
+        new NodeConfigDefinition("model", "Model", "LLM model.", DataType.String, Required: false, DefaultValue: "default", OptionsSource: "llm-models"),
         new NodeConfigDefinition("maxWords", "Max Words", "Maximum words in summary.", DataType.Number, Required: false, DefaultValue: 250),
         new NodeConfigDefinition("tone", "Tone", "Summary tone.", DataType.Enum, Required: false, DefaultValue: "formal", AllowedValues: new[] { "formal", "neutral", "friendly" })
     };

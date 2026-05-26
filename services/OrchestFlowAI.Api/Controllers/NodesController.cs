@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OrchestFlowAI.AI.Abstractions;
 using OrchestFlowAI.Contracts.Responses;
 using OrchestFlowAI.Engine.Registry;
 using OrchestFlowAI.SDK.Interfaces;
@@ -10,7 +11,10 @@ namespace OrchestFlowAI.Api.Controllers;
 public sealed class NodesController : ControllerBase
 {
     private readonly INodeRegistry _registry;
-    public NodesController(INodeRegistry registry) => _registry = registry;
+    private readonly IEnumerable<ILLMProvider> _llmProviders;
+
+    public NodesController(INodeRegistry registry, IEnumerable<ILLMProvider> llmProviders)
+    { _registry = registry; _llmProviders = llmProviders; }
 
     [HttpGet("catalog")]
     public ActionResult<object> Catalog()
@@ -27,6 +31,20 @@ public sealed class NodesController : ControllerBase
             d.Configuration.Select(c => new NodePortResponse(c.Key, c.DisplayName, c.Description, c.Type.ToString(), c.Required, c.DefaultValue, c.AllowedValues, c.OptionsSource)).ToList()
         )).ToList();
         return Ok(new { nodes = descriptors });
+    }
+
+    /// <summary>Returns all available LLM models from registered providers, for use in dropdown config fields.</summary>
+    [HttpGet("models")]
+    public ActionResult<object> Models()
+    {
+        var models = new List<object>
+        {
+            new { value = "default", label = "default (server configured)" }
+        };
+        foreach (var provider in _llmProviders)
+            foreach (var model in provider.Models)
+                models.Add(new { value = $"{provider.Id}/{model}", label = $"{provider.Id} / {model}" });
+        return Ok(new { models });
     }
 
     [HttpGet("/api/health")]
