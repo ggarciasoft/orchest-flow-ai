@@ -227,3 +227,24 @@ public sealed class StubGmailCredentialRepository : IGmailCredentialRepository
     public Task DeleteAsync(Guid id, Guid tenantId, CancellationToken ct = default)
     { _store.RemoveAll(g => g.Id == id && g.TenantId == tenantId); return Task.CompletedTask; }
 }
+
+public sealed class StubPlatformSettingsRepository : IPlatformSettingsRepository
+{
+    private readonly List<PlatformSetting> _store = new();
+
+    public Task<IReadOnlyList<PlatformSetting>> ListAsync(Guid tenantId, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<PlatformSetting>>(_store.Where(p => p.TenantId == tenantId).ToList());
+
+    public Task<PlatformSetting?> GetAsync(Guid tenantId, string key, CancellationToken ct = default)
+        => Task.FromResult(_store.FirstOrDefault(p => p.TenantId == tenantId && p.Key == key));
+
+    public Task UpsertAsync(Guid tenantId, string key, string value, CancellationToken ct = default)
+    {
+        var existing = _store.FirstOrDefault(p => p.TenantId == tenantId && p.Key == key);
+        if (existing != null)
+            existing.SetValue(value);
+        else
+            _store.Add(PlatformSetting.Create(tenantId, key, value));
+        return Task.CompletedTask;
+    }
+}

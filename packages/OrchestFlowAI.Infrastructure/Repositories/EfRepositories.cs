@@ -289,3 +289,31 @@ public sealed class EfGmailCredentialRepository : IGmailCredentialRepository
         if (cred != null) { _db.GmailCredentials.Remove(cred); await _db.SaveChangesAsync(ct); }
     }
 }
+
+/// <summary>EF Core implementation of <see cref="IPlatformSettingsRepository"/>.</summary>
+public sealed class EfPlatformSettingsRepository : IPlatformSettingsRepository
+{
+    private readonly OrchestFlowAIDbContext _db;
+    public EfPlatformSettingsRepository(OrchestFlowAIDbContext db) => _db = db;
+
+    public async Task<IReadOnlyList<PlatformSetting>> ListAsync(Guid tenantId, CancellationToken ct = default)
+        => await _db.PlatformSettings.AsNoTracking().Where(p => p.TenantId == tenantId).ToListAsync(ct);
+
+    public Task<PlatformSetting?> GetAsync(Guid tenantId, string key, CancellationToken ct = default)
+        => _db.PlatformSettings.AsNoTracking().FirstOrDefaultAsync(p => p.TenantId == tenantId && p.Key == key, ct);
+
+    public async Task UpsertAsync(Guid tenantId, string key, string value, CancellationToken ct = default)
+    {
+        var existing = await _db.PlatformSettings.FirstOrDefaultAsync(p => p.TenantId == tenantId && p.Key == key, ct);
+        if (existing != null)
+        {
+            existing.SetValue(value);
+            _db.PlatformSettings.Update(existing);
+        }
+        else
+        {
+            _db.PlatformSettings.Add(PlatformSetting.Create(tenantId, key, value));
+        }
+        await _db.SaveChangesAsync(ct);
+    }
+}

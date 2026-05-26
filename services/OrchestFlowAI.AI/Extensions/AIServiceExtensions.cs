@@ -34,13 +34,12 @@ public static class AIServiceExtensions
         services.AddSingleton<FakeLLMProvider>();
         services.AddSingleton<ILLMProvider>(sp => sp.GetRequiredService<FakeLLMProvider>());
 
-        // Register OpenAI provider only when an API key is configured
-        if (!string.IsNullOrWhiteSpace(apiKey))
-        {
-            services.AddSingleton<OpenAILLMProvider>(sp =>
-                new OpenAILLMProvider(apiKey, sp.GetRequiredService<ILogger<OpenAILLMProvider>>()));
-            services.AddSingleton<ILLMProvider>(sp => sp.GetRequiredService<OpenAILLMProvider>());
-        }
+        // Always register the key holder so SettingsController can update it
+        var holder = new OpenAIApiKeyHolder(apiKey);
+        services.AddSingleton(holder);
+        services.AddSingleton<OpenAILLMProvider>(sp =>
+            new OpenAILLMProvider(holder, sp.GetRequiredService<ILogger<OpenAILLMProvider>>()));
+        services.AddSingleton<ILLMProvider>(sp => sp.GetRequiredService<OpenAILLMProvider>());
 
         // Router resolves the correct provider based on the model string or default
         services.AddSingleton(sp =>

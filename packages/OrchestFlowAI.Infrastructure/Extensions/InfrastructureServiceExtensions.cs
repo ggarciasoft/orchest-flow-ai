@@ -9,6 +9,7 @@ using OrchestFlowAI.Infrastructure.Queue;
 using OrchestFlowAI.Infrastructure.Repositories;
 using OrchestFlowAI.Infrastructure.Storage;
 using OrchestFlowAI.Infrastructure.Notifications;
+using OrchestFlowAI.Infrastructure.Settings;
 using StackExchange.Redis;
 
 namespace OrchestFlowAI.Infrastructure.Extensions;
@@ -70,6 +71,7 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<ITenantInviteRepository, EfTenantInviteRepository>();
             services.AddScoped<IGmailCredentialRepository, EfGmailCredentialRepository>();
             services.AddScoped<OrchestFlowAI.Engine.IEngineExecutionRepository, EfEngineExecutionRepository>();
+            services.AddScoped<IPlatformSettingsRepository, EfPlatformSettingsRepository>();
             // Persistent queue backed by PostgreSQL
             services.AddScoped<IPersistentExecutionQueue, PostgresExecutionQueue>();
         }
@@ -88,9 +90,13 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<ITenantInviteRepository, StubTenantInviteRepository>();
             services.AddScoped<IGmailCredentialRepository, StubGmailCredentialRepository>();
             services.AddScoped<OrchestFlowAI.Engine.IEngineExecutionRepository, StubEngineExecutionRepository>();
+            services.AddScoped<IPlatformSettingsRepository, StubPlatformSettingsRepository>();
             // In-memory stub persistent queue — no DB required
             services.AddSingleton<IPersistentExecutionQueue, StubExecutionQueue>();
         }
+
+        // Platform settings service — singleton with in-memory cache, backed by DB
+        services.AddSingleton<IPlatformSettingsService, PlatformSettingsService>();
 
         return services;
     }

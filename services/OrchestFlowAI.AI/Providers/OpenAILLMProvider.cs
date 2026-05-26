@@ -6,21 +6,21 @@ namespace OrchestFlowAI.AI.Providers;
 
 public sealed class OpenAILLMProvider : ILLMProvider
 {
-    private readonly string _apiKey;
+    private readonly OpenAIApiKeyHolder _keyHolder;
     private readonly ILogger<OpenAILLMProvider> _logger;
     public string Id => "openai";
     public IReadOnlyCollection<string> Models => new[] { "gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo" };
 
-    public OpenAILLMProvider(string apiKey, ILogger<OpenAILLMProvider> logger)
+    public OpenAILLMProvider(OpenAIApiKeyHolder keyHolder, ILogger<OpenAILLMProvider> logger)
     {
-        _apiKey = apiKey;
+        _keyHolder = keyHolder;
         _logger = logger;
     }
 
     public async Task<LLMResponse> GenerateTextAsync(LLMRequest request, CancellationToken ct = default)
     {
         var model = request.Model == "default" ? "gpt-4o-mini" : request.Model;
-        var client = new ChatClient(model, _apiKey);
+        var client = new ChatClient(model, _keyHolder.ApiKey);
         var messages = new List<ChatMessage>();
         if (request.SystemPrompt != null) messages.Add(ChatMessage.CreateSystemMessage(request.SystemPrompt));
         messages.Add(ChatMessage.CreateUserMessage(request.Prompt));

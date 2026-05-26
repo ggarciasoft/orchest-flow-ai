@@ -25,6 +25,7 @@ public sealed class OrchestFlowAIDbContext : DbContext
     public DbSet<TenantInvite> TenantInvites => Set<TenantInvite>();
     public DbSet<ExecutionQueueItem> ExecutionQueue => Set<ExecutionQueueItem>();
     public DbSet<GmailCredential> GmailCredentials => Set<GmailCredential>();
+    public DbSet<PlatformSetting> PlatformSettings => Set<PlatformSetting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -145,6 +146,14 @@ public sealed class OrchestFlowAIDbContext : DbContext
             e.Property(g => g.Email).HasMaxLength(320);
             e.HasIndex(g => new { g.TenantId, g.Name }).IsUnique();
             e.HasIndex(g => g.TenantId);
+        });
+
+        modelBuilder.Entity<PlatformSetting>(e =>
+        {
+            e.HasKey(p => p.Id);
+            e.Property(p => p.Key).IsRequired().HasMaxLength(200);
+            e.Property(p => p.Value).IsRequired();
+            e.HasIndex(p => new { p.TenantId, p.Key }).IsUnique();
         });
 
         modelBuilder.Entity<ExecutionQueueItem>(e =>

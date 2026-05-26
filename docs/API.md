@@ -298,3 +298,11 @@ Redirects browser to Google. After consent, Google calls /api/gmail/callback whi
 ### Use credential in GmailReadNode
 
 Set credentialName: "my-gmail" in the node config instead of providing clientId/clientSecret/efreshToken inline.
+
+### Settings
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | /api/settings | JWT | Get platform settings (keys masked) |
+| PUT | /api/settings | JWT | Update settings; empty values ignored |
+| POST | /api/settings/test/openai | JWT | Test OpenAI connection |

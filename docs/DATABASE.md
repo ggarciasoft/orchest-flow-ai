@@ -250,3 +250,17 @@ Stores OAuth2 credentials for Gmail integrations, scoped per tenant.
 | UpdatedAt | TIMESTAMPTZ | |
 
 Unique index: (TenantId, Name).
+
+### PlatformSettings
+
+Stores per-tenant runtime-configurable key-value pairs (e.g. LLM API keys, default model).
+
+| Column | Type | Notes |
+|--------|------|-------|
+| Id | UUID | PK |
+| TenantId | UUID | FK → Tenants |
+| Key | VARCHAR(200) | Setting key (e.g. llm.openai.apiKey) |
+| Value | TEXT | Setting value |
+| UpdatedAt | TIMESTAMPTZ | Last updated |
+
+Unique index: (TenantId, Key).

@@ -239,3 +239,5 @@ OrchestFlowAI provides a guided onboarding experience for creating a new workspa
 - Each invite token is a unique GUID string (32 hex characters).
 - Once accepted, the invite cannot be reused.
 - The new user's role is set from the invite's ole field.
+
+> **Tip:** OPENAI_API_KEY can also be configured at runtime via the Settings page in the UI (Settings ? OpenAI API Key). Changes take effect immediately without restart.
