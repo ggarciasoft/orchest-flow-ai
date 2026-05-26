@@ -2,8 +2,8 @@
 
 <!-- Status & Build -->
 [![Status](https://img.shields.io/badge/status-active%20development-yellow?style=flat-square)](https://github.com/ggarciasoft/OrchestFlowAI)
-[![Backend Tests](https://img.shields.io/badge/backend%20tests-125%20passing-brightgreen?style=flat-square&logo=dotnet)](./tests/OrchestFlowAI.Tests)
-[![Frontend Tests](https://img.shields.io/badge/frontend%20tests-24%20passing-brightgreen?style=flat-square&logo=jest)](./apps/web)
+[![Backend Tests](https://img.shields.io/badge/backend%20tests-299%20passing-brightgreen?style=flat-square&logo=dotnet)](./tests/OrchestFlowAI.Tests)
+[![Frontend Tests](https://img.shields.io/badge/frontend%20tests-59%20passing-brightgreen?style=flat-square&logo=jest)](./apps/web)
 [![Last Commit](https://img.shields.io/github/last-commit/ggarciasoft/OrchestFlowAI?style=flat-square)](https://github.com/ggarciasoft/OrchestFlowAI/commits/main)
 
 <!-- Stack -->
@@ -34,7 +34,7 @@ OrchestFlowAI is a modular platform that lets teams build AI-driven business wor
 | Frontend (Next.js) | ✅ Running — designer, pages, auth |
 | Workflow Engine | ✅ Implemented — graph execution, retries, approvals |
 | Node Library | ✅ **19 nodes** across 6 categories |
-| Unit Tests | ✅ **125/125 backend** · **24/24 frontend** passing |
+| Unit Tests | ✅ **299/299 backend** · **59/59 frontend** passing |
 | Database | ⚠️ In-memory stubs (PostgreSQL not yet wired) |
 | Designer Save | ⚠️ Not yet implemented — see `BACKLOG.md` |
 | Auth guard (frontend) | ⚠️ Partial — login works, route guard pending |
@@ -165,7 +165,7 @@ OrchestFlowAI/
 │   ├── logic/                  # Control flow nodes
 │   └── system/                 # Start/End nodes
 ├── tests/
-│   └── OrchestFlowAI.Tests/        # xUnit test project (125 tests)
+│   └── OrchestFlowAI.Tests/        # xUnit test project (299 tests)
 ├── docs/                       # Architecture, API, nodes, setup docs
 ├── rules/                      # Coding rules by domain
 ├── AGENTS.md                   # AI agent roles and rules
@@ -231,10 +231,10 @@ docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
 
 ### Run tests
 ```bash
-# Backend (125 tests)
-cd tests/OrchestFlowAI.Tests && dotnet test
+# Backend (299 tests)
+cd tests/OrchestFlowAI.Tests && dotnet test --configuration Release
 
-# Frontend (26 tests)
+# Frontend (59 tests)
 cd apps/web && npm test
 ```
 

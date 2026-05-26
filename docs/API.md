@@ -72,6 +72,8 @@ Response: `{ "id": "…", "versionNumber": 2 }`
 ### `POST /api/workflows/{workflowId}/versions/{versionId}/activate`
 Mark a version as active. Only one active version per workflow.
 
+Response: `204 No Content`
+
 ### `POST /api/workflows/{workflowId}/validate`
 Validate the workflow's current definition without saving. Returns the engine's validation report.
 

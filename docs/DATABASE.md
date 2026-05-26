@@ -187,9 +187,23 @@ Indexes: `(tenant_id, created_at desc)`, `(workflow_execution_id)`.
 
 ## 4. Migrations
 
-- Migrations live in `OrchestFlowAI.Infrastructure/Persistence/Migrations/`.
-- Use EF Core migrations or a runner like FluentMigrator (decision recorded as ADR).
+- Migrations live in `OrchestFlowAI.Infrastructure/Migrations/`.
+- EF Core migrations are used. The Infrastructure project is both the migrations project and its own startup project for `dotnet ef` commands.
 - Migrations are forward-only in production; backfills are explicit data scripts.
+- Auto-migration runs on API startup with 5 retries (fatal if all retries fail — app will not start with missing tables).
+- To add a migration:
+  ```sh
+  dotnet ef migrations add <Name> \
+    --project packages/OrchestFlowAI.Infrastructure \
+    --startup-project packages/OrchestFlowAI.Infrastructure
+  ```
+- To apply manually (dev):
+  ```sh
+  dotnet ef database update \
+    --project packages/OrchestFlowAI.Infrastructure \
+    --startup-project packages/OrchestFlowAI.Infrastructure \
+    --connection "Host=localhost;Database=OrchestFlowAI;Username=OrchestFlowAI;Password=<pwd>"
+  ```
 
 ---
 

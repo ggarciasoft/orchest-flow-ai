@@ -1,7 +1,7 @@
 # OrchestFlowAI — Known Gaps & Work Backlog
 
 > Created: 2026-05-23  
-> Last updated: 2026-05-24
+> Last updated: 2026-05-25
 
 ---
 
@@ -78,8 +78,8 @@
 | Auto-migrate on startup | ✅ |
 | Swagger + JWT auth button | ✅ all envs |
 | Docker Compose split (3 files) | ✅ |
-| Backend unit tests | ✅ **173 / 173** |
-| Frontend unit tests | ✅ **29 / 29** |
+| Backend unit tests | ✅ **299 / 299** |
+| Frontend unit tests | ✅ **59 / 59** |
 | XML / JSDoc docs on all public APIs | ✅ |
 
 ---
