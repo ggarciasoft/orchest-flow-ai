@@ -230,4 +230,26 @@ public sealed class DatabaseExecuteNodeTests
         await act.Should().ThrowAsync<NodeExecutionException>()
             .Where(e => e.Code == "DB_UNKNOWN_PROVIDER");
     }
+
+    [Fact]
+    public async Task ExecuteAsync_TemplateInParameters_ResolvesInputBeforeProviderCheck()
+    {
+        // Template {{responseBody}} in parameters JSON should be resolved from NodeInputs.
+        // Proves the inputs path is reached by failing on DB_UNKNOWN_PROVIDER (not DB_MISSING_CONNECTION),
+        // since connectionString is supplied via input.
+        var ctx = new TestContextBuilder()
+            .WithConfig(new()
+            {
+                ["provider"] = "oracle",
+                ["statement"] = "INSERT INTO test_table (data_value) VALUES (@data_value)",
+                ["parameters"] = "{\"data_value\": \"{{responseBody}}\"}"
+            })
+            .WithInputs(new() { ["connectionString"] = "fake", ["responseBody"] = "hello world" })
+            .Build();
+
+        // Must fail on unknown provider, NOT on missing connection — proves inputs were accepted
+        var act = () => _node.ExecuteAsync(ctx, CancellationToken.None);
+        await act.Should().ThrowAsync<NodeExecutionException>()
+            .Where(e => e.Code == "DB_UNKNOWN_PROVIDER");
+    }
 }

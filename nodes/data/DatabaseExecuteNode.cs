@@ -44,7 +44,7 @@ public sealed class DatabaseExecuteNode : IWorkflowNode
         command.CommandTimeout = timeoutSeconds;
 
         if (!string.IsNullOrWhiteSpace(parametersJson))
-            BindParameters(command, parametersJson);
+            BindParameters(command, parametersJson, ctx.NodeInputs);
 
         try
         {
@@ -71,7 +71,7 @@ public sealed class DatabaseExecuteNode : IWorkflowNode
             _ => throw new NodeExecutionException("DB_UNKNOWN_PROVIDER", $"Unknown provider '{provider}'. Use postgresql, sqlserver, or mysql.", retryable: false)
         };
 
-    private static void BindParameters(DbCommand command, string parametersJson)
+    private static void BindParameters(DbCommand command, string parametersJson, IReadOnlyDictionary<string, object?> inputs)
     {
         var parameters = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(parametersJson)
             ?? new Dictionary<string, JsonElement>();
@@ -79,18 +79,27 @@ public sealed class DatabaseExecuteNode : IWorkflowNode
         {
             var param = command.CreateParameter();
             param.ParameterName = key.TrimStart('@', '$', ':');
-            param.Value = value.ValueKind switch
+            object resolvedValue = value.ValueKind switch
             {
                 JsonValueKind.Null => DBNull.Value,
                 JsonValueKind.True => true,
                 JsonValueKind.False => false,
                 JsonValueKind.Number when value.TryGetInt64(out var l) => l,
                 JsonValueKind.Number => value.GetDouble(),
-                _ => (object)value.GetString()!
+                _ => (object)ResolveTemplate(value.GetString()!, inputs)
             };
+            param.Value = resolvedValue;
             command.Parameters.Add(param);
         }
     }
+
+    /// <summary>Resolves <c>{{key}}</c> placeholders in a string against the provided input dictionary.</summary>
+    private static string ResolveTemplate(string template, IReadOnlyDictionary<string, object?> inputs)
+        => global::System.Text.RegularExpressions.Regex.Replace(template, @"\{\{(\w+)\}}", match =>
+        {
+            var key = match.Groups[1].Value;
+            return inputs.TryGetValue(key, out var val) ? val?.ToString() ?? string.Empty : match.Value;
+        });
 }
 
 /// <summary>Descriptor for <see cref="DatabaseExecuteNode"/>.</summary>

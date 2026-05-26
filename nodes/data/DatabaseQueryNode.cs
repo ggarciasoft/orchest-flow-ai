@@ -46,7 +46,7 @@ public sealed class DatabaseQueryNode : IWorkflowNode
 
         // Bind named parameters from JSON object, e.g. {"userId": "abc", "status": "active"}
         if (!string.IsNullOrWhiteSpace(parametersJson))
-            BindParameters(command, parametersJson);
+            BindParameters(command, parametersJson, ctx.NodeInputs);
 
         try
         {
@@ -76,27 +76,36 @@ public sealed class DatabaseQueryNode : IWorkflowNode
             _ => throw new NodeExecutionException("DB_UNKNOWN_PROVIDER", $"Unknown provider '{provider}'. Use postgresql, sqlserver, or mysql.", retryable: false)
         };
 
-    private static void BindParameters(DbCommand command, string parametersJson)
+    private static void BindParameters(DbCommand command, string parametersJson, IReadOnlyDictionary<string, object?> inputs)
     {
         var parameters = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(parametersJson)
             ?? new Dictionary<string, JsonElement>();
         foreach (var (key, value) in parameters)
         {
             var param = command.CreateParameter();
-            // Support both @name (SQL Server / MySQL) and $name / :name (PostgreSQL) styles
             param.ParameterName = key.TrimStart('@', '$', ':');
-            param.Value = value.ValueKind switch
+            // Resolve {{inputKey}} templates against upstream node outputs / workflow inputs
+            object resolvedValue = value.ValueKind switch
             {
                 JsonValueKind.Null => DBNull.Value,
                 JsonValueKind.True => true,
                 JsonValueKind.False => false,
                 JsonValueKind.Number when value.TryGetInt64(out var l) => l,
                 JsonValueKind.Number => value.GetDouble(),
-                _ => (object)value.GetString()!
+                _ => (object)ResolveTemplate(value.GetString()!, inputs)
             };
+            param.Value = resolvedValue;
             command.Parameters.Add(param);
         }
     }
+
+    /// <summary>Resolves <c>{{key}}</c> placeholders in a string against the provided input dictionary.</summary>
+    private static string ResolveTemplate(string template, IReadOnlyDictionary<string, object?> inputs)
+        => global::System.Text.RegularExpressions.Regex.Replace(template, @"\{\{(\w+)\}}", match =>
+        {
+            var key = match.Groups[1].Value;
+            return inputs.TryGetValue(key, out var val) ? val?.ToString() ?? string.Empty : match.Value;
+        });
 
     private static async Task<List<Dictionary<string, object?>>> ReadRowsAsync(DbDataReader reader, CancellationToken ct)
     {
