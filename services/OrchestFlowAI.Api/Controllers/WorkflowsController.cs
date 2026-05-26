@@ -183,6 +183,6 @@ public sealed class WorkflowsController : ControllerBase
     public async Task<ActionResult> ActivateVersion(Guid id, Guid versionId, CancellationToken ct)
     {
         await _workflows.ActivateVersionAsync(versionId, id, ct);
-        return Ok();
+        return NoContent();
     }
 }

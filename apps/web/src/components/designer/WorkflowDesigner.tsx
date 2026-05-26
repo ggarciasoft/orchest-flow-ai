@@ -42,7 +42,9 @@ interface ContextMenu { x: number; y: number; nodeId: string; }
 export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson }: Props) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const [selected, setSelected] = useState<Node | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Always derive selected node from current nodes state so config changes are reflected immediately
+  const selected = selectedId ? (nodes.find(n => n.id === selectedId) ?? null) : null;
   const [executing, setExecuting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -59,11 +61,18 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson 
 
       if (def.nodes?.length) {
         // Restore node styles from category colors
+        // Always use type 'default' for React Flow rendering — actual node type lives in data.descriptor
         const restoredNodes: Node[] = def.nodes.map(n => {
-          const descriptor = nodeCatalog.find(d => d.type === (n.data?.descriptor as NodeDescriptor | undefined)?.type);
+          const descriptor = nodeCatalog.find(d => d.type === ((n.data?.descriptor as NodeDescriptor | undefined)?.type ?? n.type));
           const category = descriptor?.category ?? 'system';
           return {
             ...n,
+            type: 'default',   // React Flow type — always 'default'; actual type is in data.descriptor
+            data: {
+              ...n.data,
+              label: descriptor?.displayName ?? (n.data?.label as string) ?? n.type,
+              descriptor: descriptor ?? n.data?.descriptor,
+            },
             style: {
               background: CATEGORY_COLORS[category] ?? '#94a3b8',
               color: 'white', border: 'none', borderRadius: 8,
@@ -90,14 +99,14 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson 
 
   const onNodeClick: NodeMouseHandler = (_evt, node) => {
     setContextMenu(null);
-    setSelected(node);
+    setSelectedId(node.id);
   };
 
   /** Removes a node and all its connected edges by id. */
   const deleteNode = useCallback((nodeId: string) => {
     setNodes(nds => nds.filter(n => n.id !== nodeId));
     setEdges(eds => eds.filter(e => e.source !== nodeId && e.target !== nodeId));
-    setSelected(prev => (prev?.id === nodeId ? null : prev));
+    setSelectedId(prev => (prev === nodeId ? null : prev));
     setContextMenu(null);
   }, [setNodes, setEdges]);
 
@@ -163,7 +172,7 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson 
       const result = await api.workflows.saveVersion(workflow.id, definition);
 
       // Activate the newly saved version so it's the one that gets executed
-      await fetch(`/api/workflows/${workflow.id}/versions/${result.id}/activate`, { method: 'POST' });
+      await api.workflows.activateVersion(workflow.id, result.id);
 
       setSavedAt(new Date().toLocaleTimeString());
     } catch (e) {
@@ -228,7 +237,7 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson 
             onConnect={onConnect}
             onNodeClick={onNodeClick}
             onNodeContextMenu={onNodeContextMenu}
-            onPaneClick={() => { setSelected(null); setContextMenu(null); }}
+            onPaneClick={() => { setSelectedId(null); setContextMenu(null); }}
             fitView>
             <Background />
             <Controls />
@@ -242,7 +251,7 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson 
         <NodeConfigDrawer
           node={selected}
           catalog={nodeCatalog}
-          onClose={() => setSelected(null)}
+          onClose={() => setSelectedId(null)}
           onDelete={() => deleteNode(selected.id)}
           onConfigChange={(config) =>
             setNodes(nds => nds.map(n =>
@@ -270,3 +279,4 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson 
     </div>
   );
 }
+

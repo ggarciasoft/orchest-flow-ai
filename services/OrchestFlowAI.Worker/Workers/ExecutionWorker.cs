@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OrchestFlowAI.Application.Abstractions;
@@ -9,12 +10,12 @@ namespace OrchestFlowAI.Worker.Workers;
 public sealed class ExecutionWorker : BackgroundService
 {
     private readonly IExecutionQueueConsumer _queue;
-    private readonly IWorkflowEngine _engine;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ExecutionWorker> _logger;
 
-    /// <summary>Initialises the worker with a queue consumer and engine.</summary>
-    public ExecutionWorker(IExecutionQueueConsumer queue, IWorkflowEngine engine, ILogger<ExecutionWorker> logger)
-    { _queue = queue; _engine = engine; _logger = logger; }
+    /// <summary>Initialises the worker with a queue consumer, scope factory, and logger.</summary>
+    public ExecutionWorker(IExecutionQueueConsumer queue, IServiceScopeFactory scopeFactory, ILogger<ExecutionWorker> logger)
+    { _queue = queue; _scopeFactory = scopeFactory; _logger = logger; }
 
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -25,7 +26,10 @@ public sealed class ExecutionWorker : BackgroundService
             try
             {
                 _logger.LogInformation("Processing execution {ExecutionId}", msg.ExecutionId);
-                await _engine.RunAsync(msg.ExecutionId, stoppingToken);
+                // Create a fresh scope per execution so each gets its own DbContext instance
+                using var scope = _scopeFactory.CreateScope();
+                var engine = scope.ServiceProvider.GetRequiredService<IWorkflowEngine>();
+                await engine.RunAsync(msg.ExecutionId, stoppingToken);
             }
             catch (Exception ex)
             {

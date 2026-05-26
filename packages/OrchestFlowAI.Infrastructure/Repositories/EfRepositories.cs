@@ -13,7 +13,7 @@ public sealed class EfWorkflowRepository : IWorkflowRepository
     public EfWorkflowRepository(OrchestFlowAIDbContext db) => _db = db;
 
     public Task<Workflow?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default)
-        => _db.Workflows.FirstOrDefaultAsync(w => w.Id == id && w.TenantId == tenantId, ct);
+        => _db.Workflows.AsNoTracking().FirstOrDefaultAsync(w => w.Id == id && w.TenantId == tenantId, ct);
 
     public async Task<Workflow> CreateAsync(Workflow workflow, CancellationToken ct = default)
     { _db.Workflows.Add(workflow); await _db.SaveChangesAsync(ct); return workflow; }
@@ -23,40 +23,44 @@ public sealed class EfWorkflowRepository : IWorkflowRepository
 
     public async Task<IReadOnlyList<Workflow>> ListAsync(Guid tenantId, string? search, int page, int pageSize, CancellationToken ct = default)
     {
-        var q = _db.Workflows.Where(w => w.TenantId == tenantId);
+        var q = _db.Workflows.AsNoTracking().Where(w => w.TenantId == tenantId);
         if (!string.IsNullOrEmpty(search)) q = q.Where(w => w.Name.Contains(search));
         return await q.OrderByDescending(w => w.UpdatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
     }
 
     public async Task<int> CountAsync(Guid tenantId, string? search, CancellationToken ct = default)
     {
-        var q = _db.Workflows.Where(w => w.TenantId == tenantId);
+        var q = _db.Workflows.AsNoTracking().Where(w => w.TenantId == tenantId);
         if (!string.IsNullOrEmpty(search)) q = q.Where(w => w.Name.Contains(search));
         return await q.CountAsync(ct);
     }
 
     public Task<WorkflowVersion?> GetActiveVersionAsync(Guid workflowId, CancellationToken ct = default)
-        => _db.WorkflowVersions.FirstOrDefaultAsync(v => v.WorkflowId == workflowId && v.IsActive, ct);
+        => _db.WorkflowVersions.AsNoTracking().FirstOrDefaultAsync(v => v.WorkflowId == workflowId && v.IsActive, ct);
 
     public async Task<WorkflowVersion> CreateVersionAsync(WorkflowVersion version, CancellationToken ct = default)
     { _db.WorkflowVersions.Add(version); await _db.SaveChangesAsync(ct); return version; }
 
     public Task<WorkflowVersion?> GetVersionAsync(Guid versionId, CancellationToken ct = default)
-        => _db.WorkflowVersions.FindAsync(new object[] { versionId }, ct).AsTask();
+        => _db.WorkflowVersions.AsNoTracking().FirstOrDefaultAsync(v => v.Id == versionId, ct);
 
     public async Task ActivateVersionAsync(Guid versionId, Guid workflowId, CancellationToken ct = default)
     {
-        await _db.WorkflowVersions.Where(v => v.WorkflowId == workflowId && v.IsActive).ForEachAsync(v => v.Deactivate(), ct);
-        var version = await _db.WorkflowVersions.FindAsync(new object[] { versionId }, ct);
-        version?.Activate();
+        // Load all active versions for this workflow, deactivate them, then activate the target
+        var versions = await _db.WorkflowVersions.Where(v => v.WorkflowId == workflowId).ToListAsync(ct);
+        foreach (var v in versions)
+        {
+            if (v.IsActive) v.Deactivate();
+            if (v.Id == versionId) v.Activate();
+        }
         await _db.SaveChangesAsync(ct);
     }
 
     public Task<Workflow?> GetByIdAsync(Guid id, CancellationToken ct = default)
-        => _db.Workflows.FirstOrDefaultAsync(w => w.Id == id && !w.IsDeleted, ct);
+        => _db.Workflows.AsNoTracking().FirstOrDefaultAsync(w => w.Id == id && !w.IsDeleted, ct);
 
     public Task<IReadOnlyList<Workflow>> ListByTriggerTypeAsync(TriggerType triggerType, CancellationToken ct = default)
-        => _db.Workflows.Where(w => w.TriggerType == triggerType && !w.IsDeleted)
+        => _db.Workflows.AsNoTracking().Where(w => w.TriggerType == triggerType && !w.IsDeleted)
             .ToListAsync(ct)
             .ContinueWith(t => (IReadOnlyList<Workflow>)t.Result, ct);
 }
@@ -68,7 +72,7 @@ public sealed class EfExecutionRepository : IExecutionRepository
     public EfExecutionRepository(OrchestFlowAIDbContext db) => _db = db;
 
     public Task<WorkflowExecution?> GetAsync(Guid id, CancellationToken ct = default)
-        => _db.WorkflowExecutions.FindAsync(new object[] { id }, ct).AsTask();
+        => _db.WorkflowExecutions.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id, ct);
 
     public async Task<WorkflowExecution> CreateAsync(WorkflowExecution execution, CancellationToken ct = default)
     { _db.WorkflowExecutions.Add(execution); await _db.SaveChangesAsync(ct); return execution; }
@@ -78,13 +82,15 @@ public sealed class EfExecutionRepository : IExecutionRepository
 
     public async Task<IReadOnlyList<WorkflowExecution>> ListAsync(Guid tenantId, string? status, int page, int pageSize, CancellationToken ct = default)
     {
-        var q = _db.WorkflowExecutions.Where(e => e.TenantId == tenantId);
-        if (!string.IsNullOrEmpty(status)) q = q.Where(e => e.Status.ToString() == status);
+        var q = _db.WorkflowExecutions.AsNoTracking().Where(e => e.TenantId == tenantId);
+        // Parse status string to enum for clean SQL translation — avoid .ToString() in EF LINQ expressions
+        if (!string.IsNullOrEmpty(status) && Enum.TryParse<OrchestFlowAI.Domain.Enums.ExecutionStatus>(status, ignoreCase: true, out var statusEnum))
+            q = q.Where(e => e.Status == statusEnum);
         return await q.OrderByDescending(e => e.StartedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
     }
 
     public async Task<IReadOnlyList<NodeExecution>> GetNodeExecutionsAsync(Guid executionId, CancellationToken ct = default)
-        => await _db.NodeExecutions.Where(n => n.WorkflowExecutionId == executionId).OrderBy(n => n.Step).ToListAsync(ct);
+        => await _db.NodeExecutions.AsNoTracking().Where(n => n.WorkflowExecutionId == executionId).OrderBy(n => n.Step).ToListAsync(ct);
 
     public async Task<NodeExecution> CreateNodeExecutionAsync(NodeExecution nodeExecution, CancellationToken ct = default)
     { _db.NodeExecutions.Add(nodeExecution); await _db.SaveChangesAsync(ct); return nodeExecution; }

@@ -119,127 +119,25 @@ if (!descriptor) return null; // Return early if no descriptor is found
           )}
         </div>
 
-        {/* Special auth section for HTTP nodes */}
-        {descriptor.type === 'integrations.http' && (
-          <div className="space-y-3">
-            <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Authentication</p>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Auth Type</label>
-              <select
-                className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={config.authType ?? 'None'}
-                onChange={e => onConfigChange({ ...config, authType: e.target.value })}
-              >
-                <option value="None">None</option>
-                <option value="Bearer">Bearer Token</option>
-                <option value="Basic">Basic Auth</option>
-                <option value="APIKey">API Key</option>
-                <option value="OAuth2">OAuth2 Client Credentials</option>
-              </select>
-            </div>
-            {config.authType === 'Bearer' && (
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Token</label>
-                <input
-                  className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={config.authToken ?? ''}
-                  onChange={e => onConfigChange({ ...config, authToken: e.target.value })}
-                />
-              </div>
-            )}
-            {config.authType === 'Basic' && (
-              <div className="space-y-2">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Username</label>
-                  <input
-                    className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={config.authUsername ?? ''}
-                    onChange={e => onConfigChange({ ...config, authUsername: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Password</label>
-                  <input
-                    type="password"
-                    className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={config.authPassword ?? ''}
-                    onChange={e => onConfigChange({ ...config, authPassword: e.target.value })}
-                  />
-                </div>
-              </div>
-            )}
-            {config.authType === 'APIKey' && (
-              <div className="space-y-2">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Header/Param Name</label>
-                  <input
-                    className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={config.authApiKeyName ?? ''}
-                    onChange={e => onConfigChange({ ...config, authApiKeyName: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Value</label>
-                  <input
-                    className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={config.authApiKeyValue ?? ''}
-                    onChange={e => onConfigChange({ ...config, authApiKeyValue: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Location</label>
-                  <select
-                    className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={config.authApiKeyLocation ?? 'Header'}
-                    onChange={e => onConfigChange({ ...config, authApiKeyLocation: e.target.value })}
-                  >
-                    <option value="Header">Header</option>
-                    <option value="Query">Query</option>
-                  </select>
-                </div>
-              </div>
-            )}
-            {config.authType === 'OAuth2' && (
-              <div className="space-y-2">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Token URL</label>
-                  <input
-                    className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={config.authTokenUrl ?? ''}
-                    onChange={e => onConfigChange({ ...config, authTokenUrl: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Client ID</label>
-                  <input
-                    className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={config.authClientId ?? ''}
-                    onChange={e => onConfigChange({ ...config, authClientId: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Client Secret</label>
-                  <input
-                    type="password"
-                    className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={config.authClientSecret ?? ''}
-                    onChange={e => onConfigChange({ ...config, authClientSecret: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Scope</label>
-                  <input
-                    className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={config.authScope ?? ''}
-                    onChange={e => onConfigChange({ ...config, authScope: e.target.value })}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {descriptor.configuration.map(cfg => {
+                // Conditional visibility for auth sub-fields — only show when the relevant authType is selected
+                const authType = config.authType as string | undefined;
+                const hiddenWhen: Record<string, string[]> = {
+                  authToken:          ['bearer'],
+                  authUsername:       ['basic'],
+                  authPassword:       ['basic'],
+                  authApiKeyName:     ['api-key'],
+                  authApiKeyValue:    ['api-key'],
+                  authApiKeyLocation: ['api-key'],
+                  authTokenUrl:       ['oauth2-client-credentials'],
+                  authClientId:       ['oauth2-client-credentials'],
+                  authClientSecret:   ['oauth2-client-credentials'],
+                  authScope:          ['oauth2-client-credentials'],
+                };
+                const visibleFor = hiddenWhen[cfg.key];
+                if (visibleFor && !visibleFor.includes(authType ?? '')) return null;
 
-        {descriptor.configuration.map(cfg => (
+                return (
                 <div key={cfg.key}>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
                     {cfg.displayName}
@@ -267,7 +165,7 @@ if (!descriptor) return null; // Return early if no descriptor is found
                   )}
                   <p className="text-xs text-gray-400 mt-0.5">{cfg.description}</p>
                 </div>
-              ))}
+              )})}
             </div>
           </div>
         )}

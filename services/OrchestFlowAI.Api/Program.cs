@@ -132,16 +132,35 @@ using (var scope = app.Services.CreateScope())
 
     if (!string.IsNullOrWhiteSpace(connectionString))
     {
-        try
+        const int maxRetries = 5;
+        const int delayMs = 3000;
+        Exception? lastEx = null;
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++)
         {
-            var db = services.GetRequiredService<OrchestFlowAI.Infrastructure.Persistence.OrchestFlowAIDbContext>();
-            // Apply any pending migrations — creates tables on first run
-            await db.Database.MigrateAsync();
-            app.Logger.LogInformation("Database migrations applied successfully.");
+            try
+            {
+                var db = services.GetRequiredService<OrchestFlowAI.Infrastructure.Persistence.OrchestFlowAIDbContext>();
+                // Apply any pending migrations — creates tables on first run
+                await db.Database.MigrateAsync();
+                app.Logger.LogInformation("Database migrations applied successfully.");
+                lastEx = null;
+                break;
+            }
+            catch (Exception ex)
+            {
+                lastEx = ex;
+                app.Logger.LogWarning(ex, "Migration attempt {Attempt}/{Max} failed. Retrying in {Delay}ms...", attempt, maxRetries, delayMs);
+                if (attempt < maxRetries)
+                    await Task.Delay(delayMs);
+            }
         }
-        catch (Exception ex)
+
+        // If all retries exhausted, fail hard — running without tables is worse than not starting
+        if (lastEx != null)
         {
-            app.Logger.LogError(ex, "Failed to apply database migrations.");
+            app.Logger.LogCritical(lastEx, "Database migration failed after {Max} attempts. Shutting down.", maxRetries);
+            throw new InvalidOperationException("Database migration failed. Cannot start application.", lastEx);
         }
     }
     else

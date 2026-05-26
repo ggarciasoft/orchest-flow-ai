@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -77,6 +77,25 @@ namespace OrchestFlowAI.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ExecutionQueue",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    WorkflowId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TriggeredBy = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Payload = table.Column<string>(type: "text", nullable: false),
+                    Status = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    PickedUpAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    CompletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ExecutionQueue", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "NodeExecutions",
                 columns: table => new
                 {
@@ -90,12 +109,48 @@ namespace OrchestFlowAI.Infrastructure.Migrations
                     InputJson = table.Column<string>(type: "text", nullable: true),
                     OutputJson = table.Column<string>(type: "text", nullable: true),
                     ErrorMessage = table.Column<string>(type: "text", nullable: true),
+                    AttemptNumber = table.Column<int>(type: "integer", nullable: false, defaultValue: 1),
                     RetryCount = table.Column<int>(type: "integer", nullable: false),
                     Step = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_NodeExecutions", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "NodePresets",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    NodeType = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    ConfigJson = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NodePresets", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TenantInvites",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Email = table.Column<string>(type: "character varying(320)", maxLength: 320, nullable: false),
+                    Role = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Token = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    AcceptedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TenantInvites", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -161,6 +216,12 @@ namespace OrchestFlowAI.Infrastructure.Migrations
                     CreatedBy = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    TriggerType = table.Column<string>(type: "text", nullable: false),
+                    WebhookSecret = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    CronExpression = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    RetryMaxAttempts = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    RetryBackoffMs = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    RetryBackoffMultiplier = table.Column<double>(type: "double precision", nullable: false, defaultValue: 2.0),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false),
                     DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
@@ -207,9 +268,35 @@ namespace OrchestFlowAI.Infrastructure.Migrations
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ExecutionQueue_Status_CreatedAt",
+                table: "ExecutionQueue",
+                columns: new[] { "Status", "CreatedAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ExecutionQueue_TenantId",
+                table: "ExecutionQueue",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_NodeExecutions_WorkflowExecutionId",
                 table: "NodeExecutions",
                 column: "WorkflowExecutionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_NodePresets_TenantId_NodeType",
+                table: "NodePresets",
+                columns: new[] { "TenantId", "NodeType" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TenantInvites_TenantId",
+                table: "TenantInvites",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TenantInvites_Token",
+                table: "TenantInvites",
+                column: "Token",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_TenantId_Email",
@@ -256,7 +343,16 @@ namespace OrchestFlowAI.Infrastructure.Migrations
                 name: "Documents");
 
             migrationBuilder.DropTable(
+                name: "ExecutionQueue");
+
+            migrationBuilder.DropTable(
                 name: "NodeExecutions");
+
+            migrationBuilder.DropTable(
+                name: "NodePresets");
+
+            migrationBuilder.DropTable(
+                name: "TenantInvites");
 
             migrationBuilder.DropTable(
                 name: "Tenants");

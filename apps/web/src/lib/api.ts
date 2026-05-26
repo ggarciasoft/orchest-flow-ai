@@ -27,9 +27,11 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     const err = await res.json().catch(() => ({}));
     throw new Error((err as Record<string, string>).detail ?? (err as Record<string, string>).title ?? `HTTP ${res.status}`);
   }
-  // 204 No Content — return undefined rather than attempting to parse empty body
+  // 204 No Content or empty body — return undefined rather than attempting to parse
   if (res.status === 204) return undefined as T;
-  return res.json();
+  const text = await res.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text) as T;
 }
 
 /** All OrchestFlowAI API methods organized by resource domain. */
@@ -79,6 +81,9 @@ export const api = {
     /** Saves a new version of a workflow definition and activates it. */
     saveVersion: (id: string, definition: object) =>
       apiFetch<{ id: string; versionNumber: number }>(`/api/workflows/${id}/versions`, { method: 'POST', body: JSON.stringify({ definition }) }),
+    /** Activates a specific workflow version by id. */
+    activateVersion: (workflowId: string, versionId: string) =>
+      apiFetch<void>(`/api/workflows/${workflowId}/versions/${versionId}/activate`, { method: 'POST' }),
   },
   /** Workflow execution history and node timeline endpoints. */
   executions: {
