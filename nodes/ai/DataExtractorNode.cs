@@ -79,6 +79,7 @@ public sealed class DataExtractorNode : IWorkflowNode
         {
             "financial" =>
                 "Amount: numeric only, no currency symbols or commas (e.g. 150.00). If not found, return null.\n" +
+                "Currency: ISO 4217 currency code (e.g. USD, DOP, EUR, MXN). Detect from symbols or context: $ may be USD or DOP, RD$ is DOP, € is EUR, £ is GBP. If not found, return null.\n" +
                 "Date: ISO 8601 format YYYY-MM-DD. If not found, return null.\n" +
                 "Category: one of Food, Transport, Utilities, Entertainment, Healthcare, Other.\n" +
                 "Store: merchant/business name only, no address or extra text.",
@@ -184,7 +185,7 @@ public sealed class DataExtractorNodeDescriptor : IWorkflowNodeDescriptor
             OptionDescriptions: new Dictionary<string, string>
             {
                 ["none"] = "No preset rules. Use Format Instructions for custom rules.",
-                ["financial"] = "Amount: numeric only (e.g. 150.00)\nDate: YYYY-MM-DD\nCategory: Food | Transport | Utilities | Entertainment | Healthcare | Other\nStore: merchant name only",
+                ["financial"] = "Amount: numeric only (e.g. 150.00)\nCurrency: ISO 4217 code (USD, DOP, EUR…)\nDate: YYYY-MM-DD\nCategory: Food | Transport | Utilities | Entertainment | Healthcare | Other\nStore: merchant name only",
                 ["invoice"] = "Amount: numeric only (e.g. 1200.00)\nDate: YYYY-MM-DD\nInvoiceNumber: alphanumeric string\nVendor: company name only",
                 ["contact"] = "Name: full name, title-case\nEmail: lowercase email address\nPhone: E.164 format (e.g. +1234567890)\nCompany: company name only",
             }),
