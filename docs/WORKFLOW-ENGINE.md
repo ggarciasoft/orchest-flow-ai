@@ -274,26 +274,39 @@ The loop body must be terminated with a `logic.foreach.end` node. The engine ite
    a. Engine clones the current nodeOutputs context.
    b. Injects `{ item, index, total }` as the ForEach node's outputs for this iteration.
    c. Walks the subgraph from the ForEach output edge until reaching `logic.foreach.end`.
-   d. Executes each body node with the per-item context.
+   d. Executes each body node. Each body node execution is **persisted as a `NodeExecution` row** and appears in the execution timeline.
    e. Collects the ForEachEnd node's outputs as the result for this iteration.
 4. After all items: ForEach node's final outputs are `{ results: [...], count: N }`.
 5. Engine advances to the node after `logic.foreach.end`.
 
+### Input Resolution in Loop Body
+
+Each body node resolves its inputs via `ResolveInputs` (normal edge wiring). Two additional mechanisms handle cases where explicit wiring isn't present:
+
+1. **`inheritOutputs` flag** (on `logic.foreach` config, default `false`): when `true`, all outputs accumulated so far in the current iteration are merged into the base inputs before edge resolution. This lets a node like `integrations.http` access `ai.extract` outputs (`Amount`, `Currency`, etc.) without a direct edge. Off by default to keep memory usage flat.
+
+2. **`ctx.NodeOutputs` fallback in nodes**: some nodes (`logic.foreach`, `ai.extract`) scan `ctx.NodeOutputs` directly when `NodeInputs` is empty, making edge wiring optional for common patterns like `gmail.read → foreach`.
+
+### Input Propagation Without Wiring
+
+Because `integrations.gmail.read` outputs `emails` (not `inputArray`), and `logic.foreach` expects `inputArray`, the ForEach node automatically checks `emails`, `items`, `data`, `array`, `results` as aliases — so no explicit edge map is needed.
+
 ### Example Workflow
 
 ```
-GmailRead → ForEach (loopMode=true, inputArray={{emails}})
-               → DataExtractor (text={{item}})
-               → HTTPRequest (POST {{extractedJson}})
+GmailRead → ForEach (loopMode=true, inheritOutputs=true)
+               → DataExtractor (fields: Amount, Currency, Date, Store, Category)
+               → DbExecute (INSERT ... @amount, @currency, @date)
+               → HTTPRequest (POST body with {{Amount}}, {{Currency}})
             ForEachEnd
 → End
 ```
 
 ### Notes
 
-- Body node failures are skipped (non-fatal per iteration).
-- Body nodes do NOT persist `NodeExecution` rows per iteration (engine-internal execution only).
+- Body node failures per iteration: logged as Failed `NodeExecution`, iteration is skipped, loop continues.
 - `results` output is a JSON array of each ForEachEnd node's outputs.
+- Individual field outputs from `ai.extract` (e.g. `{{Amount}}`, `{{Currency}}`) are available in `{{...}}` templates of downstream body nodes without extra wiring when `inheritOutputs=true`.
 
 
 ---

@@ -74,21 +74,30 @@ The most important screen. Three regions:
 
 1. **Left sidebar** — node palette with categories (AI, Documents, Logic, Human, Integrations, System). Categories collapse. Drag a node onto the canvas to add it.
 2. **Main canvas** — React Flow surface with nodes and edges. Selecting a node opens the right drawer.
-3. **Right drawer** — node configuration form rendered dynamically from the node descriptor (`/api/nodes/catalog`).
+3. **Right drawer** — node configuration form rendered dynamically from the node descriptor (`/api/nodes/catalog`). Boolean fields render as a `true/false` select. Enum fields with `optionDescriptions` show a formatted preview box below the dropdown when a value is selected.
 
 Top toolbar actions:
 
-- **Save** (creates a new version)
-- **Validate** (calls `POST /api/workflows/{id}/validate`)
-- **Execute** (opens an input dialog → `POST /api/workflows/{id}/execute`)
-- **Versions** (list of versions; activate a version)
-- **Publish** (activate current version)
+- **↩ Undo** / **↪ Redo** — 50-step history stack. Keyboard: `Ctrl+Z` / `Ctrl+Y` (or `Ctrl+Shift+Z`). Tracks node add/delete, edge add/delete, config changes.
+- **Save** — serializes canvas and creates a new version via `POST /api/workflows/{id}/versions`, then activates it.
+- **History** — toggles the Version History panel (replaces the config drawer while open). Lists all saved versions newest-first with **Load** (preview on canvas without activating) and **Activate** actions.
+- **Run** — opens an input dialog → `POST /api/workflows/{id}/execute`.
 
-Status indicators:
+Keyboard shortcuts:
 
-- Inline validation errors on nodes (red border, tooltip with message).
-- Edge condition badges.
-- Unsaved-changes indicator in the toolbar.
+| Key | Action |
+|-----|--------|
+| `Del` / `Backspace` | Delete selected node or edge (skipped when typing in inputs) |
+| `Ctrl+Z` | Undo |
+| `Ctrl+Y` / `Ctrl+Shift+Z` | Redo |
+
+Version History Panel (`VersionHistoryPanel`):
+
+- Lists all versions from `GET /api/workflows/{id}/versions` (newest first)
+- ✅ badge on the currently active version
+- **Load**: fetches definition from `GET /api/workflows/{id}/versions/{versionId}` and hydrates the canvas
+- **Activate**: calls `POST /api/workflows/{id}/versions/{versionId}/activate`; toolbar badge updates
+- Version badge in toolbar reflects the version currently shown on canvas (may differ from active if a historical version was loaded)
 
 ### Execution Details / Timeline
 

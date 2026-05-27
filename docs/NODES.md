@@ -104,10 +104,32 @@ Each entry has:
 
 ### `ai.extract`  ✅ Shipped
 
-- **Purpose:** Extract structured fields from unstructured text using an LLM.
-- **Inputs:** `text` (`String`, required)
-- **Outputs:** `extractedJson` (`Json`), plus individual field outputs
-- **Config:** `fields` (comma-separated, required), `model`
+- **Purpose:** Extract structured fields from unstructured text using an LLM. Strips HTML tags and decodes entities before sending to the model. Uses a system prompt + `<input_text>` XML delimiters to prevent prompt injection.
+- **Inputs:** `text` (`String`, required — or `item` / `body` as fallback; falls back to `NodeOutputs` scan when edge wiring is missing)
+- **Outputs:** `extractedJson` (`Json`, the full JSON object); plus **individual field outputs** matching each key in `fields` (e.g. `Amount`, `Date`, `Currency`) for direct use as `{{Amount}}` in downstream nodes
+- **Config:**
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `fields` | String | — | Comma-separated field names to extract, e.g. `Amount, Date, Store` |
+| `formatPreset` | Enum | `none` | Built-in format rules. See presets below. |
+| `formatInstructions` | String | — | Custom per-field rules appended after preset. E.g. `Amount: numeric only. Date: YYYY-MM-DD.` |
+| `textInput` | Enum | `text` | Which upstream output key to use as input (`text`, `item`, `body`) |
+| `model` | String | `default` | LLM model override |
+
+**Format Presets:**
+
+| Preset | Fields & Rules |
+|--------|----------------|
+| `none` | No preset rules — use `formatInstructions` for custom rules |
+| `financial` | `Amount`: numeric only (e.g. `150.00`)<br>`Currency`: ISO 4217 code (`USD`, `DOP`, `EUR`, `GBP`…) detected from symbols (RD$ → DOP, $ → USD/DOP by context, € → EUR, £ → GBP)<br>`Date`: YYYY-MM-DD<br>`Category`: Food \| Transport \| Utilities \| Entertainment \| Healthcare \| Other<br>`Store`: merchant name only |
+| `invoice` | `Amount`: numeric, `Date`: YYYY-MM-DD, `InvoiceNumber`: alphanumeric, `Vendor`: company name |
+| `contact` | `Name`: title-case full name, `Email`: lowercase, `Phone`: E.164 (+1234567890), `Company`: name only |
+
+**Notes:**
+- `formatInstructions` appends after preset rules; use it to override specific fields or add extras.
+- Individual field outputs (e.g. `{{Amount}}`, `{{Currency}}`) are always available — no need to parse `extractedJson`.
+- Prompt injection protection: email body is wrapped in `<input_text>` tags; system prompt instructs the model to ignore any commands inside.
 
 ### `ai.extract-entities`  · Phase 11
 
@@ -162,7 +184,7 @@ Each entry has:
 - **Outputs:** `matchedCase` (`String`), `matched` (`Boolean`)
 - **Config:** `cases` (comma-separated, required)
 
-### `logic.foreach`  ? Shipped
+### `logic.foreach`  ✅ Shipped
 
 **Category:** Logic
 **Description:** Iterates over a JSON array. Supports two modes:
@@ -170,9 +192,11 @@ Each entry has:
 - **Fan-out mode (default, `loopMode=false`):** Expands the array into indexed outputs (`item_0..N`) for static wiring. Backward-compatible.
 - **Loop mode (`loopMode=true`):** Emits `_foreach_items` so the engine executes downstream nodes **once per item** and collects results. Requires a `logic.foreach.end` node at the end of the loop body. After the loop, outputs `results` (JSON array of per-item outputs) and `count`.
 
+**Input resolution:** `inputArray` key is canonical, but the node also accepts `emails`, `items`, `data`, `array`, `results` as aliases. When `NodeInputs` is empty (edge wiring didn't propagate), the node falls back to scanning `NodeOutputs` for any of those keys — making explicit edge wiring optional for `integrations.gmail.read → logic.foreach`.
+
 | Input | Type | Description |
 |-------|------|-------------|
-| `inputArray` | String | JSON array string to iterate over |
+| `inputArray` | String | JSON array string to iterate over (also accepts `emails`, `items`, etc.) |
 
 | Output | Type | Description |
 |--------|------|-------------|
@@ -187,7 +211,14 @@ Each entry has:
 |--------|------|---------|-------------|
 | `maxItems` | Number | 50 | Max items to process (cap: 200) |
 | `itemVariable` | String | item | Name prefix for outputs |
-| `loopMode` | Boolean | false | Enable per-item engine loop |
+| `loopMode` | Boolean | false | Enable per-item engine loop. Requires `logic.foreach.end` at end of body. |
+| `inheritOutputs` | Boolean | false | When true, each node in the loop body receives all outputs accumulated so far in the iteration (e.g. `ai.extract` outputs available in `integrations.http` without extra wiring). Off by default to keep memory usage flat. |
+
+**Loop body wiring:**
+```
+gmail.read → logic.foreach → ai.extract → data.db-execute → integrations.http → logic.foreach.end → system.end
+```
+With `inheritOutputs=true`, `integrations.http` receives `Amount`, `Currency`, etc. from `ai.extract` without a direct edge. With `inheritOutputs=false` (default), wire explicit edges or use direct predecessor outputs only.
 
 ---
 

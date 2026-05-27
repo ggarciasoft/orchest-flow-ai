@@ -56,8 +56,7 @@
 ## 🟡 Important Gaps
 
 ### 3. Workflow versioning UI
-- **Problem:** The designer always saves a new version and activates it. There's no way to browse version history, compare versions, or roll back.
-- **Proposed fix:** Version history panel in designer or workflow detail page.
+- **Status:** ✅ Resolved — Version History panel in designer toolbar. Load (preview), Activate (set active). `GET /api/workflows/{id}/versions` + `GET /api/workflows/{id}/versions/{versionId}`.
 
 ### 4. Execution input UI
 - **Problem:** "Run" from the workflow list fires with an empty `{}` input. No way to pass input values to `system.start` outputs at run time.
@@ -112,7 +111,13 @@
 | LLM model dropdown on all AI nodes | ✅ |
 | OpenAI API key via Settings page (hot-reload) | ✅ |
 | ForEachNode (fan-out) + GmailReadNode | ✅ |
-| Backend unit tests | ✅ **316 / 316** |
+| ForEach loop mode + loop body node execution recording | ✅ |
+| ForEach `inheritOutputs` flag for cross-body-node output sharing | ✅ |
+| Undo/Redo in designer (50-step history, Ctrl+Z/Y) | ✅ |
+| Version History panel in designer (Load + Activate) | ✅ |
+| `ai.extract` format presets (financial/invoice/contact) + prompt injection protection | ✅ |
+| Worker reads OpenAI key from DB per-tenant (not env-only) | ✅ |
+| Backend unit tests | ✅ **317 / 317** |
 | Frontend unit tests | ✅ **62 / 62** |
 | XML / JSDoc docs on all public APIs | ✅ |
 
