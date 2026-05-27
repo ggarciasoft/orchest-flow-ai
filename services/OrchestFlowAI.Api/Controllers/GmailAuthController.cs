@@ -27,8 +27,6 @@ public sealed class GmailAuthController : ControllerBase
     [HttpGet("auth/start"), AllowAnonymous]
     public async Task<IActionResult> Start(
         [FromQuery] string name,
-        [FromQuery] string? clientId,
-        [FromQuery] string? clientSecret,
         [FromQuery] string? redirectUri,
         [FromQuery] string? tenantId,
         CancellationToken ct)
@@ -41,20 +39,13 @@ public sealed class GmailAuthController : ControllerBase
             ?? tenantId
             ?? "00000000-0000-0000-0000-000000000001";
 
-        // If clientId/clientSecret not provided, load from platform settings
-        if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
-        {
-            var settingsTenantId = Guid.TryParse(tenantId, out var tid) ? tid : Guid.Parse("00000000-0000-0000-0000-000000000001");
-            clientId = string.IsNullOrWhiteSpace(clientId)
-                ? await _settings.GetAsync(settingsTenantId, "gmail.clientId", ct) ?? clientId
-                : clientId;
-            clientSecret = string.IsNullOrWhiteSpace(clientSecret)
-                ? await _settings.GetAsync(settingsTenantId, "gmail.clientSecret", ct) ?? clientSecret
-                : clientSecret;
-        }
+        // Load clientId/clientSecret from platform settings
+        var settingsTenantId = Guid.TryParse(tenantId, out var tid) ? tid : Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var clientId = await _settings.GetAsync(settingsTenantId, "gmail.clientId", ct);
+        var clientSecret = await _settings.GetAsync(settingsTenantId, "gmail.clientSecret", ct);
 
         if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
-            return BadRequest(new { detail = "Gmail clientId and clientSecret are required. Configure them in Settings \u2192 Gmail or pass as query params." });
+            return BadRequest(new { detail = "Gmail app credentials not configured. Go to Settings \u2192 Gmail to add your OAuth2 client ID and secret." });
 
         // Encode all context needed for the callback in state (base64 JSON)
         var stateObj = new { tenantId, name, clientId, clientSecret };

@@ -193,22 +193,24 @@ if (!descriptor) return null; // Return early if no descriptor is found
                         ))}
                       </select>
                       {optsSrc === 'gmail-credentials' && (
-                        <a
-                          href={api.gmail.authStartUrl({ name: 'my-gmail' })}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline mt-0.5"
-                          onClick={e => {
-                            // Prompt for name/creds before opening
-                            e.preventDefault();
-                            const name = window.prompt('Credential name (e.g. my-gmail):');
-                            if (!name) return;
-                            // clientId and clientSecret come from Settings — backend will use saved settings
-                            window.open(api.gmail.authStartUrl({ name }), '_blank');
-                          }}
-                        >
-                          <ExternalLink size={11} /> Connect Gmail account
-                        </a>
+                        <div className="space-y-1">
+                          <p className="text-xs text-amber-600">
+                            Make sure Gmail credentials are configured in{' '}
+                            <a href="/settings" className="underline">Settings</a> first.
+                          </p>
+                          <a
+                            href="#"
+                            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline mt-0.5"
+                            onClick={e => {
+                              e.preventDefault();
+                              const name = window.prompt('Credential name (e.g. my-gmail):');
+                              if (!name) return;
+                              window.open(api.gmail.authStartUrl({ name }), '_blank');
+                            }}
+                          >
+                            <ExternalLink size={11} /> Connect Gmail account
+                          </a>
+                        </div>
                       )}
                     </div>
                   ) : cfg.allowedValues ? (
