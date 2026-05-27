@@ -212,6 +212,10 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
                         if (iterNodeImpl == null) break;
 
                         var iterInputs = ResolveInputs(iterNode.Id, def.Edges, iterOutputs, inputs);
+                        _logger.LogDebug("Loop body ResolveInputs for {NodeId}: edgeCount={EdgeCount} iterOutputsKeys=[{Keys}] resultKeys=[{ResultKeys}]",
+                            iterNode.Id, def.Edges.Count(e => e.Target == iterNode.Id),
+                            string.Join(",", iterOutputs.Keys.Select(k => k.Split('-')[0])),
+                            string.Join(",", iterInputs.Keys));
                         var iterConfig = iterNode.Config.ToDictionary(kv => kv.Key, kv => (object?)kv.Value);
                         var iterCtx = BuildContext(executionId, execution, iterInputs, iterConfig, iterOutputs, inputs, ++step, scope.ServiceProvider, ct);
 

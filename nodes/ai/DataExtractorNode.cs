@@ -25,12 +25,29 @@ public sealed class DataExtractorNode : IWorkflowNode
     /// <returns>Succeeded result with "extractedJson" and individual field outputs.</returns>
     public async Task<NodeExecutionResult> ExecuteAsync(WorkflowExecutionContext ctx, CancellationToken ct)
     {
-        // Accept 'text' directly, or fall back to 'item' (ForEach loop output) or 'body' (email body)
-        // If 'item' is a JSON object with a 'body' field (e.g. Gmail email), extract just the body
-        var textInputKey = ctx.GetConfig<string>("textInput") ?? "text";
+        var textInputKey = ctx.GetConfig<string>("textInput");
+        // Guard against empty string config value — treat same as missing
+        if (string.IsNullOrWhiteSpace(textInputKey)) textInputKey = "text";
+
         var rawText = ctx.GetInput<string>(textInputKey)
-            ?? (textInputKey == "text" ? ctx.GetInput<string>("item") ?? ctx.GetInput<string>("body") : null)
-            ?? throw new InvalidOperationException($"Input '{textInputKey}' is required");
+            ?? (textInputKey == "text" ? ctx.GetInput<string>("item") ?? ctx.GetInput<string>("body") : null);
+
+        // Fallback: when NodeInputs is empty (ResolveInputs didn't propagate the ForEach item),
+        // look directly in NodeOutputs for the injected 'item' key from the loop engine.
+        if (rawText == null)
+        {
+            foreach (var nodeOut in ctx.NodeOutputs.Values)
+            {
+                if (nodeOut.TryGetValue("item", out var itemVal) && itemVal != null)
+                { rawText = itemVal?.ToString(); break; }
+                if (!string.IsNullOrEmpty(textInputKey) && textInputKey != "item"
+                    && nodeOut.TryGetValue(textInputKey, out var keyVal) && keyVal != null)
+                { rawText = keyVal?.ToString(); break; }
+            }
+        }
+
+        if (rawText == null)
+            throw new InvalidOperationException($"Input '{textInputKey}' is required");
 
         // If the input looks like a JSON email object, prefer the body field for extraction
         string text;
