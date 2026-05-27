@@ -27,10 +27,10 @@ public sealed class DataExtractorNode : IWorkflowNode
     {
         // Accept 'text' directly, or fall back to 'item' (ForEach loop output) or 'body' (email body)
         // If 'item' is a JSON object with a 'body' field (e.g. Gmail email), extract just the body
-        var rawText = ctx.GetInput<string>("text")
-            ?? ctx.GetInput<string>("item")
-            ?? ctx.GetInput<string>("body")
-            ?? throw new InvalidOperationException("Input 'text' is required (also accepts 'item' or 'body' from upstream nodes)");
+        var textInputKey = ctx.GetConfig<string>("textInput") ?? "text";
+        var rawText = ctx.GetInput<string>(textInputKey)
+            ?? (textInputKey == "text" ? ctx.GetInput<string>("item") ?? ctx.GetInput<string>("body") : null)
+            ?? throw new InvalidOperationException($"Input '{textInputKey}' is required");
 
         // If the input looks like a JSON email object, prefer the body field for extraction
         string text;
@@ -100,6 +100,7 @@ public sealed class DataExtractorNodeDescriptor : IWorkflowNodeDescriptor
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
         new NodeConfigDefinition("fields", "Fields", "Comma-separated field names to extract e.g. 'name,date,amount'.", DataType.String, Required: true),
+        new NodeConfigDefinition("textInput", "Text Input", "Which upstream output to use as the text source.", DataType.Enum, Required: false, DefaultValue: "text", AllowedValues: new[] { "text", "item", "body" }),
         new NodeConfigDefinition("model", "Model", "LLM model to use.", DataType.String, Required: false, DefaultValue: "default", OptionsSource: "llm-models")
     };
 }

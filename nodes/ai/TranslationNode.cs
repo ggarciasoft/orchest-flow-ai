@@ -23,10 +23,10 @@ public sealed class TranslationNode : IWorkflowNode
     /// <returns>Succeeded result with "translatedText" and "targetLanguage" outputs.</returns>
     public async Task<NodeExecutionResult> ExecuteAsync(WorkflowExecutionContext ctx, CancellationToken ct)
     {
-        var text = ctx.GetInput<string>("text")
-            ?? ctx.GetInput<string>("item")
-            ?? ctx.GetInput<string>("body")
-            ?? throw new InvalidOperationException("Input 'text' is required (also accepts 'item' or 'body' from upstream nodes)");
+        var text = ctx.GetInput<string>(ctx.GetConfig<string>("textInput") ?? "text")
+            ?? (string.IsNullOrEmpty(ctx.GetConfig<string>("textInput")) || ctx.GetConfig<string>("textInput") == "text"
+                ? ctx.GetInput<string>("item") ?? ctx.GetInput<string>("body") : null)
+            ?? throw new InvalidOperationException($"Input '{ctx.GetConfig<string>("textInput") ?? "text"}' is required");
         var targetLanguage = ctx.GetConfig<string>("targetLanguage") ?? throw new InvalidOperationException("Config 'targetLanguage' is required");
         var model = ctx.GetConfig<string>("model") ?? "default";
 
@@ -75,6 +75,7 @@ public sealed class TranslationNodeDescriptor : IWorkflowNodeDescriptor
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
         new NodeConfigDefinition("targetLanguage", "Target Language", "Language to translate into e.g. 'Spanish', 'French'.", DataType.String, Required: true),
+        new NodeConfigDefinition("textInput", "Text Input", "Which upstream output to use as the text source.", DataType.Enum, Required: false, DefaultValue: "text", AllowedValues: new[] { "text", "item", "body" }),
         new NodeConfigDefinition("model", "Model", "LLM model to use.", DataType.String, Required: false, DefaultValue: "default", OptionsSource: "llm-models")
     };
 }

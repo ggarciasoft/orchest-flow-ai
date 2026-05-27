@@ -24,10 +24,10 @@ public sealed class TextClassifierNode : IWorkflowNode
     /// <returns>Succeeded result with "category", "confidence", and "rawResponse" outputs.</returns>
     public async Task<NodeExecutionResult> ExecuteAsync(WorkflowExecutionContext ctx, CancellationToken ct)
     {
-        var text = ctx.GetInput<string>("text")
-            ?? ctx.GetInput<string>("item")
-            ?? ctx.GetInput<string>("body")
-            ?? throw new InvalidOperationException("Input 'text' is required (also accepts 'item' or 'body' from upstream nodes)");
+        var text = ctx.GetInput<string>(ctx.GetConfig<string>("textInput") ?? "text")
+            ?? (string.IsNullOrEmpty(ctx.GetConfig<string>("textInput")) || ctx.GetConfig<string>("textInput") == "text"
+                ? ctx.GetInput<string>("item") ?? ctx.GetInput<string>("body") : null)
+            ?? throw new InvalidOperationException($"Input '{ctx.GetConfig<string>("textInput") ?? "text"}' is required");
         var categories = ctx.GetConfig<string>("categories") ?? throw new InvalidOperationException("Config 'categories' is required");
         var model = ctx.GetConfig<string>("model") ?? "default";
         var instructions = ctx.GetConfig<string>("instructions") ?? string.Empty;
@@ -115,6 +115,7 @@ public sealed class TextClassifierNodeDescriptor : IWorkflowNodeDescriptor
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
         new NodeConfigDefinition("categories", "Categories", "Comma-separated category names e.g. 'urgent,normal,low'.", DataType.String, Required: true),
+        new NodeConfigDefinition("textInput", "Text Input", "Which upstream output to use as the text source.", DataType.Enum, Required: false, DefaultValue: "text", AllowedValues: new[] { "text", "item", "body" }),
         new NodeConfigDefinition("model", "Model", "LLM model to use.", DataType.String, Required: false, DefaultValue: "default", OptionsSource: "llm-models"),
         new NodeConfigDefinition("instructions", "Instructions", "Extra classification guidance.", DataType.String, Required: false)
     };

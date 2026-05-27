@@ -25,10 +25,10 @@ public sealed class ContractRiskAnalysisNode : IWorkflowNode
     public string Type => "ai.contract-risk-analysis";
     public async Task<NodeExecutionResult> ExecuteAsync(WorkflowExecutionContext ctx, CancellationToken ct)
     {
-        var text = ctx.GetInput<string>("text")
-            ?? ctx.GetInput<string>("item")
-            ?? ctx.GetInput<string>("body")
-            ?? throw new InvalidOperationException("Input 'text' is required (also accepts 'item' or 'body' from upstream nodes)");
+        var text = ctx.GetInput<string>(ctx.GetConfig<string>("textInput") ?? "text")
+            ?? (string.IsNullOrEmpty(ctx.GetConfig<string>("textInput")) || ctx.GetConfig<string>("textInput") == "text"
+                ? ctx.GetInput<string>("item") ?? ctx.GetInput<string>("body") : null)
+            ?? throw new InvalidOperationException($"Input '{ctx.GetConfig<string>("textInput") ?? "text"}' is required");
         var model = ctx.GetConfig<string>("model") ?? "default";
         var router = ctx.Services.GetRequiredService<LLMProviderRouter>();
         var (provider, resolvedModel) = router.Route(model);
@@ -63,6 +63,7 @@ public sealed class ContractRiskAnalysisNodeDescriptor : IWorkflowNodeDescriptor
     };
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
+        new NodeConfigDefinition("textInput", "Text Input", "Which upstream output to use as the text source.", DataType.Enum, Required: false, DefaultValue: "text", AllowedValues: new[] { "text", "item", "body" }),
         new NodeConfigDefinition("model", "Model", "LLM model to use.", DataType.String, Required: false, DefaultValue: "default", OptionsSource: "llm-models"),
         new NodeConfigDefinition("riskThreshold", "Risk Threshold", "Minimum risk level to flag.", DataType.Enum, Required: false, DefaultValue: "high", AllowedValues: new[] { "low", "medium", "high" })
     };

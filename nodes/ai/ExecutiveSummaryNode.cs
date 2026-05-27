@@ -12,10 +12,10 @@ public sealed class ExecutiveSummaryNode : IWorkflowNode
     public string Type => "ai.executive-summary";
     public async Task<NodeExecutionResult> ExecuteAsync(WorkflowExecutionContext ctx, CancellationToken ct)
     {
-        var text = ctx.GetInput<string>("text")
-            ?? ctx.GetInput<string>("item")
-            ?? ctx.GetInput<string>("body")
-            ?? throw new InvalidOperationException("Input 'text' is required (also accepts 'item' or 'body' from upstream nodes)");
+        var text = ctx.GetInput<string>(ctx.GetConfig<string>("textInput") ?? "text")
+            ?? (string.IsNullOrEmpty(ctx.GetConfig<string>("textInput")) || ctx.GetConfig<string>("textInput") == "text"
+                ? ctx.GetInput<string>("item") ?? ctx.GetInput<string>("body") : null)
+            ?? throw new InvalidOperationException($"Input '{ctx.GetConfig<string>("textInput") ?? "text"}' is required");
         var model = ctx.GetConfig<string>("model") ?? "default";
         var maxWords = ctx.GetConfig<int?>("maxWords") ?? 250;
         var tone = ctx.GetConfig<string>("tone") ?? "formal";
@@ -39,6 +39,7 @@ public sealed class ExecutiveSummaryNodeDescriptor : IWorkflowNodeDescriptor
     public IReadOnlyCollection<NodeOutputDefinition> Outputs => new[] { new NodeOutputDefinition("summary", "Summary", "Generated executive summary.", DataType.String) };
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
+        new NodeConfigDefinition("textInput", "Text Input", "Which upstream output to use as the text source.", DataType.Enum, Required: false, DefaultValue: "text", AllowedValues: new[] { "text", "item", "body" }),
         new NodeConfigDefinition("model", "Model", "LLM model.", DataType.String, Required: false, DefaultValue: "default", OptionsSource: "llm-models"),
         new NodeConfigDefinition("maxWords", "Max Words", "Maximum words in summary.", DataType.Number, Required: false, DefaultValue: 250),
         new NodeConfigDefinition("tone", "Tone", "Summary tone.", DataType.Enum, Required: false, DefaultValue: "formal", AllowedValues: new[] { "formal", "neutral", "friendly" })
