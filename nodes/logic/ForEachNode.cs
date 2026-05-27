@@ -29,6 +29,20 @@ public sealed class ForEachNode : IWorkflowNode
             if (ctx.NodeInputs.TryGetValue(key, out var v) && v != null) { rawInput = v; break; }
         }
 
+        // Fallback: if NodeInputs is empty (edge wiring didn't propagate), scan all previous node outputs
+        // for the first array-like value. This handles the case where ResolveInputs doesn't map the key.
+        if (rawInput == null)
+        {
+            foreach (var nodeOut in ctx.NodeOutputs.Values)
+            {
+                foreach (var key in new[] { "inputArray", "emails", "items", "data", "array", "results" })
+                {
+                    if (nodeOut.TryGetValue(key, out var v) && v != null) { rawInput = v; break; }
+                }
+                if (rawInput != null) break;
+            }
+        }
+
         List<JsonElement> items;
         try
         {

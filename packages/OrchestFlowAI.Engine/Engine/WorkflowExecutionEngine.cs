@@ -427,13 +427,22 @@ public async Task ResumeAsync(Guid executionId, ResumeSignal signal, Cancellatio
         return null;
     }
 
-    private static Dictionary<string, object?> ResolveInputs(string nodeId, List<WorkflowEdgeDefinition> edges,
+    private Dictionary<string, object?> ResolveInputs(string nodeId, List<WorkflowEdgeDefinition> edges,
         Dictionary<string, IReadOnlyDictionary<string, object?>> nodeOutputs, Dictionary<string, object?> workflowInputs)
     {
         var inputs = new Dictionary<string, object?>(workflowInputs);
-        foreach (var edge in edges.Where(e => e.Target == nodeId))
+        var matchingEdges = edges.Where(e => e.Target == nodeId).ToList();
+        _logger.LogDebug("ResolveInputs for {NodeId}: {EdgeCount} incoming edges, nodeOutputs has keys: [{Keys}]",
+            nodeId, matchingEdges.Count, string.Join(", ", nodeOutputs.Keys));
+        foreach (var edge in matchingEdges)
         {
-            if (!nodeOutputs.TryGetValue(edge.Source, out var sourceOutputs)) continue;
+            if (!nodeOutputs.TryGetValue(edge.Source, out var sourceOutputs))
+            {
+                _logger.LogDebug("  Edge from {Source} -> source not in nodeOutputs", edge.Source);
+                continue;
+            }
+            _logger.LogDebug("  Edge from {Source}: {Count} output keys: [{Keys}]",
+                edge.Source, sourceOutputs.Count, string.Join(", ", sourceOutputs.Keys));
             if (edge.Map != null)
                 foreach (var (targetKey, sourceKey) in edge.Map)
                     if (sourceOutputs.TryGetValue(sourceKey, out var mappedVal)) inputs[targetKey] = mappedVal;
