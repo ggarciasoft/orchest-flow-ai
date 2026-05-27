@@ -1,36 +1,18 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import type { Workflow } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { Plus, Search, GitBranch, Play } from 'lucide-react';
 import { PageHeader, Button, EmptyState } from '@/components/ui';
+import { RunWorkflowModal } from '@/components/RunWorkflowModal';
 
-/**
- * WorkflowsPage — lists all workflows for the current tenant.
- * Supports live search filtering, navigation to create or open workflows,
- * and one-click execution from the list.
- */
 export default function WorkflowsPage() {
   const [search, setSearch] = useState('');
-  const [runningId, setRunningId] = useState<string | null>(null);
-  const queryClient = useQueryClient();
+  const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
   const { data, isLoading } = useQuery({ queryKey: ['workflows', search], queryFn: () => api.workflows.list({ search }) });
-
-  const handleRun = async (workflowId: string) => {
-    setRunningId(workflowId);
-    try {
-      await api.workflows.execute(workflowId, {});
-      // Invalidate executions list so it refreshes if the user navigates there
-      queryClient.invalidateQueries({ queryKey: ['executions'] });
-      alert('Execution started! Check the Executions page for progress.');
-    } catch (e) {
-      alert('Run failed: ' + (e as Error).message);
-    } finally {
-      setRunningId(null);
-    }
-  };
 
   return (
     <div>
@@ -81,12 +63,12 @@ export default function WorkflowsPage() {
                 )}
                 <span className="text-xs text-slate-400">{formatDate(w.updatedAt)}</span>
                 <button
-                  onClick={() => handleRun(w.id)}
-                  disabled={runningId === w.id || !w.activeVersion}
+                  onClick={() => setSelectedWorkflow(w)}
+                  disabled={!w.activeVersion}
                   title={!w.activeVersion ? 'No active version — save from the designer first' : 'Run workflow'}
                   className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
-                  <Play size={12} />{runningId === w.id ? 'Starting…' : 'Run'}
+                  <Play size={12} />Run
                 </button>
                 <Link href={`/workflows/${w.id}/designer`}>
                   <Button variant="ghost" size="sm">Designer</Button>
@@ -95,6 +77,13 @@ export default function WorkflowsPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {selectedWorkflow && (
+        <RunWorkflowModal
+          workflow={selectedWorkflow}
+          onClose={() => setSelectedWorkflow(null)}
+        />
       )}
     </div>
   );

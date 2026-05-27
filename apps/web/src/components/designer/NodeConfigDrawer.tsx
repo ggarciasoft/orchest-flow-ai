@@ -194,7 +194,7 @@ if (!descriptor) return null; // Return early if no descriptor is found
                       </select>
                       {optsSrc === 'gmail-credentials' && (
                         <a
-                          href={api.gmail.authStartUrl({ name: 'my-gmail', clientId: '', clientSecret: '' })}
+                          href={api.gmail.authStartUrl({ name: 'my-gmail' })}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline mt-0.5"
@@ -203,11 +203,8 @@ if (!descriptor) return null; // Return early if no descriptor is found
                             e.preventDefault();
                             const name = window.prompt('Credential name (e.g. my-gmail):');
                             if (!name) return;
-                            const clientId = window.prompt('Google OAuth2 Client ID:');
-                            if (!clientId) return;
-                            const clientSecret = window.prompt('Google OAuth2 Client Secret:');
-                            if (!clientSecret) return;
-                            window.open(api.gmail.authStartUrl({ name, clientId, clientSecret }), '_blank');
+                            // clientId and clientSecret come from Settings — backend will use saved settings
+                            window.open(api.gmail.authStartUrl({ name }), '_blank');
                           }}
                         >
                           <ExternalLink size={11} /> Connect Gmail account

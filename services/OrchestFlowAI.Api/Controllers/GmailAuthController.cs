@@ -12,11 +12,12 @@ public sealed class GmailAuthController : ControllerBase
 {
     private readonly IGmailCredentialRepository _repo;
     private readonly IHttpClientFactory _http;
+    private readonly IPlatformSettingsService _settings;
 
     private static readonly JsonSerializerOptions _jsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public GmailAuthController(IGmailCredentialRepository repo, IHttpClientFactory http)
-    { _repo = repo; _http = http; }
+    public GmailAuthController(IGmailCredentialRepository repo, IHttpClientFactory http, IPlatformSettingsService settings)
+    { _repo = repo; _http = http; _settings = settings; }
 
     /// <summary>
     /// Starts the OAuth2 flow. Redirects to Google consent screen.
@@ -24,20 +25,36 @@ public sealed class GmailAuthController : ControllerBase
     /// Callers that have a JWT can pass their tenantId via query; unauthenticated callers fall back to the dev tenant.
     /// </summary>
     [HttpGet("auth/start"), AllowAnonymous]
-    public IActionResult Start(
+    public async Task<IActionResult> Start(
         [FromQuery] string name,
-        [FromQuery] string clientId,
-        [FromQuery] string clientSecret,
+        [FromQuery] string? clientId,
+        [FromQuery] string? clientSecret,
         [FromQuery] string? redirectUri,
-        [FromQuery] string? tenantId)
+        [FromQuery] string? tenantId,
+        CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
-            return BadRequest(new { detail = "name, clientId and clientSecret are required" });
+        if (string.IsNullOrWhiteSpace(name))
+            return BadRequest(new { detail = "name is required" });
 
         // Prefer JWT claim, then explicit query param, then dev-tenant fallback
         tenantId = User.FindFirst("tenant_id")?.Value
             ?? tenantId
             ?? "00000000-0000-0000-0000-000000000001";
+
+        // If clientId/clientSecret not provided, load from platform settings
+        if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
+        {
+            var settingsTenantId = Guid.TryParse(tenantId, out var tid) ? tid : Guid.Parse("00000000-0000-0000-0000-000000000001");
+            clientId = string.IsNullOrWhiteSpace(clientId)
+                ? await _settings.GetAsync(settingsTenantId, "gmail.clientId", ct) ?? clientId
+                : clientId;
+            clientSecret = string.IsNullOrWhiteSpace(clientSecret)
+                ? await _settings.GetAsync(settingsTenantId, "gmail.clientSecret", ct) ?? clientSecret
+                : clientSecret;
+        }
+
+        if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
+            return BadRequest(new { detail = "Gmail clientId and clientSecret are required. Configure them in Settings \u2192 Gmail or pass as query params." });
 
         // Encode all context needed for the callback in state (base64 JSON)
         var stateObj = new { tenantId, name, clientId, clientSecret };

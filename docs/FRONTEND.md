@@ -42,6 +42,7 @@ apps/web/
 ├── components/
 │   ├── ui/                               # shadcn/ui primitives
 │   ├── designer/                         # canvas, node palette, config drawer
+│   ├── RunWorkflowModal.tsx              # modal: fetches active version def, renders dynamic input form, executes
 │   ├── timeline/
 │   ├── approvals/
 │   └── shared/

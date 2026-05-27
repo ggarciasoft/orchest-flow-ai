@@ -21,11 +21,25 @@ jest.mock("next/link", () => ({
   default: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a>,
 }));
 
+jest.mock("next/navigation", () => ({
+  useRouter: jest.fn(() => ({ push: jest.fn() })),
+}));
+
+jest.mock("@/components/RunWorkflowModal", () => ({
+  RunWorkflowModal: ({ onClose }: { onClose: () => void }) => (
+    <div data-testid="run-workflow-modal">
+      <button onClick={onClose}>Close</button>
+    </div>
+  ),
+}));
+
 jest.mock("lucide-react", () => ({
   Plus: () => <span>Plus</span>,
   Search: () => <span>Search</span>,
   GitBranch: () => <span>GitBranch</span>,
   Play: () => <span>Play</span>,
+  X: () => <span>X</span>,
+  Loader2: () => <span>Loader2</span>,
 }));
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (

@@ -218,8 +218,10 @@ export const api = {
   /** Gmail credential management endpoints. */
   gmail: {
     /** Starts the Gmail OAuth2 flow. Returns a URL to redirect the browser to. */
-    authStartUrl: (params: { name: string; clientId: string; clientSecret: string }) => {
-      const q = new URLSearchParams({ name: params.name, clientId: params.clientId, clientSecret: params.clientSecret });
+    authStartUrl: (params: { name: string; clientId?: string; clientSecret?: string }) => {
+      const q = new URLSearchParams({ name: params.name });
+      if (params.clientId) q.set('clientId', params.clientId);
+      if (params.clientSecret) q.set('clientSecret', params.clientSecret);
       return `${API_BASE}/api/gmail/auth/start?${q}`;
     },
     /** Lists saved Gmail credentials for the tenant (names + emails only). */

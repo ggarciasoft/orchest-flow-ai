@@ -25,7 +25,8 @@ public sealed class SettingsController : ControllerBase
         var result = new Dictionary<string, string?>();
         foreach (var kv in all)
         {
-            result[kv.Key] = kv.Key.Contains("key", StringComparison.OrdinalIgnoreCase)
+            result[kv.Key] = (kv.Key.Contains("key", StringComparison.OrdinalIgnoreCase) ||
+                              kv.Key.Contains("secret", StringComparison.OrdinalIgnoreCase))
                 ? MaskKey(kv.Value)
                 : kv.Value;
         }

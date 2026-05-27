@@ -10,8 +10,9 @@ import '@xyflow/react/dist/style.css';
 import type { Workflow, NodeDescriptor } from '@/lib/api';
 import { NodePalette } from './NodePalette';
 import { NodeConfigDrawer } from './NodeConfigDrawer';
+import { RunWorkflowModal } from '../RunWorkflowModal';
 import { api } from '@/lib/api';
-import { Save, Play, CheckCircle } from 'lucide-react';
+import { Save, Play } from 'lucide-react';
 
 interface Props {
   /** Workflow metadata (id, name, description). */
@@ -47,7 +48,7 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Always derive selected node from current nodes state so config changes are reflected immediately
   const selected = selectedId ? (nodes.find(n => n.id === selectedId) ?? null) : null;
-  const [executing, setExecuting] = useState(false);
+  const [showRunModal, setShowRunModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
@@ -184,17 +185,9 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
     }
   };
 
-  /** Enqueues a workflow execution using the currently active version. */
-  const handleExecute = async () => {
-    setExecuting(true);
-    try {
-      await api.workflows.execute(workflow.id, {});
-      alert('Execution started! Check the Executions page for progress.');
-    } catch (e) {
-      alert('Execution failed: ' + (e as Error).message);
-    } finally {
-      setExecuting(false);
-    }
+  /** Opens the Run Workflow modal for the current workflow. */
+  const handleExecute = () => {
+    setShowRunModal(true);
   };
 
   return (
@@ -223,12 +216,12 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
             </button>
             <button
               className={`text-sm px-4 py-1.5 rounded-lg flex items-center gap-1.5 font-medium ${
-                executing ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                !activeVersionNumber ? 'bg-gray-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'
               } text-white`}
               onClick={handleExecute}
-              disabled={executing}
+              disabled={!activeVersionNumber}
             >
-              <Play size={14} />{executing ? 'Starting…' : 'Execute'}
+              <Play size={14} />Run
             </button>
           </div>
         </div>
@@ -261,6 +254,10 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
             ))
           }
         />
+      )}
+
+      {showRunModal && (
+        <RunWorkflowModal workflow={workflow} onClose={() => setShowRunModal(false)} />
       )}
 
       {/* Right-click context menu */}

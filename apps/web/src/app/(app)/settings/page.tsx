@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/ui';
 import { api, SecretSummary } from '@/lib/api';
-import { CheckCircle, XCircle, Loader2, Eye, EyeOff, Trash2, Plus, Lock } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Eye, EyeOff, Trash2, Plus, Lock, Mail } from 'lucide-react';
 
 type TestStatus = 'idle' | 'testing' | 'ok' | 'fail';
 
@@ -22,6 +22,13 @@ export default function SettingsPage() {
   const [testStatus, setTestStatus] = useState<TestStatus>('idle');
   const [testMessage, setTestMessage] = useState('');
 
+  // Gmail OAuth2 state
+  const [gmailClientId, setGmailClientId] = useState('');
+  const [gmailClientSecret, setGmailClientSecret] = useState('');
+  const [showGmailSecret, setShowGmailSecret] = useState(false);
+  const [gmailSaving, setGmailSaving] = useState(false);
+  const [gmailSaved, setGmailSaved] = useState(false);
+
   // Secrets vault state
   const [secrets, setSecrets] = useState<SecretSummary[]>([]);
   const [secretsLoading, setSecretsLoading] = useState(false);
@@ -39,6 +46,8 @@ export default function SettingsPage() {
   useEffect(() => {
     api.settings.get().then(s => {
       if (s['llm.defaultModel']) setDefaultModel(s['llm.defaultModel'] ?? 'gpt-4o-mini');
+      if (s['gmail.clientId']) setGmailClientId(s['gmail.clientId'] ?? '');
+      // Never populate clientSecret — let user re-enter if needed
     }).catch(() => {});
     loadSecrets();
   }, []);
@@ -68,6 +77,22 @@ export default function SettingsPage() {
     } catch {
       setTestStatus('fail');
       setTestMessage('Request failed');
+    }
+  };
+
+  const handleSaveGmail = async () => {
+    setGmailSaving(true);
+    setGmailSaved(false);
+    try {
+      const updates: Record<string, string> = {};
+      if (gmailClientId) updates['gmail.clientId'] = gmailClientId;
+      if (gmailClientSecret) updates['gmail.clientSecret'] = gmailClientSecret;
+      if (Object.keys(updates).length > 0) await api.settings.update(updates);
+      setGmailSaved(true);
+      setGmailClientSecret('');
+      setTimeout(() => setGmailSaved(false), 3000);
+    } finally {
+      setGmailSaving(false);
     }
   };
 
@@ -176,7 +201,64 @@ export default function SettingsPage() {
             </button>
           </div>
         </div>
-      </div>
+
+        {/* Gmail OAuth2 App */}
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-3">
+            <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center text-white">
+              <Mail size={16} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Gmail</p>
+              <p className="text-xs text-slate-500">OAuth2 app credentials for Gmail integration nodes</p>
+            </div>
+          </div>
+          <div className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Client ID</label>
+              <input
+                type="text"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="xxx.apps.googleusercontent.com"
+                value={gmailClientId}
+                onChange={e => setGmailClientId(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Client Secret</label>
+              <div className="relative">
+                <input
+                  type={showGmailSecret ? 'text' : 'password'}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 pr-10"
+                  placeholder="Leave blank to keep existing"
+                  value={gmailClientSecret}
+                  onChange={e => setGmailClientSecret(e.target.value)}
+                />
+                <button type="button" onClick={() => setShowGmailSecret(v => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  {showGmailSecret ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+            <div className="pt-1">
+              <p className="text-xs text-slate-400">
+                Once saved, use the <strong>Connect Gmail account</strong> link in any GmailReadNode config — no need to re-enter credentials.
+              </p>
+            </div>
+          </div>
+          <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+            {gmailSaved && <p className="text-sm text-green-600 flex items-center gap-1"><CheckCircle size={14} /> Saved</p>}
+            {!gmailSaved && <span />}
+            <button
+              onClick={handleSaveGmail}
+              disabled={gmailSaving}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
+            >
+              {gmailSaving && <Loader2 size={14} className="animate-spin" />}
+              Save changes
+            </button>
+          </div>
+        </div>
 
         {/* Secret Vault */}
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
