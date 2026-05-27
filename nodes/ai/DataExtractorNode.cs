@@ -4,7 +4,9 @@ using OrchestFlowAI.AI.Routing;
 using OrchestFlowAI.SDK.Context;
 using OrchestFlowAI.SDK.Interfaces;
 using OrchestFlowAI.SDK.Models;
+using System.Net;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace OrchestFlowAI.Nodes.AI;
 
@@ -59,27 +61,41 @@ public sealed class DataExtractorNode : IWorkflowNode
                 : rawText;
         }
         catch (JsonException) { text = rawText; }
+
+        // Strip HTML tags so the LLM receives clean plain text
+        text = Regex.Replace(text, "<[^>]+>", " ");
+        text = WebUtility.HtmlDecode(text);
+        text = Regex.Replace(text, @"\s{2,}", " ").Trim();
         var fields = ctx.GetConfig<string>("fields") ?? throw new InvalidOperationException("Config 'fields' is required");
         var model = ctx.GetConfig<string>("model") ?? "default";
 
         var router = ctx.Services.GetRequiredService<LLMProviderRouter>();
         var (provider, resolvedModel) = router.Route(model);
 
-        var prompt = $"Extract the following fields from the text and return as a JSON object with exactly these keys: {fields}.\n\nText:\n{text}\n\nReturn ONLY valid JSON, no explanation.";
+        var prompt = $"Extract the following fields from the text and return as a JSON object with exactly these keys: {fields}.\n\nText:\n{text}\n\nReturn ONLY valid JSON, no markdown, no explanation.";
         var response = await provider.GenerateTextAsync(
             new LLMRequest { Prompt = prompt, Model = resolvedModel, MaxTokens = 1024, TenantId = ctx.TenantId }, ct);
 
+        // Strip markdown code fences if the LLM returned them despite instructions
         var extractedJson = response.Text.Trim();
+        if (extractedJson.StartsWith("```"))
+        {
+            var firstNewline = extractedJson.IndexOf('\n');
+            var lastFence = extractedJson.LastIndexOf("```");
+            if (firstNewline >= 0 && lastFence > firstNewline)
+                extractedJson = extractedJson[(firstNewline + 1)..lastFence].Trim();
+        }
+
         var outputs = new Dictionary<string, object?> { ["extractedJson"] = extractedJson };
 
-        // Attempt to parse JSON and surface individual fields as separate outputs
+        // Parse individual fields and surface as separate outputs
         try
         {
             var doc = JsonDocument.Parse(extractedJson);
             foreach (var field in fields.Split(',').Select(f => f.Trim()))
             {
                 if (doc.RootElement.TryGetProperty(field, out var val))
-                    outputs[field] = val.GetString();
+                    outputs[field] = val.ValueKind == JsonValueKind.Null ? null : val.GetString();
             }
         }
         catch (JsonException) { /* Leave extractedJson as raw string if not parseable */ }
