@@ -244,12 +244,25 @@ if (!descriptor) return null; // Return early if no descriptor is found
                       <option value="true">true</option>
                     </select>
                   ) : (
-                    <input
-                      className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder={String(cfg.defaultValue ?? '')}
-                      value={String(config[cfg.key] ?? '')}
-                      onChange={e => onConfigChange({ ...config, [cfg.key]: e.target.value })}
-                    />
+                    /* Plain text or sensitive input */
+                    <div className="space-y-1">
+                      <input
+                        className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder={cfg.isSensitive ? '••••••••  or  {{secret:name}}' : String(cfg.defaultValue ?? '')}
+                        type={cfg.isSensitive ? 'password' : 'text'}
+                        value={String(config[cfg.key] ?? '')}
+                        onChange={e => onConfigChange({ ...config, [cfg.key]: e.target.value })}
+                      />
+                      {cfg.isSensitive && (
+                        <p className="text-xs text-amber-600 flex items-center gap-1">
+                          <span>🔒</span>
+                          Sensitive — use{' '}
+                          <code className="bg-amber-50 border border-amber-200 rounded px-1 font-mono">{`{{secret:name}}`}</code>{' '}
+                          to avoid storing raw values.
+                          <a href="/settings/secrets" target="_blank" className="underline ml-0.5">Manage secrets</a>
+                        </p>
+                      )}
+                    </div>
                   )}
                   <p className="text-xs text-gray-400 mt-0.5">{cfg.description}</p>
                 </div>

@@ -147,9 +147,10 @@ public sealed class DatabaseExecuteNodeDescriptor : IWorkflowNodeDescriptor
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
         new NodeConfigDefinition("provider", "Provider", "Database provider.", DataType.Enum, Required: true, DefaultValue: "postgresql", AllowedValues: new[] { "postgresql", "sqlserver", "mysql" }),
-        new NodeConfigDefinition("connectionString", "Connection String", "Database connection string. Can also be passed as a runtime input.", DataType.String, Required: false),
+        new NodeConfigDefinition("connectionString", "Connection String", "Database connection string. Can also be passed as a runtime input.", DataType.String, Required: false, IsSensitive: true),
         new NodeConfigDefinition("statement", "SQL Statement", "Parameterized INSERT/UPDATE/DELETE statement. Use @paramName placeholders.", DataType.String, Required: true),
         new NodeConfigDefinition("parameters", "Parameters", "JSON object of statement parameters, e.g. {\"id\": \"abc\", \"status\": \"active\"}.", DataType.String, Required: false),
         new NodeConfigDefinition("timeoutSeconds", "Timeout (s)", "Statement timeout in seconds.", DataType.Number, Required: false, DefaultValue: 30),
     };
 }
+

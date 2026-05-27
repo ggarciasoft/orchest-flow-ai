@@ -247,9 +247,10 @@ public sealed class GmailReadNodeDescriptor : IWorkflowNodeDescriptor
     {
         new NodeConfigDefinition("credentialName", "Credential Name", "Name of a saved Gmail credential (from /api/gmail/auth/start). If set, clientId/clientSecret/refreshToken are not needed.", DataType.String, Required: false, OptionsSource: "gmail-credentials"),
         new NodeConfigDefinition("clientId", "Client ID", "OAuth2 client ID from Google Cloud Console.", DataType.String, Required: false),
-        new NodeConfigDefinition("clientSecret", "Client Secret", "OAuth2 client secret from Google Cloud Console.", DataType.String, Required: false),
-        new NodeConfigDefinition("refreshToken", "Refresh Token", "OAuth2 refresh token with Gmail read scope.", DataType.String, Required: false),
+        new NodeConfigDefinition("clientSecret", "Client Secret", "OAuth2 client secret from Google Cloud Console.", DataType.String, Required: false, IsSensitive: true),
+        new NodeConfigDefinition("refreshToken", "Refresh Token", "OAuth2 refresh token with Gmail read scope.", DataType.String, Required: false, IsSensitive: true),
         new NodeConfigDefinition("query", "Query", "Gmail search query (e.g. is:unread, from:someone@example.com).", DataType.String, Required: false, DefaultValue: "is:unread"),
         new NodeConfigDefinition("maxResults", "Max Results", "Maximum emails to retrieve (1-50, default: 10).", DataType.Number, Required: false, DefaultValue: 10)
     };
 }
+

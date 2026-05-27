@@ -167,15 +167,15 @@ public sealed class HttpRequestNodeDescriptor : IWorkflowNodeDescriptor
         new NodeConfigDefinition("body", "Body", "Request body for POST/PUT.", DataType.String, Required: false),
         new NodeConfigDefinition("timeoutSeconds", "Timeout (s)", "Request timeout in seconds.", DataType.Number, Required: false, DefaultValue: 30),
         new NodeConfigDefinition("authType", "Auth Type", "Authentication type.", DataType.Enum, Required: false, DefaultValue: "none", AllowedValues: new[] { "none", "bearer", "basic", "api-key", "oauth2-client-credentials" }),
-        new NodeConfigDefinition("authToken", "Auth Token", "Bearer token.", DataType.String, Required: false),
+        new NodeConfigDefinition("authToken", "Auth Token", "Bearer token.", DataType.String, Required: false, IsSensitive: true),
         new NodeConfigDefinition("authUsername", "Auth Username", "Basic auth username.", DataType.String, Required: false),
-        new NodeConfigDefinition("authPassword", "Auth Password", "Basic auth password.", DataType.String, Required: false),
+        new NodeConfigDefinition("authPassword", "Auth Password", "Basic auth password.", DataType.String, Required: false, IsSensitive: true),
         new NodeConfigDefinition("authApiKeyName", "API Key Name", "API key name.", DataType.String, Required: false),
-        new NodeConfigDefinition("authApiKeyValue", "API Key Value", "API key value.", DataType.String, Required: false),
+        new NodeConfigDefinition("authApiKeyValue", "API Key Value", "API key value.", DataType.String, Required: false, IsSensitive: true),
         new NodeConfigDefinition("authApiKeyLocation", "API Key Location", "Location for API key.", DataType.Enum, Required: false, DefaultValue: "header", AllowedValues: new[] { "header", "query" }),
         new NodeConfigDefinition("authTokenUrl", "Auth Token URL", "OAuth2 token URL.", DataType.String, Required: false),
         new NodeConfigDefinition("authClientId", "Client ID", "OAuth2 client ID.", DataType.String, Required: false),
-        new NodeConfigDefinition("authClientSecret", "Client Secret", "OAuth2 client secret.", DataType.String, Required: false),
+        new NodeConfigDefinition("authClientSecret", "Client Secret", "OAuth2 client secret.", DataType.String, Required: false, IsSensitive: true),
         new NodeConfigDefinition("authScope", "Scope", "OAuth2 scope.", DataType.String, Required: false)
     };
 }
