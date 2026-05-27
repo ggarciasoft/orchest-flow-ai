@@ -189,6 +189,11 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
                 var itemsJson = feItemsRaw.ToString()!;
                 var feItems = JsonSerializer.Deserialize<List<JsonElement>>(itemsJson, _jsonOpts) ?? new();
                 var loopResults = new List<Dictionary<string, object?>>(); 
+                // inheritOutputs: when true, each body node receives all outputs accumulated so far in the iteration.
+                // Keeps things simple without needing explicit wiring for every pair. Off by default.
+                var inheritOutputs = current.Config.TryGetValue("inheritOutputs", out var inhEl)
+                    && inhEl is JsonElement inh
+                    && (inh.ValueKind == JsonValueKind.True || (inh.ValueKind == JsonValueKind.String && inh.GetString() == "true"));
 
                 // Find body start (first node after ForEach)
                 var bodyStart = ResolveNextNode(current.Id, def.Edges, nodeMap, result.Outputs, nodeOutputs);
@@ -211,15 +216,22 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
                         var iterNodeImpl = _registry.GetNode(iterNode.Type);
                         if (iterNodeImpl == null) break;
 
-                        // Build accumulated inputs: merge all outputs produced so far in this iteration
-                        // so every node in the loop body can access data from all predecessors,
-                        // not just the direct edge source. Direct edge wiring takes priority.
-                        var accumulatedInputs = new Dictionary<string, object?>(inputs);
-                        foreach (var nodeOut in iterOutputs.Values)
-                            foreach (var kv in nodeOut)
-                                accumulatedInputs.TryAdd(kv.Key, kv.Value);
+                        // Build base inputs: use accumulated iteration outputs when inheritOutputs is on,
+                        // otherwise use normal workflow inputs only. Direct edge wiring always takes priority.
+                        Dictionary<string, object?> baseInputs;
+                        if (inheritOutputs)
+                        {
+                            baseInputs = new Dictionary<string, object?>(inputs);
+                            foreach (var nodeOut in iterOutputs.Values)
+                                foreach (var kv in nodeOut)
+                                    baseInputs.TryAdd(kv.Key, kv.Value);
+                        }
+                        else
+                        {
+                            baseInputs = inputs;
+                        }
 
-                        var iterInputs = ResolveInputs(iterNode.Id, def.Edges, iterOutputs, accumulatedInputs);
+                        var iterInputs = ResolveInputs(iterNode.Id, def.Edges, iterOutputs, baseInputs);
                         _logger.LogDebug("Loop body ResolveInputs for {NodeId}: edgeCount={EdgeCount} iterOutputsKeys=[{Keys}] resultKeys=[{ResultKeys}]",
                             iterNode.Id, def.Edges.Count(e => e.Target == iterNode.Id),
                             string.Join(",", iterOutputs.Keys.Select(k => k.Split('-')[0])),

@@ -157,6 +157,7 @@ public sealed class ForEachNodeDescriptor : IWorkflowNodeDescriptor
     {
         new NodeConfigDefinition("itemVariable", "Item Variable", "Name prefix for per-item outputs (default: item).", DataType.String, Required: false, DefaultValue: "item"),
         new NodeConfigDefinition("maxItems", "Max Items", "Maximum number of items to expand (default: 50, max: 200).", DataType.Number, Required: false, DefaultValue: 50),
-        new NodeConfigDefinition("loopMode", "Loop Mode", "When true, the engine executes downstream nodes once per item instead of fan-out. Requires a logic.foreach.end node at the end of the loop body.", DataType.Boolean, Required: false, DefaultValue: false)
+        new NodeConfigDefinition("loopMode", "Loop Mode", "When true, the engine executes downstream nodes once per item instead of fan-out. Requires a logic.foreach.end node at the end of the loop body.", DataType.Boolean, Required: false, DefaultValue: false),
+        new NodeConfigDefinition("inheritOutputs", "Inherit Outputs", "When true, each node in the loop body receives all outputs accumulated so far in the iteration (e.g. ai.extract outputs available to integrations.http without extra wiring). Off by default to keep memory usage low.", DataType.Boolean, Required: false, DefaultValue: false)
     };
 }
