@@ -33,7 +33,7 @@ public sealed class ContractRiskAnalysisNode : IWorkflowNode
         var router = ctx.Services.GetRequiredService<LLMProviderRouter>();
         var (provider, resolvedModel) = router.Route(model);
         var schema = """{"type":"object","required":["riskLevel","summary","keyClauses","recommendedAction"],"properties":{"riskLevel":{"type":"string","enum":["Low","Medium","High"]},"summary":{"type":"string"},"keyClauses":{"type":"array","items":{"type":"object","properties":{"title":{"type":"string"},"risk":{"type":"string"},"reason":{"type":"string"}}}},"recommendedAction":{"type":"string"}}}""";
-        var req = new LLMRequest { Prompt = ContractRiskPrompt.User(text), SystemPrompt = ContractRiskPrompt.System, Model = resolvedModel, MaxTokens = 1024 };
+        var req = new LLMRequest { Prompt = ContractRiskPrompt.User(text), SystemPrompt = ContractRiskPrompt.System, Model = resolvedModel, MaxTokens = 1024, TenantId = ctx.TenantId };
         var response = await provider.GenerateStructuredAsync<ContractRiskOutput>(req, schema, ct);
         return NodeExecutionResult.Succeeded(new Dictionary<string, object?>
         {

@@ -40,7 +40,7 @@ public sealed class TextClassifierNode : IWorkflowNode
             systemPrompt += $" Additional instructions: {instructions}";
 
         var response = await provider.GenerateTextAsync(
-            new LLMRequest { Prompt = text, SystemPrompt = systemPrompt, Model = resolvedModel }, ct);
+            new LLMRequest { Prompt = text, SystemPrompt = systemPrompt, Model = resolvedModel, TenantId = ctx.TenantId }, ct);
 
         var trimmed = response.Text.Trim().ToLowerInvariant();
         var categoryList = categories.Split(',').Select(c => c.Trim().ToLowerInvariant()).ToList();

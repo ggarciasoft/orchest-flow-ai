@@ -67,7 +67,7 @@ public sealed class DataExtractorNode : IWorkflowNode
 
         var prompt = $"Extract the following fields from the text and return as a JSON object with exactly these keys: {fields}.\n\nText:\n{text}\n\nReturn ONLY valid JSON, no explanation.";
         var response = await provider.GenerateTextAsync(
-            new LLMRequest { Prompt = prompt, Model = resolvedModel, MaxTokens = 1024 }, ct);
+            new LLMRequest { Prompt = prompt, Model = resolvedModel, MaxTokens = 1024, TenantId = ctx.TenantId }, ct);
 
         var extractedJson = response.Text.Trim();
         var outputs = new Dictionary<string, object?> { ["extractedJson"] = extractedJson };

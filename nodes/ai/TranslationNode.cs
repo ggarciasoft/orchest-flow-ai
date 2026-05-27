@@ -35,7 +35,7 @@ public sealed class TranslationNode : IWorkflowNode
 
         var systemPrompt = $"You are a professional translator. Translate the text accurately into {targetLanguage}. Respond with ONLY the translated text, no explanation.";
         var response = await provider.GenerateTextAsync(
-            new LLMRequest { Prompt = text, SystemPrompt = systemPrompt, Model = resolvedModel, MaxTokens = 1024 }, ct);
+            new LLMRequest { Prompt = text, SystemPrompt = systemPrompt, Model = resolvedModel, MaxTokens = 1024, TenantId = ctx.TenantId }, ct);
 
         return NodeExecutionResult.Succeeded(new Dictionary<string, object?>
         {

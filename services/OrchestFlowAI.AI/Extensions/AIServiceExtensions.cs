@@ -38,7 +38,8 @@ public static class AIServiceExtensions
         var holder = new OpenAIApiKeyHolder(apiKey);
         services.AddSingleton(holder);
         services.AddSingleton<OpenAILLMProvider>(sp =>
-            new OpenAILLMProvider(holder, sp.GetRequiredService<ILogger<OpenAILLMProvider>>()));
+            new OpenAILLMProvider(holder, sp.GetRequiredService<ILogger<OpenAILLMProvider>>(),
+                sp.GetService<OrchestFlowAI.Application.Abstractions.IPlatformSettingsService>()));
         services.AddSingleton<ILLMProvider>(sp => sp.GetRequiredService<OpenAILLMProvider>());
 
         // Router resolves the correct provider based on the model string or default

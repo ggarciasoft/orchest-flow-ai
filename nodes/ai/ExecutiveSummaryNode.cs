@@ -21,7 +21,7 @@ public sealed class ExecutiveSummaryNode : IWorkflowNode
         var tone = ctx.GetConfig<string>("tone") ?? "formal";
         var router = ctx.Services.GetRequiredService<LLMProviderRouter>();
         var (provider, resolvedModel) = router.Route(model);
-        var req = new LLMRequest { Prompt = ExecutiveSummaryPrompt.User(text, maxWords, tone), SystemPrompt = ExecutiveSummaryPrompt.System, Model = resolvedModel, MaxTokens = 512 };
+        var req = new LLMRequest { Prompt = ExecutiveSummaryPrompt.User(text, maxWords, tone), SystemPrompt = ExecutiveSummaryPrompt.System, Model = resolvedModel, MaxTokens = 512, TenantId = ctx.TenantId };
         var response = await provider.GenerateTextAsync(req, ct);
         return NodeExecutionResult.Succeeded(new Dictionary<string, object?> { ["summary"] = response.Text.Trim() });
     }

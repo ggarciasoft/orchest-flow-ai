@@ -1,26 +1,42 @@
 using System.Text.Json;
 using OpenAI.Chat;
 using OrchestFlowAI.AI.Abstractions;
+using OrchestFlowAI.Application.Abstractions;
 using Microsoft.Extensions.Logging;
 namespace OrchestFlowAI.AI.Providers;
 
 public sealed class OpenAILLMProvider : ILLMProvider
 {
     private readonly OpenAIApiKeyHolder _keyHolder;
+    private readonly IPlatformSettingsService? _platformSettings;
     private readonly ILogger<OpenAILLMProvider> _logger;
     public string Id => "openai";
     public IReadOnlyCollection<string> Models => new[] { "gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo" };
 
-    public OpenAILLMProvider(OpenAIApiKeyHolder keyHolder, ILogger<OpenAILLMProvider> logger)
+    public OpenAILLMProvider(OpenAIApiKeyHolder keyHolder, ILogger<OpenAILLMProvider> logger, IPlatformSettingsService? platformSettings = null)
     {
         _keyHolder = keyHolder;
         _logger = logger;
+        _platformSettings = platformSettings;
+    }
+
+    private async Task<string> ResolveApiKeyAsync(Guid? tenantId, CancellationToken ct)
+    {
+        // Prefer DB-stored key for the tenant (set via Settings page)
+        if (_platformSettings != null && tenantId.HasValue)
+        {
+            var dbKey = await _platformSettings.GetAsync(tenantId.Value, "llm.openai.apiKey", ct);
+            if (!string.IsNullOrWhiteSpace(dbKey)) return dbKey;
+        }
+        // Fall back to in-memory holder (env var or hot-reload from API process)
+        return _keyHolder.ApiKey;
     }
 
     public async Task<LLMResponse> GenerateTextAsync(LLMRequest request, CancellationToken ct = default)
     {
         var model = request.Model == "default" ? "gpt-4o-mini" : request.Model;
-        var client = new ChatClient(model, _keyHolder.ApiKey);
+        var apiKey = await ResolveApiKeyAsync(request.TenantId, ct);
+        var client = new ChatClient(model, apiKey);
         var messages = new List<ChatMessage>();
         if (request.SystemPrompt != null) messages.Add(ChatMessage.CreateSystemMessage(request.SystemPrompt));
         messages.Add(ChatMessage.CreateUserMessage(request.Prompt));
