@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { isAuthenticated, clearToken } from '@/lib/auth';
 import {
   LayoutDashboard, GitBranch, Play, CheckSquare,
-  FileText, Settings, LogOut
+  FileText, Settings, LogOut, KeyRound
 } from 'lucide-react';
 
 const nav = [
@@ -16,6 +16,7 @@ const nav = [
   { href: '/approvals',  label: 'Approvals',   icon: CheckSquare },
   { href: '/documents',  label: 'Documents',   icon: FileText },
   { href: '/settings',   label: 'Settings',    icon: Settings },
+  { href: '/settings/secrets', label: 'Secrets', icon: KeyRound },
 ];
 
 /**
