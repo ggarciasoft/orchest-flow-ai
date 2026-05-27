@@ -13,6 +13,8 @@ public interface IWorkflowRepository
     Task<WorkflowVersion> CreateVersionAsync(WorkflowVersion version, CancellationToken ct = default);
     Task<WorkflowVersion?> GetVersionAsync(Guid versionId, CancellationToken ct = default);
     Task ActivateVersionAsync(Guid versionId, Guid workflowId, CancellationToken ct = default);
+    /// <summary>Returns all versions for a workflow ordered by version number descending.</summary>
+    Task<IReadOnlyList<WorkflowVersion>> ListVersionsAsync(Guid workflowId, CancellationToken ct = default);
 
     /// <summary>Returns all non-deleted workflows with the specified trigger type.</summary>
     Task<IReadOnlyList<Workflow>> ListByTriggerTypeAsync(TriggerType triggerType, CancellationToken ct = default);

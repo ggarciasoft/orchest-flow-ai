@@ -109,6 +109,12 @@ export const api = {
     /** Activates a specific workflow version by id. */
     activateVersion: (workflowId: string, versionId: string) =>
       apiFetch<void>(`/api/workflows/${workflowId}/versions/${versionId}/activate`, { method: 'POST' }),
+    /** Lists all versions of a workflow ordered newest first. */
+    listVersions: (workflowId: string) =>
+      apiFetch<WorkflowVersionSummary[]>(`/api/workflows/${workflowId}/versions`),
+    /** Fetches the full definition JSON for a specific version. */
+    getVersion: (workflowId: string, versionId: string) =>
+      apiFetch<WorkflowVersionDetail>(`/api/workflows/${workflowId}/versions/${versionId}`),
   },
   /** Workflow execution history and node timeline endpoints. */
   executions: {
@@ -262,6 +268,8 @@ export interface User { id: string; email: string; displayName: string; role: st
 
 /** Workflow definition metadata. */
 export interface Workflow { id: string; name: string; description: string; activeVersion?: number; createdAt: string; updatedAt: string; }
+export interface WorkflowVersionSummary { id: string; versionNumber: number; isActive: boolean; createdBy: string | null; createdAt: string; }
+export interface WorkflowVersionDetail extends WorkflowVersionSummary { definitionJson: string; }
 
 /** A single workflow execution instance. */
 export interface WorkflowExecution { id: string; workflowId: string; workflowVersionId: string; status: string; startedAt: string; completedAt?: string; correlationId: string; errorMessage?: string; workflowName?: string; versionNumber?: number; }

@@ -63,6 +63,15 @@ public sealed class EfWorkflowRepository : IWorkflowRepository
         => _db.Workflows.AsNoTracking().Where(w => w.TriggerType == triggerType && !w.IsDeleted)
             .ToListAsync(ct)
             .ContinueWith(t => (IReadOnlyList<Workflow>)t.Result, ct);
+
+    public async Task<IReadOnlyList<WorkflowVersion>> ListVersionsAsync(Guid workflowId, CancellationToken ct = default)
+    {
+        var versions = await _db.WorkflowVersions.AsNoTracking()
+            .Where(v => v.WorkflowId == workflowId)
+            .OrderByDescending(v => v.VersionNumber)
+            .ToListAsync(ct);
+        return versions;
+    }
 }
 
 /// <summary>EF Core implementation of <see cref="IExecutionRepository"/>.</summary>

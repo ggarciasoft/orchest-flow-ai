@@ -11,9 +11,10 @@ import '@xyflow/react/dist/style.css';
 import type { Workflow, NodeDescriptor } from '@/lib/api';
 import { NodePalette } from './NodePalette';
 import { NodeConfigDrawer } from './NodeConfigDrawer';
+import { VersionHistoryPanel } from './VersionHistoryPanel';
 import { RunWorkflowModal } from '../RunWorkflowModal';
 import { api } from '@/lib/api';
-import { Save, Play, Undo2, Redo2 } from 'lucide-react';
+import { Save, Play, Undo2, Redo2, History } from 'lucide-react';
 import { useHistory } from '@/hooks/useHistory';
 
 interface Props {
@@ -59,6 +60,8 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
   const [edgeContextMenu, setEdgeContextMenu] = useState<EdgeContextMenu | null>(null);
 
   const { pushSnapshot, undo: historyUndo, redo: historyRedo, canUndo, canRedo } = useHistory({ nodes: [], edges: [] });
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [canvasVersionNumber, setCanvasVersionNumber] = useState<number | undefined>(activeVersionNumber);
 
   // Hydrate canvas from saved definition when the page loads
   useEffect(() => {
@@ -278,7 +281,7 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
       <div className="flex-1 flex flex-col min-w-0">
         <div className="flex items-center justify-between px-5 py-3 border-b bg-white shrink-0">
           <div>
-            <div className="flex items-center gap-2"><h2 className="font-semibold text-gray-900">{workflow.name}</h2>{activeVersionNumber != null && (<span className="text-xs text-slate-500 border border-slate-200 rounded px-2 py-0.5 bg-slate-50">v{activeVersionNumber}</span>)}</div>
+            <div className="flex items-center gap-2"><h2 className="font-semibold text-gray-900">{workflow.name}</h2>{canvasVersionNumber != null && (<span className="text-xs text-slate-500 border border-slate-200 rounded px-2 py-0.5 bg-slate-50">v{canvasVersionNumber}</span>)}</div>
             <p className="text-xs text-gray-400">
               Click a node to configure · Right-click or <kbd className="text-xs bg-gray-100 border rounded px-1">Del</kbd> to delete · <kbd className="text-xs bg-gray-100 border rounded px-1">Ctrl+Z</kbd> undo · <kbd className="text-xs bg-gray-100 border rounded px-1">Ctrl+Y</kbd> redo
               {savedAt && <span className="ml-3 text-green-600">✓ Saved at {savedAt}</span>}
@@ -306,7 +309,15 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
             >
               <Redo2 size={14} />
             </button>
-            {/* Save button — serializes canvas and persists to API */}
+            <button
+              className={`border text-sm px-2 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
+                showVersionHistory ? 'bg-slate-100 text-slate-800' : 'hover:bg-gray-50 text-gray-600'
+              }`}
+              onClick={() => setShowVersionHistory(v => !v)}
+              title="Version history"
+            >
+              <History size={14} /> History
+            </button>
             <button
               className={`border text-sm px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
                 saving ? 'opacity-50 cursor-not-allowed text-gray-400' : 'hover:bg-gray-50 text-gray-600'
@@ -319,10 +330,10 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
             </button>
             <button
               className={`text-sm px-4 py-1.5 rounded-lg flex items-center gap-1.5 font-medium ${
-                !activeVersionNumber ? 'bg-gray-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'
+                !canvasVersionNumber ? 'bg-gray-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'
               } text-white`}
               onClick={handleExecute}
-              disabled={!activeVersionNumber}
+              disabled={!canvasVersionNumber}
             >
               <Play size={14} />Run
             </button>
@@ -354,7 +365,7 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
       </div>
 
       {/* Config drawer with delete button */}
-      {selected && (
+      {selected && !showVersionHistory && (
         <NodeConfigDrawer
           node={selected}
           catalog={nodeCatalog}
@@ -369,6 +380,45 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
               return next;
             })
           }
+        />
+      )}
+
+      {/* Version history panel */}
+      {showVersionHistory && (
+        <VersionHistoryPanel
+          workflowId={workflow.id}
+          currentVersionNumber={canvasVersionNumber}
+          onClose={() => setShowVersionHistory(false)}
+          onLoadVersion={(definitionJson, versionNumber) => {
+            // Hydrate canvas with the chosen version's definition
+            try {
+              const def = JSON.parse(definitionJson) as {
+                nodes?: Array<{ id: string; type: string; position: { x: number; y: number }; data: Record<string, unknown> }>;
+                edges?: Array<{ id: string; source: string; target: string }>;
+              };
+              if (def.nodes?.length) {
+                const restoredNodes = def.nodes.map(n => {
+                  const descriptor = nodeCatalog.find(d => d.type === ((n.data?.descriptor as { type?: string } | undefined)?.type ?? n.type));
+                  const category = (descriptor?.category ?? 'system') as string;
+                  return {
+                    ...n, type: 'default' as const,
+                    data: { ...n.data, label: descriptor?.displayName ?? (n.data?.label as string) ?? n.type, descriptor: descriptor ?? n.data?.descriptor },
+                    style: { background: ({ ai: '#818cf8', documents: '#34d399', logic: '#fbbf24', human: '#f87171', system: '#94a3b8', integrations: '#60a5fa', data: '#a78bfa' } as Record<string, string>)[category] ?? '#94a3b8', color: 'white', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500 },
+                  };
+                });
+                setNodes(restoredNodes);
+                const restoredEdges = (def.edges ?? []).map(e => ({ ...e, type: 'default' as const }));
+                setEdges(restoredEdges);
+                pushSnapshot({ nodes: restoredNodes, edges: restoredEdges });
+              }
+              setCanvasVersionNumber(versionNumber);
+              setSelectedId(null);
+            } catch { /* ignore malformed */ }
+          }}
+          onActivated={() => {
+            // Refresh active version badge — reload active version number
+            api.workflows.getActiveVersion(workflow.id).then(v => setCanvasVersionNumber(v.versionNumber)).catch(() => {});
+          }}
         />
       )}
 

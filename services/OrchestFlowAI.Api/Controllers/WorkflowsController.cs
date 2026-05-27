@@ -182,16 +182,48 @@ public sealed class WorkflowsController : ControllerBase
         return Ok(new { id = version.Id, versionNumber = version.VersionNumber });
     }
 
-    /// <summary>
-    /// Activates a specific workflow version, deactivating all others for this workflow.
-    /// </summary>
-    /// <param name="id">The workflow id.</param>
-    /// <param name="versionId">The version id to activate.</param>
-    /// <response code="200">Version activated successfully.</response>
+    /// <summary>Activates a specific workflow version, deactivating all others for this workflow.</summary>
     [HttpPost("{id}/versions/{versionId}/activate"), Authorize(Policy = "EditorOrAbove")]
     public async Task<ActionResult> ActivateVersion(Guid id, Guid versionId, CancellationToken ct)
     {
         await _workflows.ActivateVersionAsync(versionId, id, ct);
         return NoContent();
+    }
+
+    /// <summary>Lists all versions of a workflow ordered by version number descending.</summary>
+    /// <response code="200">List of versions with id, number, active flag, creator, and creation date.</response>
+    [HttpGet("{id}/versions"), Authorize(Policy = "ViewerOrAbove")]
+    public async Task<ActionResult> ListVersions(Guid id, CancellationToken ct)
+    {
+        var w = await _workflows.GetAsync(id, TenantId, ct);
+        if (w == null) return NotFound();
+        var versions = await _workflows.ListVersionsAsync(id, ct);
+        return Ok(versions.Select(v => new
+        {
+            id = v.Id,
+            versionNumber = v.VersionNumber,
+            isActive = v.IsActive,
+            createdBy = v.CreatedBy,
+            createdAt = v.CreatedAt,
+        }));
+    }
+
+    /// <summary>Returns the definition JSON for a specific workflow version.</summary>
+    /// <response code="200">Version definition JSON.</response>
+    /// <response code="404">Version not found.</response>
+    [HttpGet("{id}/versions/{versionId}"), Authorize(Policy = "ViewerOrAbove")]
+    public async Task<ActionResult> GetVersion(Guid id, Guid versionId, CancellationToken ct)
+    {
+        var version = await _workflows.GetVersionAsync(versionId, ct);
+        if (version == null || version.WorkflowId != id) return NotFound();
+        return Ok(new
+        {
+            id = version.Id,
+            versionNumber = version.VersionNumber,
+            isActive = version.IsActive,
+            createdBy = version.CreatedBy,
+            createdAt = version.CreatedAt,
+            definitionJson = version.DefinitionJson,
+        });
     }
 }

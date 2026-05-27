@@ -36,6 +36,7 @@ jest.mock("lucide-react", () => ({
   Play: () => <span>Play</span>,
   Undo2: () => <span>Undo</span>,
   Redo2: () => <span>Redo</span>,
+  History: () => <span>History</span>,
 }));
 
 const mockWorkflow = {
