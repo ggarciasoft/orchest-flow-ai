@@ -67,12 +67,17 @@ public sealed class DataExtractorNode : IWorkflowNode
         text = WebUtility.HtmlDecode(text);
         text = Regex.Replace(text, @"\s{2,}", " ").Trim();
         var fields = ctx.GetConfig<string>("fields") ?? throw new InvalidOperationException("Config 'fields' is required");
+        var formatInstructions = ctx.GetConfig<string>("formatInstructions");
         var model = ctx.GetConfig<string>("model") ?? "default";
 
         var router = ctx.Services.GetRequiredService<LLMProviderRouter>();
         var (provider, resolvedModel) = router.Route(model);
 
-        var prompt = $"Extract the following fields from the text and return as a JSON object with exactly these keys: {fields}.\n\nText:\n{text}\n\nReturn ONLY valid JSON, no markdown, no explanation.";
+        var formatClause = string.IsNullOrWhiteSpace(formatInstructions)
+            ? string.Empty
+            : $"\n\nFormat rules (apply strictly):\n{formatInstructions}";
+        var prompt = $"Extract the following fields from the text and return as a JSON object with exactly these keys: {fields}.{formatClause}\n\nText:\n{{text}}\n\nReturn ONLY valid JSON, no markdown, no explanation.";
+        prompt = prompt.Replace("{text}", text);
         var response = await provider.GenerateTextAsync(
             new LLMRequest { Prompt = prompt, Model = resolvedModel, MaxTokens = 1024, TenantId = ctx.TenantId }, ct);
 
@@ -133,6 +138,7 @@ public sealed class DataExtractorNodeDescriptor : IWorkflowNodeDescriptor
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
         new NodeConfigDefinition("fields", "Fields", "Comma-separated field names to extract e.g. 'name,date,amount'.", DataType.String, Required: true),
+        new NodeConfigDefinition("formatInstructions", "Format Instructions", "Optional per-field format rules appended to the LLM prompt. E.g. 'Amount: numeric only, no currency symbols or commas. Date: ISO 8601 (YYYY-MM-DD). Category: one of Food, Transport, Utilities, Other.'.", DataType.String, Required: false),
         new NodeConfigDefinition("textInput", "Text Input", "Which upstream output to use as the text source.", DataType.Enum, Required: false, DefaultValue: "text", AllowedValues: new[] { "text", "item", "body" }),
         new NodeConfigDefinition("model", "Model", "LLM model to use.", DataType.String, Required: false, DefaultValue: "default", OptionsSource: "llm-models")
     };
