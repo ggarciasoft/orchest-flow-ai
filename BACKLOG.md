@@ -45,7 +45,7 @@
 
 ### 1. Plain-text secrets in workflow config JSON
 - **Problem:** Node config (including API keys pasted into HTTP nodes, refresh tokens, etc.) is stored as plain JSON in `WorkflowVersion.DefinitionJson`. Anyone with DB access can read all secrets.
-- **Proposed fix:** Secret vault — encrypt sensitive fields at rest; reference secrets by name in config rather than embedding values.
+- **Status:** ⚠️ Partially resolved — Secret vault infrastructure exists (`SecretService`, `IEncryptionService`, `{{secret:name}}` resolver in engine). Secrets Vault UI shipped (`/settings/secrets`). **Remaining:** no UI enforcement that sensitive fields *use* `{{secret:...}}` — users can still paste raw values. A node config field-level `isSensitive` flag with masking + auto-suggest would close this fully.
 
 ### 2. ForEach is fan-out only — no true per-item subgraph loop
 - **Problem:** `logic.foreach` outputs `item_0..item_N` which only works for a fixed number of items wired at design time. Can't loop over 50 emails without 50 wired branches.
@@ -62,16 +62,13 @@
 - **Status:** ✅ Resolved — `RunWorkflowModal` parses the active version definition, discovers input keys from `system.start` outgoing edges, and renders a dynamic input form before execution.
 
 ### 5. Feedback endpoint not wired
-- **Problem:** `/feedback` page form submits but `POST /api/feedback` is a TODO stub — nothing is stored or sent.
-- **Proposed fix:** Store in DB or forward to email/webhook.
+- **Status:** ✅ Resolved — `POST /api/feedback` stores to DB (`Feedback` entity), frontend form wired.
 
 ### 6. Settings page — additional LLM providers
-- **Problem:** Only OpenAI is configurable via UI. Anthropic, Azure OpenAI, and Ollama are not yet supported.
-- **Proposed fix:** Add provider cards to Settings page for each; extend `AIServiceExtensions` with conditional registration.
+- **Status:** ✅ Resolved — Anthropic, Azure OpenAI, Ollama added with Settings cards, test endpoints, and unit tests.
 
 ### 7. Gmail credential connect flow requires knowing client credentials
-- **Problem:** The "Connect Gmail account" prompt in the designer asks for clientId + clientSecret inline. Ideally credentials are pre-registered in Settings.
-- **Proposed fix:** Move Gmail OAuth2 app config (clientId/clientSecret) to Settings page; connect flow just picks an account.
+- **Status:** ✅ Resolved — Connect flow now uses Settings-stored clientId/clientSecret. Returns helpful error if not configured in Settings.
 
 ---
 
@@ -85,6 +82,10 @@
 | Webhook node — inbound signature verification | `WebhookOutNode` exists; inbound webhook validation (HMAC) not enforced |
 | Multi-tenant admin panel | No super-admin view across tenants |
 | Export/import workflow definitions | Download/upload workflow JSON |
+| Sensitive config field enforcement | Node config fields marked `isSensitive` should auto-mask values in drawer and suggest `{{secret:...}}` instead of raw paste |
+| Ollama model list dynamic | `llm.ollama.models` setting not surfaced in UI; models are hardcoded in provider |
+| ForEach loop body branching | Loop body is linear only; no conditional branching inside a loop iteration |
+| Workflow run history per workflow | Executions list is global; no per-workflow filtered view |
 
 ---
 
@@ -116,7 +117,11 @@
 | Version History panel in designer (Load + Activate) | ✅ |
 | `ai.extract` format presets (financial/invoice/contact) + prompt injection protection | ✅ |
 | Worker reads OpenAI key from DB per-tenant (not env-only) | ✅ |
-| Backend unit tests | ✅ **317 / 317** |
+| Feedback endpoint wired to DB (`POST /api/feedback`) | ✅ |
+| Anthropic, Azure OpenAI, Ollama LLM providers + Settings cards | ✅ |
+| Gmail credential connect flow uses Settings-stored credentials | ✅ |
+| Secrets Vault UI (`/settings/secrets`) — list, add, rotate, delete | ✅ |
+| Backend unit tests | ✅ **351 / 351** |
 | Frontend unit tests | ✅ **62 / 62** |
 | XML / JSDoc docs on all public APIs | ✅ |
 
