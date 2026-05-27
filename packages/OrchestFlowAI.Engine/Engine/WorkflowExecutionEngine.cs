@@ -215,20 +215,38 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
                         var iterConfig = iterNode.Config.ToDictionary(kv => kv.Key, kv => (object?)kv.Value);
                         var iterCtx = BuildContext(executionId, execution, iterInputs, iterConfig, iterOutputs, inputs, ++step, scope.ServiceProvider, ct);
 
+                        // Record each loop body node execution in the DB so it appears in the timeline
+                        var iterNodeExec = NodeExecution.Create(executionId, iterNode.Id, iterNode.Type, step);
+                        iterNodeExec.Start(JsonSerializer.Serialize(iterInputs));
+                        await execRepo.CreateNodeExecutionAsync(iterNodeExec, ct);
+                        await _notifier.NotifyNodeStarted(executionId, iterNodeExec.Id, iterNode.Type, ct);
+
                         NodeExecutionResult iterResult;
                         try { iterResult = await iterNodeImpl.ExecuteAsync(iterCtx, ct); }
                         catch (Exception ex)
                         {
                             _logger.LogWarning(ex, "ForEach body node {NodeType} threw on item {Idx}", iterNode.Type, idx);
+                            iterNodeExec.Fail(ex.Message);
+                            await execRepo.UpdateNodeExecutionAsync(iterNodeExec, ct);
+                            await _notifier.NotifyNodeFailed(executionId, iterNodeExec.Id, iterNode.Type, ex.Message, ct);
                             break;
                         }
 
                         if (iterResult.Status == SDK.Models.NodeExecutionStatus.Succeeded)
                         {
+                            iterNodeExec.Succeed(JsonSerializer.Serialize(iterResult.Outputs));
+                            await execRepo.UpdateNodeExecutionAsync(iterNodeExec, ct);
+                            await _notifier.NotifyNodeCompleted(executionId, iterNodeExec.Id, iterNode.Type, ct);
                             iterOutputs[iterNode.Id] = iterResult.Outputs;
                             lastIterOutputs = new Dictionary<string, object?>(iterResult.Outputs);
                         }
-                        else break;
+                        else
+                        {
+                            iterNodeExec.Fail(iterResult.ErrorMessage ?? "error");
+                            await execRepo.UpdateNodeExecutionAsync(iterNodeExec, ct);
+                            await _notifier.NotifyNodeFailed(executionId, iterNodeExec.Id, iterNode.Type, iterResult.ErrorMessage ?? "error", ct);
+                            break;
+                        }
 
                         iterNode = ResolveNextNode(iterNode.Id, def.Edges, nodeMap,
                             iterResult.Outputs.ToDictionary(kv => kv.Key, kv => kv.Value), iterOutputs);
