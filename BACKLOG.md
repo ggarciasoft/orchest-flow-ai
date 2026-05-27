@@ -121,8 +121,9 @@
 | Gmail credential connect flow uses Settings-stored credentials | ✅ |
 | Secrets Vault UI (`/settings/secrets`) — list, add, rotate, delete | ✅ |
 | `isSensitive` node config fields — masked drawer inputs + `{{secret:name}}` suggestion | ✅ |
-| Backend unit tests | ✅ **351 / 351** |
-| Frontend unit tests | ✅ **62 / 62** |
+| AI Workflow Assistant (`POST /api/workflows/ai-assist` + `AiAssistPanel` in designer) | ✅ |
+| Backend unit tests | ✅ **360 / 360** |
+| Frontend unit tests | ✅ **63 / 63** |
 | XML / JSDoc docs on all public APIs | ✅ |
 
 ---

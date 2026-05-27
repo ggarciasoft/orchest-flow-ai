@@ -416,3 +416,62 @@ Standard envelope:
 ```
 
 Default page size 20, max 100.
+
+---
+
+## 15. AI Workflow Assistant
+
+### Generate / Update Workflow
+
+`
+POST /api/workflows/ai-assist
+Authorization: Bearer <token>
+Content-Type: application/json
+`
+
+**Request body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| prompt | string | ? | Plain-language description of what to build or change |
+| currentDefinitionJson | string | ? | Current canvas definition JSON. When provided, the AI updates the existing workflow instead of creating a new one |
+| workflowName | string | ? | Name for the workflow (used in the generated definition) |
+
+**Example — create new:**
+```json
+{
+  "prompt": "Read Gmail emails labelled recibos-pagos-facturas, extract Amount, Currency, Date and Store using the financial preset, save each row to PostgreSQL",
+  "workflowName": "Gmail Receipt Extractor"
+}
+```
+
+**Example — update existing:**
+```json
+{
+  "prompt": "Add an HTTP webhook notification after the database insert step",
+  "currentDefinitionJson": "{ ...current canvas definition... }"
+}
+```
+
+**Response 200:**
+```json
+{
+  "definition": { ...WorkflowDefinition... },
+  "explanation": "Built a Gmail ? ForEach ? ai.extract ? db-execute chain. ForEach is in loop mode with the financial preset configured on ai.extract.",
+  "changes": [
+    "Added integrations.http node after data.db-execute",
+    "Wired db-execute ? http ? foreach.end"
+  ]
+}
+```
+
+**Errors:**
+| Status | Meaning |
+|--------|---------|
+| 400 | Prompt is empty |
+| 500 | LLM generation failed (check error field in body) |
+
+**Notes:**
+- Requires EditorOrAbove role
+- The returned definition is not saved — the client previews it and calls POST /api/workflows/{id}/versions + activate when accepted
+- The AI is given a compact node catalog (all types, key inputs/outputs/config) so it knows what nodes exist
+- Current definition is injected as context when updating; unchanged nodes are preserved

@@ -210,3 +210,4 @@ Every screen explicitly handles:
 6. Approval actions require a confirmation step (modal).
 7. Avoid layout shift: reserve space with skeletons.
 8. No `any` in TypeScript; resolve types through the generated client or local Zod schemas.
+
