@@ -34,6 +34,8 @@ jest.mock("@/lib/api", () => ({
 jest.mock("lucide-react", () => ({
   Save: () => <span>Save</span>,
   Play: () => <span>Play</span>,
+  Undo2: () => <span>Undo</span>,
+  Redo2: () => <span>Redo</span>,
 }));
 
 const mockWorkflow = {

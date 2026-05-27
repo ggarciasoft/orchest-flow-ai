@@ -13,7 +13,8 @@ import { NodePalette } from './NodePalette';
 import { NodeConfigDrawer } from './NodeConfigDrawer';
 import { RunWorkflowModal } from '../RunWorkflowModal';
 import { api } from '@/lib/api';
-import { Save, Play } from 'lucide-react';
+import { Save, Play, Undo2, Redo2 } from 'lucide-react';
+import { useHistory } from '@/hooks/useHistory';
 
 interface Props {
   /** Workflow metadata (id, name, description). */
@@ -57,6 +58,8 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
   const [edgeContextMenu, setEdgeContextMenu] = useState<EdgeContextMenu | null>(null);
 
+  const { pushSnapshot, undo: historyUndo, redo: historyRedo, canUndo, canRedo } = useHistory({ nodes: [], edges: [] });
+
   // Hydrate canvas from saved definition when the page loads
   useEffect(() => {
     if (!initialDefinitionJson) return;
@@ -66,10 +69,11 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
         edges?: Array<{ id: string; source: string; target: string; condition?: string }>;
       };
 
+      let restoredNodes: Node[] = [];
       if (def.nodes?.length) {
         // Restore node styles from category colors
         // Always use type 'default' for React Flow rendering — actual node type lives in data.descriptor
-        const restoredNodes: Node[] = def.nodes.map(n => {
+        restoredNodes = def.nodes.map(n => {
           const descriptor = nodeCatalog.find(d => d.type === ((n.data?.descriptor as NodeDescriptor | undefined)?.type ?? n.type));
           const category = descriptor?.category ?? 'system';
           return {
@@ -93,6 +97,9 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
       if (def.edges?.length) {
         setEdges(def.edges.map(e => ({ ...e, type: 'default' })));
       }
+      // Push initial snapshot so undo doesn't go past the loaded state
+      const restoredEdgesForSnapshot = def.edges?.map(e => ({ ...e, type: 'default' })) ?? [];
+      pushSnapshot({ nodes: restoredNodes ?? [], edges: restoredEdgesForSnapshot });
     } catch {
       // Malformed definition JSON — start with empty canvas
       console.warn('Could not parse workflow definition JSON');
@@ -100,8 +107,12 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
   }, [initialDefinitionJson, nodeCatalog, setNodes, setEdges]);
 
   const onConnect = useCallback(
-    (conn: Connection) => setEdges(eds => addEdge(conn, eds)),
-    [setEdges]
+    (conn: Connection) => setEdges(eds => {
+      const next = addEdge(conn, eds);
+      pushSnapshot({ nodes, edges: next });
+      return next;
+    }),
+    [setEdges, nodes, pushSnapshot]
   );
 
   const onNodeClick: NodeMouseHandler = (_evt, node) => {
@@ -111,27 +122,69 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
 
   /** Removes an edge by id. */
   const deleteEdge = useCallback((edgeId: string) => {
-    setEdges(eds => eds.filter(e => e.id !== edgeId));
+    setEdges(eds => {
+      const next = eds.filter(e => e.id !== edgeId);
+      pushSnapshot({ nodes, edges: next });
+      return next;
+    });
     setSelectedEdgeId(null);
-  }, [setEdges]);
+  }, [setEdges, nodes, pushSnapshot]);
 
   /** Removes a node and all its connected edges by id. */
   const deleteNode = useCallback((nodeId: string) => {
-    setNodes(nds => nds.filter(n => n.id !== nodeId));
-    setEdges(eds => eds.filter(e => e.source !== nodeId && e.target !== nodeId));
+    setNodes(nds => {
+      const nextNodes = nds.filter(n => n.id !== nodeId);
+      setEdges(eds => {
+        const nextEdges = eds.filter(e => e.source !== nodeId && e.target !== nodeId);
+        pushSnapshot({ nodes: nextNodes, edges: nextEdges });
+        return nextEdges;
+      });
+      return nextNodes;
+    });
     setSelectedId(prev => (prev === nodeId ? null : prev));
     setContextMenu(null);
-  }, [setNodes, setEdges]);
+  }, [setNodes, setEdges, pushSnapshot]);
 
-  /** Delete/Backspace removes the selected node or edge; skips when typing in inputs. */
+  /** Undo: restore previous canvas state. */
+  const handleUndo = useCallback(() => {
+    const snapshot = historyUndo();
+    if (!snapshot) return;
+    setNodes(snapshot.nodes);
+    setEdges(snapshot.edges);
+    setSelectedId(null);
+    setSelectedEdgeId(null);
+  }, [historyUndo, setNodes, setEdges]);
+
+  /** Redo: restore next canvas state. */
+  const handleRedo = useCallback(() => {
+    const snapshot = historyRedo();
+    if (!snapshot) return;
+    setNodes(snapshot.nodes);
+    setEdges(snapshot.edges);
+    setSelectedId(null);
+    setSelectedEdgeId(null);
+  }, [historyRedo, setNodes, setEdges]);
+
+  /** Delete/Backspace removes the selected node or edge; Ctrl+Z/Y for undo/redo. Skips when typing in inputs. */
   const onKeyDown = useCallback((evt: React.KeyboardEvent) => {
+    const tag = (evt.target as HTMLElement).tagName;
+    const inInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+    if ((evt.ctrlKey || evt.metaKey) && evt.key === 'z' && !evt.shiftKey) {
+      evt.preventDefault();
+      if (!inInput) handleUndo();
+      return;
+    }
+    if ((evt.ctrlKey || evt.metaKey) && (evt.key === 'y' || (evt.key === 'z' && evt.shiftKey))) {
+      evt.preventDefault();
+      if (!inInput) handleRedo();
+      return;
+    }
     if (evt.key === 'Delete' || evt.key === 'Backspace') {
-      const tag = (evt.target as HTMLElement).tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (inInput) return;
       if (selectedEdgeId) { deleteEdge(selectedEdgeId); return; }
       if (selected) { deleteNode(selected.id); }
     }
-  }, [selected, selectedId, selectedEdgeId, deleteNode, deleteEdge]);
+  }, [selected, selectedEdgeId, deleteNode, deleteEdge, handleUndo, handleRedo]);
 
   const onEdgeClick: EdgeMouseHandler = useCallback((_evt, edge) => {
     setSelectedId(null);
@@ -165,7 +218,11 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
         fontSize: 13, fontWeight: 500,
       },
     };
-    setNodes(nds => [...nds, newNode]);
+    setNodes(nds => {
+      const next = [...nds, newNode];
+      pushSnapshot({ nodes: next, edges });
+      return next;
+    });
   };
 
   /**
@@ -223,11 +280,32 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
           <div>
             <div className="flex items-center gap-2"><h2 className="font-semibold text-gray-900">{workflow.name}</h2>{activeVersionNumber != null && (<span className="text-xs text-slate-500 border border-slate-200 rounded px-2 py-0.5 bg-slate-50">v{activeVersionNumber}</span>)}</div>
             <p className="text-xs text-gray-400">
-              Click a node to configure · Right-click or <kbd className="text-xs bg-gray-100 border rounded px-1">Del</kbd> to delete
+              Click a node to configure · Right-click or <kbd className="text-xs bg-gray-100 border rounded px-1">Del</kbd> to delete · <kbd className="text-xs bg-gray-100 border rounded px-1">Ctrl+Z</kbd> undo · <kbd className="text-xs bg-gray-100 border rounded px-1">Ctrl+Y</kbd> redo
               {savedAt && <span className="ml-3 text-green-600">✓ Saved at {savedAt}</span>}
             </p>
           </div>
           <div className="flex gap-2">
+            {/* Undo/Redo buttons */}
+            <button
+              className={`border text-sm px-2 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${
+                canUndo ? 'hover:bg-gray-50 text-gray-600' : 'opacity-30 cursor-not-allowed text-gray-400'
+              }`}
+              onClick={handleUndo}
+              disabled={!canUndo}
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo2 size={14} />
+            </button>
+            <button
+              className={`border text-sm px-2 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${
+                canRedo ? 'hover:bg-gray-50 text-gray-600' : 'opacity-30 cursor-not-allowed text-gray-400'
+              }`}
+              onClick={handleRedo}
+              disabled={!canRedo}
+              title="Redo (Ctrl+Y)"
+            >
+              <Redo2 size={14} />
+            </button>
             {/* Save button — serializes canvas and persists to API */}
             <button
               className={`border text-sm px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
@@ -283,9 +361,13 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
           onClose={() => setSelectedId(null)}
           onDelete={() => deleteNode(selected.id)}
           onConfigChange={(config) =>
-            setNodes(nds => nds.map(n =>
-              n.id === selected.id ? { ...n, data: { ...n.data, config } } : n
-            ))
+            setNodes(nds => {
+              const next = nds.map(n =>
+                n.id === selected.id ? { ...n, data: { ...n.data, config } } : n
+              );
+              pushSnapshot({ nodes: next, edges });
+              return next;
+            })
           }
         />
       )}
