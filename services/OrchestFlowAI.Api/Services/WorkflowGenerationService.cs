@@ -65,42 +65,38 @@ public sealed class WorkflowGenerationService
     {
         var catalogSection = BuildCatalogSection();
 
-        return $"""
-You are an expert workflow automation engineer for OrchestFlowAI.
-Generate or modify workflow definitions based on user requests.
-
-WORKFLOW DEFINITION SCHEMA:
-{{
-  "id": "<guid or keep existing>",
-  "name": "<workflow name>",
-  "version": 1,
-  "nodes": [
-    {{
-      "id": "<type>-<unix-ms>",
-      "type": "<node-type>",
-      "position": {{"x": 350, "y": <150 * step>}},
-      "data": {{"label": "<displayName>", "config": {{<key>: <value>}}}},
-      "config": {{<key>: <value>}}
-    }}
-  ],
-  "edges": [
-    {{"id": "edge-<source>-<target>", "source": "<source-id>", "target": "<target-id>"}}
-  ]
-}}
-
-RULES:
-- Always include a system.start node (id: "system.start-1") as first node
-- Always include a system.end node (id: "system.end-999") as last node
-- Node IDs must be unique — use format "<type>-<unix-ms>" with incrementing values
-- Position nodes top-to-bottom: x=350, y increments by 150 per step
-- Edges must reference valid node IDs
-- config and data.config must have identical contents
-- For ForEach loops: loopMode must be true, wire: foreach -> body nodes -> foreach.end -> rest
-- Return ONLY a JSON object with these fields: explanation, changes, definition
-
-AVAILABLE NODES:
-{catalogSection}
-""";
+        return
+            "You are an expert workflow automation engineer for OrchestFlowAI.\n" +
+            "Generate or modify workflow definitions based on user requests.\n\n" +
+            "WORKFLOW DEFINITION SCHEMA:\n" +
+            "{\n" +
+            "  \"id\": \"<guid or keep existing>\",\n" +
+            "  \"name\": \"<workflow name>\",\n" +
+            "  \"version\": 1,\n" +
+            "  \"nodes\": [\n" +
+            "    {\n" +
+            "      \"id\": \"<type>-<unix-ms>\",\n" +
+            "      \"type\": \"<node-type>\",\n" +
+            "      \"position\": {\"x\": 350, \"y\": <150 * step>},\n" +
+            "      \"data\": {\"label\": \"<displayName>\", \"config\": {<key>: <value>}},\n" +
+            "      \"config\": {<key>: <value>}\n" +
+            "    }\n" +
+            "  ],\n" +
+            "  \"edges\": [\n" +
+            "    {\"id\": \"edge-<source>-<target>\", \"source\": \"<source-id>\", \"target\": \"<target-id>\"}\n" +
+            "  ]\n" +
+            "}\n\n" +
+            "RULES:\n" +
+            "- Always include a system.start node (id: \"system.start-1\") as first node\n" +
+            "- Always include a system.end node (id: \"system.end-999\") as last node\n" +
+            "- Node IDs must be unique — use format \"<type>-<unix-ms>\" with incrementing values\n" +
+            "- Position nodes top-to-bottom: x=350, y increments by 150 per step\n" +
+            "- Edges must reference valid node IDs\n" +
+            "- config and data.config must have identical contents\n" +
+            "- For ForEach loops: loopMode must be true, wire: foreach -> body nodes -> foreach.end -> rest\n" +
+            "- Return ONLY a JSON object with these fields: explanation, changes, definition\n\n" +
+            "AVAILABLE NODES:\n" +
+            catalogSection;
     }
 
     private string BuildCatalogSection()
@@ -121,19 +117,11 @@ AVAILABLE NODES:
         if (req.CurrentDefinitionJson == null)
         {
             var name = req.WorkflowName ?? "New Workflow";
-            return $"""
-Create a new workflow called "{name}".
-Request: {req.Prompt}
-""";
+            return $"Create a new workflow called \"{name}\".\nRequest: {req.Prompt}";
         }
         else
         {
-            return $"""
-Update the following workflow.
-Request: {req.Prompt}
-Current definition:
-{req.CurrentDefinitionJson}
-""";
+            return $"Update the following workflow.\nRequest: {req.Prompt}\nCurrent definition:\n{req.CurrentDefinitionJson}";
         }
     }
 
