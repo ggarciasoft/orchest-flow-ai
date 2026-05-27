@@ -140,13 +140,28 @@ OrchestFlowAI is delivered in numbered phases. Each phase has deliverables and a
 
 - Drag-and-drop polish, dynamic config forms, validation UI, search, categories, version comparison.
 
-## Phase 10 — Advanced Logic Nodes
+## Phase 9 — Visual Designer Improvements
 
-- `logic.switch`, `logic.loop`, `logic.parallel`, `logic.delay`, `logic.retry-policy`, error handler.
+- Drag-and-drop polish, dynamic config forms, validation UI, search, categories, version comparison.
+- LLM model dropdowns on AI nodes (`OptionsSource: "llm-models"`, `GET /api/nodes/models`) ✅ Shipped (2026-05-26)
 
-## Phase 11 — Integrations Pack
+## Phase 10 — Advanced Logic Nodes ✅ Partially Shipped
 
-- `integration.email.send`, `integration.http.request`, `integration.webhook.call`, `integration.slack.send-message`, `integration.teams.send-message`, `integration.jira.create-ticket`, additional AI/document nodes.
+- `logic.switch` ✅ Shipped
+- `logic.foreach` with loop mode ✅ Shipped
+- `logic.foreach.end` ✅ Shipped
+- `logic.delay` ✅ Shipped
+- `logic.merge` ✅ Shipped
+- `logic.loop`, `logic.parallel`, `logic.retry-policy`, error handler — Roadmap
+
+## Phase 11 — Integrations Pack ✅ Partially Shipped
+
+- `integrations.email` ✅ Shipped
+- `integrations.http` ✅ Shipped
+- `integrations.webhook-out` ✅ Shipped
+- `integrations.slack` ✅ Shipped
+- `integrations.gmail.read` ✅ Shipped
+- `integration.teams.send-message`, `integration.jira.create-ticket`, additional AI/document nodes — Roadmap
 
 ## Phase 12 — RAG / Knowledge Base
 
@@ -156,9 +171,19 @@ OrchestFlowAI is delivered in numbered phases. Each phase has deliverables and a
 
 - Agent configuration, tools, memory, `ai.agent-executor`, multi-agent workflow support.
 
-## Phase 14 — Enterprise Security
+## Phase 14 — Enterprise Security ✅ Partially Shipped
 
-- SSO (OIDC / SAML), RBAC, per-node permissions, secrets vault integration, tenant policies.
+- Secret vault (AES-256-CBC, `{{secret:name}}` syntax) ✅ Shipped (2026-05-26)
+- OAuth2 credential management (Gmail) ✅ Shipped (2026-05-26)
+- Settings page (AI provider config, hot-reload) ✅ Shipped (2026-05-26)
+- SSO via OIDC / SAML — Roadmap
+- Per-node permissions — Roadmap
+- HashiCorp Vault / Azure Key Vault / AWS Secrets Manager backend — Roadmap
+- Data retention policies per tenant — Roadmap
+- Audit log export to SIEM — Roadmap
+- Field-level encryption — Roadmap
+- Tenant-level network egress allowlists — Roadmap
+- Signed plugin/node packages — Roadmap
 
 ## Phase 15 — Observability & Cost Management
 

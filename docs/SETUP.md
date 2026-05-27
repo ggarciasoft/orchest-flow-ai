@@ -143,7 +143,7 @@ OrchestFlowAI_REDIS__CONNECTION_STRING=localhost:6379
 # AI
 OrchestFlowAI_LLM__DEFAULT_PROVIDER=openai
 OrchestFlowAI_LLM__DEFAULT_MODEL=gpt-4o-mini
-OrchestFlowAI_LLM__OPENAI__API_KEY=sk-...
+OrchestFlowAI_LLM__OPENAI__API_KEY=sk-...   # Can also be set via Settings page (no restart needed)
 OrchestFlowAI_LLM__AZURE__ENDPOINT=
 OrchestFlowAI_LLM__AZURE__API_KEY=
 OrchestFlowAI_LLM__ANTHROPIC__API_KEY=
@@ -154,12 +154,33 @@ OrchestFlowAI_AUTH__JWT_SIGNING_KEY=devdevdevdevdevdevdevdev    # 32+ bytes
 OrchestFlowAI_AUTH__JWT_ISSUER=OrchestFlowAI
 OrchestFlowAI_AUTH__JWT_AUDIENCE=OrchestFlowAI-web
 
+# Secret Vault
+ENCRYPTION_MASTER_KEY=dev-encryption-key-change-in-production   # CHANGE IN PRODUCTION
+
 # Storage
 OrchestFlowAI_STORAGE__ROOT=./data/uploads
 
 # Web
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5080
 ```
+
+### OpenAI API Key
+
+The OpenAI API key can be configured in two ways:
+1. **Environment variable** (`OrchestFlowAI_LLM__OPENAI__API_KEY`): set before starting the API; restart required to pick up changes.
+2. **Settings page** (`Settings â†’ OpenAI API Key` in the UI): changes take effect immediately via hot-reload (`OpenAIApiKeyHolder`) â€” no restart needed.
+
+### ENCRYPTION_MASTER_KEY
+
+Master key for AES-256-CBC encryption of secret vault values. **Must be changed in production.** The default `dev-encryption-key-change-in-production` must never be used in any environment with real secrets. If the key changes after secrets are stored, existing secrets will fail to decrypt.
+
+### Gmail OAuth2
+
+To use the `integrations.gmail.read` node with saved credentials:
+1. Register an OAuth2 app in Google Cloud Console and note the client ID and secret.
+2. Visit `GET /api/gmail/auth/start?name=my-gmail&clientId=...&clientSecret=...` in a browser.
+3. Complete the Google consent flow.
+4. The credential is saved under the name `my-gmail` and can be referenced in `GmailReadNode` via `credentialName: "my-gmail"`.
 
 ---
 
@@ -213,16 +234,16 @@ OrchestFlowAI provides a guided onboarding experience for creating a new workspa
 
 ### Onboarding Steps
 
-1. **Name your workspace** — Navigate to /onboarding. Enter a workspace name and submit. This calls POST /api/tenants (requires AdminOnly policy).
+1. **Name your workspace** ï¿½ Navigate to /onboarding. Enter a workspace name and submit. This calls POST /api/tenants (requires AdminOnly policy).
 
-2. **Invite your team** — Enter a teammate's email and select their role (Admin, Editor, Approver, Viewer). Submit to call POST /api/tenants/{id}/invite. An invite token is returned (in production this would be emailed; for MVP the token is displayed in the UI).
+2. **Invite your team** ï¿½ Enter a teammate's email and select their role (Admin, Editor, Approver, Viewer). Submit to call POST /api/tenants/{id}/invite. An invite token is returned (in production this would be emailed; for MVP the token is displayed in the UI).
 
-3. **Share the invite link** — The generated invite link is in the format:
+3. **Share the invite link** ï¿½ The generated invite link is in the format:
    `
    https://<host>/invite/<tenantId>?token=<inviteToken>
    `
 
-4. **Invitee accepts** — The invitee visits /invite/<tenantId>?token=<inviteToken>, sets a password, and submits. This calls POST /api/tenants/{id}/invite/accept which creates their user account. They are then redirected to /login.
+4. **Invitee accepts** ï¿½ The invitee visits /invite/<tenantId>?token=<inviteToken>, sets a password, and submits. This calls POST /api/tenants/{id}/invite/accept which creates their user account. They are then redirected to /login.
 
 ### API Endpoints
 
@@ -238,6 +259,7 @@ OrchestFlowAI provides a guided onboarding experience for creating a new workspa
 - Invites expire after **24 hours**.
 - Each invite token is a unique GUID string (32 hex characters).
 - Once accepted, the invite cannot be reused.
-- The new user's role is set from the invite's ole field.
+- The new user's role is set from the invite's 
+ole field.
 
 > **Tip:** OPENAI_API_KEY can also be configured at runtime via the Settings page in the UI (Settings ? OpenAI API Key). Changes take effect immediately without restart.

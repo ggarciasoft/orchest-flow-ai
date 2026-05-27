@@ -227,7 +227,78 @@ The Worker is responsible for scheduling retries (visibility timeout / delayed m
 
 ---
 
-## 7. Pause and Resume
+## 7. Secret Resolution
+
+Before a node executes, the engine resolves all `{{secret:name}}` placeholders in the node's config values.
+
+### Syntax
+
+In any string config field, reference a secret by name:
+
+```
+{{secret:my-api-key}}
+{{secret:openai-token}}
+{{secret:db-connection}}
+```
+
+### Resolution Process
+
+1. Engine calls `ISecretService.ResolveConfigAsync(config, tenantId)` before building context.
+2. For each string config value, all `{{secret:name}}` tokens are replaced with the decrypted value from the `secrets` table.
+3. If a referenced secret does not exist, the token is left unreplaced (no error) â€” the node may fail if the value is required.
+4. Secrets are decrypted using AES-256-CBC with the master key from `Encryption:MasterKey` config or `ENCRYPTION_MASTER_KEY` env var.
+
+### Management
+
+Secrets are managed via:
+- **Settings page â†’ Secrets** section in the UI
+- `GET/POST/PUT/DELETE /api/secrets` (see API.md)
+
+Secret **values are never returned to clients** â€” only names and metadata are exposed.
+
+---
+
+## 8. ForEach Loop Mode
+
+When `logic.foreach` is configured with `loopMode: true`, the engine executes the downstream subgraph once per item in the array instead of fan-out.
+
+### Subgraph Boundary
+
+The loop body must be terminated with a `logic.foreach.end` node. The engine iterates all nodes between the ForEach and ForEachEnd nodes for each item.
+
+### Execution Flow
+
+1. `logic.foreach` executes, outputs `_foreach_items` (the array) and fan-out outputs.
+2. Engine detects `_foreach_items` in outputs.
+3. For each item in the array:
+   a. Engine clones the current nodeOutputs context.
+   b. Injects `{ item, index, total }` as the ForEach node's outputs for this iteration.
+   c. Walks the subgraph from the ForEach output edge until reaching `logic.foreach.end`.
+   d. Executes each body node with the per-item context.
+   e. Collects the ForEachEnd node's outputs as the result for this iteration.
+4. After all items: ForEach node's final outputs are `{ results: [...], count: N }`.
+5. Engine advances to the node after `logic.foreach.end`.
+
+### Example Workflow
+
+```
+GmailRead â†’ ForEach (loopMode=true, inputArray={{emails}})
+               â†’ DataExtractor (text={{item}})
+               â†’ HTTPRequest (POST {{extractedJson}})
+            ForEachEnd
+â†’ End
+```
+
+### Notes
+
+- Body node failures are skipped (non-fatal per iteration).
+- Body nodes do NOT persist `NodeExecution` rows per iteration (engine-internal execution only).
+- `results` output is a JSON array of each ForEachEnd node's outputs.
+
+
+---
+
+## 9. Pause and Resume
 
 When a node returns `WaitingForApproval`:
 
@@ -246,7 +317,7 @@ Idempotency: the resume message includes the approval id; the Worker uses it as 
 
 ---
 
-## 8. Validation Rules
+## 10. Validation Rules
 
 At workflow save time (`POST /api/workflows`), the engine validates the definition:
 
@@ -264,7 +335,7 @@ Validation errors return structured details so the frontend can highlight nodes/
 
 ---
 
-## 9. Concurrency Model
+## 11. Concurrency Model
 
 - A workflow execution runs single-threaded inside the worker (sequential MVP).
 - Multiple **different** executions run concurrently across worker processes.
@@ -275,7 +346,7 @@ Parallel nodes (Phase 10) will use structured fan-out/fan-in primitives, not arb
 
 ---
 
-## 10. Engine Public API (within process)
+## 12. Engine Public API (within process)
 
 ```csharp
 public interface IWorkflowEngine
@@ -294,7 +365,7 @@ The Worker uses `RunAsync` for new executions and `ResumeAsync` after approvals.
 
 ---
 
-## 11. Future Engine Features
+## 13. Future Engine Features
 
 - Parallel and fan-out/fan-in nodes (`logic.parallel`)
 - Loops (`logic.loop`) with bounded iterations
@@ -307,29 +378,29 @@ The Worker uses `RunAsync` for new executions and `ResumeAsync` after approvals.
 
 ---
 
-## 12. Workflow Trigger Modes
+## 14. Workflow Trigger Modes
 
 Every workflow has a TriggerType field that determines how executions are started.
 
-### 12.1 Manual
+### 14.1 Manual
 
 TriggerType = Manual (default). Executions are started explicitly:
 - Via POST /api/workflows/{id}/execute (authenticated, tenant-scoped).
 - No additional configuration required.
 
-### 12.2 Webhook
+### 14.2 Webhook
 
 TriggerType = Webhook. An inbound HTTP call starts the execution:
 - Workflow must have a WebhookSecret (set via SetTrigger(Webhook, secret, null)).
 - Caller sends POST /api/webhooks/{workflowId} with header X-Webhook-Secret: <secret>.
 - **Responses:**
-  - 202 Accepted + { "executionId": "..." } — enqueued successfully.
-  - 401 Unauthorized — missing or wrong secret.
-  - 404 Not Found — workflow not found or not a Webhook-type workflow.
-- The endpoint is intentionally **unauthenticated** — verification relies solely on the shared secret.
+  - 202 Accepted + { "executionId": "..." } ï¿½ enqueued successfully.
+  - 401 Unauthorized ï¿½ missing or wrong secret.
+  - 404 Not Found ï¿½ workflow not found or not a Webhook-type workflow.
+- The endpoint is intentionally **unauthenticated** ï¿½ verification relies solely on the shared secret.
 - WebhookSecret is never included in log output (security rule 6).
 
-### 12.3 Cron / Schedule
+### 14.3 Cron / Schedule
 
 TriggerType = Cron. Executions run on a recurring schedule:
 - Workflow must have a CronExpression (standard 5-part cron, parsed by [Cronos](https://github.com/HangfireIO/Cronos)).
@@ -337,9 +408,9 @@ TriggerType = Cron. Executions run on a recurring schedule:
 - If the next scheduled occurrence has passed and the workflow was not already triggered within this minute, an execution is enqueued.
 - Last-triggered time is tracked in memory (per Worker process). No DB tracking for MVP.
 - Example expressions:
-  -   9 * * 1-5 — every weekday at 09:00 UTC.
-  - */5 * * * * — every 5 minutes.
-  -   0 1 * * — midnight on the first of every month.
+  -   9 * * 1-5 ï¿½ every weekday at 09:00 UTC.
+  - */5 * * * * ï¿½ every 5 minutes.
+  -   0 1 * * ï¿½ midnight on the first of every month.
 
 ### Setting the Trigger via API
 
@@ -355,7 +426,7 @@ workflow.SetTrigger(TriggerType.Manual, webhookSecret: null, cronExpression: nul
 Guard conditions: Webhook requires a non-empty WebhookSecret; Cron requires a non-empty CronExpression.
 ---
 
-## 13. Execution Retry / Exponential Backoff
+## 15. Execution Retry / Exponential Backoff
 
 Workflows support automatic retry of failed node executions with exponential backoff.
 
@@ -407,7 +478,7 @@ delay = BackoffMs * (BackoffMultiplier ^ (attemptNumber - 1))
 
 ### RetryPolicy.None
 
-The default is RetryPolicy.None (MaxAttempts = 0) — no retry, fail immediately on error.
+The default is RetryPolicy.None (MaxAttempts = 0) ï¿½ no retry, fail immediately on error.
 
 ---
 
@@ -460,7 +531,7 @@ Defined in `OrchestFlowAI.Contracts.Notifications.IExecutionNotifier`. The engin
 import { useExecutionStream } from '@/hooks/useExecutionStream';
 
 const { events } = useExecutionStream(executionId);
-// events: ExecutionEvent[] — each has { type, nodeId?, nodeType?, error?, status?, timestamp }
+// events: ExecutionEvent[] ï¿½ each has { type, nodeId?, nodeType?, error?, status?, timestamp }
 ```
 
 The hook connects to `/hubs/execution`, calls `JoinExecution`, and accumulates events in state. On unmount it calls `LeaveExecution` and stops the connection.

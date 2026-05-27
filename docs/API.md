@@ -1,4 +1,4 @@
-﻿# API Reference
+# API Reference
 
 Base URL (local): `http://localhost:5080`
 Versioning: prefix all endpoints with `/api`. Breaking changes go to `/api/v2`.
@@ -33,7 +33,7 @@ Response:
 ```json
 {
   "items": [
-    { "id": "â€¦", "name": "Contract Review", "activeVersion": 3, "updatedAt": "â€¦" }
+    { "id": "...", "name": "Contract Review", "activeVersion": 3, "updatedAt": "..." }
   ],
   "page": 1, "pageSize": 20, "total": 12
 }
@@ -47,7 +47,7 @@ Body:
 {
   "name": "string",
   "description": "string",
-  "definition": { /* see ARCHITECTURE.md Â§6 */ }
+  "definition": { /* see ARCHITECTURE.md §6 */ }
 }
 ```
 
@@ -57,7 +57,7 @@ Body:
 Get the workflow with its active version definition.
 
 ### `PUT /api/workflows/{workflowId}`
-Update workflow metadata (name/description) â€” does **not** modify versions.
+Update workflow metadata (name/description) — does **not** modify versions.
 
 ### `DELETE /api/workflows/{workflowId}`
 Soft-delete a workflow.
@@ -65,9 +65,9 @@ Soft-delete a workflow.
 ### `POST /api/workflows/{workflowId}/versions`
 Create a new version (drafts a new definition).
 
-Body: `{ "definition": { â€¦ } }`
+Body: `{ "definition": { ... } }`
 
-Response: `{ "id": "â€¦", "versionNumber": 2 }`
+Response: `{ "id": "...", "versionNumber": 2 }`
 
 ### `POST /api/workflows/{workflowId}/versions/{versionId}/activate`
 Mark a version as active. Only one active version per workflow.
@@ -101,10 +101,10 @@ Response:
   "workflowId": "uuid",
   "workflowVersionId": "uuid",
   "status": "Running",
-  "startedAt": "â€¦",
+  "startedAt": "...",
   "completedAt": null,
   "triggeredBy": "uuid",
-  "input": { â€¦ },
+  "input": { "..." : "..." },
   "output": null,
   "errorMessage": null
 }
@@ -123,10 +123,10 @@ Response:
       "nodeId": "extractPdf",
       "nodeType": "document.extract-pdf-text",
       "status": "Succeeded",
-      "startedAt": "â€¦",
-      "completedAt": "â€¦",
-      "input": { â€¦ },
-      "output": { â€¦ },
+      "startedAt": "...",
+      "completedAt": "...",
+      "input": { "..." : "..." },
+      "output": { "..." : "..." },
       "errorMessage": null,
       "retryCount": 0
     }
@@ -170,8 +170,8 @@ Both endpoints persist the decision, mark the node execution `Succeeded` with `{
 Multipart upload.
 
 Form fields:
-- `file` â€” required
-- `meta` â€” optional JSON string
+- `file` — required
+- `meta` — optional JSON string
 
 Response:
 ```json
@@ -180,7 +180,7 @@ Response:
   "filename": "contract.pdf",
   "mimeType": "application/pdf",
   "sizeBytes": 123456,
-  "sha256": "â€¦"
+  "sha256": "..."
 }
 ```
 
@@ -203,12 +203,12 @@ Returns all registered node descriptors:
     {
       "type": "document.extract-pdf-text",
       "displayName": "Extract PDF Text",
-      "description": "â€¦",
+      "description": "...",
       "category": "documents",
       "version": "0.1.0",
       "iconKey": "file-pdf",
-      "inputs":  [ { "key": "document", "type": "DocumentRef", "required": true, â€¦ } ],
-      "outputs": [ { "key": "text", "type": "String" }, â€¦ ],
+      "inputs":  [ { "key": "document", "type": "DocumentRef", "required": true } ],
+      "outputs": [ { "key": "text", "type": "String" } ],
       "configuration": [ { "key": "ocrFallback", "type": "Boolean", "defaultValue": false } ]
     }
   ]
@@ -216,6 +216,22 @@ Returns all registered node descriptors:
 ```
 
 The frontend uses this to render the node palette and configuration drawer.
+
+### `GET /api/nodes/models`
+Returns available LLM models for the configured providers. Used to populate model dropdowns on AI nodes.
+
+Response:
+```json
+{
+  "models": [
+    { "id": "gpt-4o", "displayName": "GPT-4o", "provider": "openai" },
+    { "id": "gpt-4o-mini", "displayName": "GPT-4o Mini", "provider": "openai" },
+    { "id": "claude-3-5-sonnet-20241022", "displayName": "Claude 3.5 Sonnet", "provider": "anthropic" }
+  ]
+}
+```
+
+Node descriptors with `OptionsSource: "llm-models"` on the `model` config field will fetch from this endpoint to populate their dropdown.
 
 ---
 
@@ -233,9 +249,11 @@ Service build version.
 
 MVP ships with email/password JWT auth. Endpoints:
 
-- `POST /api/auth/login` â†’ `{ token, user }`
+- `POST /api/auth/login` → `{ token, user }`
 - `POST /api/auth/logout`
 - `GET /api/auth/me`
+
+Token expiry: when the client receives a `401` or detects the token is expired (checked via `isTokenExpired()` in auth.ts), `apiFetch` automatically redirects to `/login`.
 
 SSO/OIDC arrives in Phase 14.
 
@@ -256,7 +274,128 @@ SSO/OIDC arrives in Phase 14.
 
 ---
 
-## 9. Idempotency
+## 9. Gmail Credentials
+
+Manage saved Gmail OAuth2 credentials for use with the `integrations.gmail.read` node.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/gmail/auth/start` | JWT | Start OAuth2 flow; redirects to Google consent screen |
+| GET | `/api/gmail/callback` | Public | OAuth2 callback; exchanges code for tokens and stores credential |
+| GET | `/api/gmail/credentials` | JWT | List saved credentials (name, email — no secrets) |
+| DELETE | `/api/gmail/credentials/{id}` | JWT | Delete a credential |
+
+### Starting the OAuth Flow
+
+```
+GET /api/gmail/auth/start?name=my-gmail&clientId=...&clientSecret=...
+```
+
+Redirects the browser to Google's consent screen. After the user grants access, Google calls `/api/gmail/callback` which stores the credential under the provided `name`.
+
+### Using a Saved Credential
+
+In a `integrations.gmail.read` node, set `credentialName: "my-gmail"` instead of providing `clientId`, `clientSecret`, and `refreshToken` inline.
+
+---
+
+## 10. Settings
+
+Platform settings for the tenant (AI provider config, default models, etc.).
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/settings` | JWT | Get platform settings (sensitive values masked) |
+| PUT | `/api/settings` | JWT | Update settings; empty/omitted values are ignored |
+| POST | `/api/settings/test/openai` | JWT | Test the configured OpenAI connection |
+
+### GET /api/settings — Response
+
+```json
+{
+  "llm.openai.apiKey": "sk-...(masked)",
+  "llm.defaultModel": "gpt-4o-mini",
+  "llm.defaultProvider": "openai"
+}
+```
+
+### PUT /api/settings — Body
+
+```json
+{
+  "llm.openai.apiKey": "sk-abc123",
+  "llm.defaultModel": "gpt-4o"
+}
+```
+
+Settings changes take effect immediately (hot-reloaded via `OpenAIApiKeyHolder`) — no restart required.
+
+### POST /api/settings/test/openai — Response
+
+```json
+{ "success": true, "model": "gpt-4o-mini", "latencyMs": 312 }
+```
+
+---
+
+## 11. Secrets
+
+The secret vault stores sensitive values (API keys, tokens, passwords) encrypted at rest. Reference them in node config using `{{secret:name}}` syntax.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/secrets` | JWT | List secret names and metadata (values never returned) |
+| POST | `/api/secrets` | JWT | Create a secret (value encrypted before storage) |
+| PUT | `/api/secrets/{id}` | JWT | Update a secret's name or value |
+| DELETE | `/api/secrets/{id}` | JWT | Delete a secret |
+
+### Secret Reference Syntax
+
+In any string config field of a node:
+
+```
+{{secret:my-api-key}}
+{{secret:openai-token}}
+{{secret:db-connection}}
+```
+
+The engine resolves all `{{secret:name}}` tokens before passing config to the node. Secret values are never stored in workflow definitions, logs, or API responses.
+
+### POST /api/secrets — Body
+
+```json
+{ "name": "openai-key", "value": "sk-abc123" }
+```
+
+### GET /api/secrets — Response
+
+```json
+{
+  "items": [
+    { "id": "uuid", "name": "openai-key", "createdAt": "...", "updatedAt": "..." }
+  ]
+}
+```
+
+See also: [Secret Resolution in WORKFLOW-ENGINE.md](./WORKFLOW-ENGINE.md) and [Secret Vault in SECURITY.md](./SECURITY.md).
+
+---
+
+## 12. Node Presets
+
+Presets are saved, reusable config snapshots for a node type. See [NODES.md](./NODES.md) for full documentation.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/presets?nodeType=...` | List presets, optionally filtered by node type |
+| GET | `/api/presets/{id}` | Get a single preset |
+| POST | `/api/presets` | Create a preset |
+| PUT | `/api/presets/{id}` | Update a preset |
+| DELETE | `/api/presets/{id}` | Delete a preset |
+
+---
+
+## 13. Idempotency
 
 Mutating endpoints (`POST /api/workflows/{id}/execute`, approvals) accept an optional header:
 
@@ -268,50 +407,12 @@ If the same key is replayed within 24h, the original response is returned withou
 
 ---
 
-## 10. Pagination
+## 14. Pagination
 
 Standard envelope:
 
 ```json
-{ "items": [ â€¦ ], "page": 1, "pageSize": 20, "total": 137 }
+{ "items": [ "..." ], "page": 1, "pageSize": 20, "total": 137 }
 ```
 
 Default page size 20, max 100.
-
----
-
-## 11. Gmail Credentials
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | /api/gmail/auth/start | JWT | Start OAuth2 flow; redirects to Google consent screen |
-| GET | /api/gmail/callback | Public | OAuth2 callback; exchanges code for tokens and stores credential |
-| GET | /api/gmail/credentials | JWT | List saved credentials (name, email — no secrets) |
-| DELETE | /api/gmail/credentials/{id} | JWT | Delete a credential |
-
-### Start OAuth flow
-
-GET /api/gmail/auth/start?name=my-gmail&clientId=...&clientSecret=...
-
-Redirects browser to Google. After consent, Google calls /api/gmail/callback which stores the credential.
-
-### Use credential in GmailReadNode
-
-Set credentialName: "my-gmail" in the node config instead of providing clientId/clientSecret/efreshToken inline.
-
-### Settings
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | /api/settings | JWT | Get platform settings (keys masked) |
-| PUT | /api/settings | JWT | Update settings; empty values ignored |
-| POST | /api/settings/test/openai | JWT | Test OpenAI connection |
-
-### Secrets
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | /api/secrets | JWT | List secret names (no values) |
-| POST | /api/secrets | JWT | Create secret |
-| PUT | /api/secrets/{id} | JWT | Update secret |
-| DELETE | /api/secrets/{id} | JWT | Delete secret |

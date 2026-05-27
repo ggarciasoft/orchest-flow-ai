@@ -60,6 +60,29 @@ Every request resolves a `TenantContext` from the JWT. The `TenantContext` is in
 
 ---
 
+## 3a. Secret Vault
+
+Sensitive values (API keys, tokens, passwords) should never be stored in workflow configuration JSON. Instead:
+
+1. Store them as named secrets via **Settings → Secrets** or `POST /api/secrets`.
+2. Reference them in node config as `{{secret:my-key-name}}`.
+3. The engine decrypts and injects the value at runtime — it never appears in workflow definitions, logs, or API responses.
+
+### Encryption
+
+- Algorithm: AES-256-CBC
+- Master key: `Encryption:MasterKey` config key or `ENCRYPTION_MASTER_KEY` environment variable
+- Each encrypted value has a unique random IV prepended (format: `base64(iv):base64(ciphertext)`)
+- **Change the master key in production.** The default `dev-encryption-key-change-in-production` must not be used in any environment with real secrets.
+
+### Secret API Rules
+
+- `GET /api/secrets` — returns names and metadata only, never values
+- `POST /api/secrets` — encrypts value before storage; plaintext never persisted
+- The encrypted column is excluded from all API responses
+
+---
+
 ## 4. Document Storage
 
 - Documents land in tenant-prefixed paths: `tenants/{tenant_id}/uploads/{document_id}.{ext}`.
