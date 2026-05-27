@@ -25,7 +25,10 @@ public sealed class ContractRiskAnalysisNode : IWorkflowNode
     public string Type => "ai.contract-risk-analysis";
     public async Task<NodeExecutionResult> ExecuteAsync(WorkflowExecutionContext ctx, CancellationToken ct)
     {
-        var text = ctx.GetInput<string>("text") ?? throw new InvalidOperationException("Input 'text' is required");
+        var text = ctx.GetInput<string>("text")
+            ?? ctx.GetInput<string>("item")
+            ?? ctx.GetInput<string>("body")
+            ?? throw new InvalidOperationException("Input 'text' is required (also accepts 'item' or 'body' from upstream nodes)");
         var model = ctx.GetConfig<string>("model") ?? "default";
         var router = ctx.Services.GetRequiredService<LLMProviderRouter>();
         var (provider, resolvedModel) = router.Route(model);

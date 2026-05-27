@@ -24,7 +24,10 @@ public sealed class TextClassifierNode : IWorkflowNode
     /// <returns>Succeeded result with "category", "confidence", and "rawResponse" outputs.</returns>
     public async Task<NodeExecutionResult> ExecuteAsync(WorkflowExecutionContext ctx, CancellationToken ct)
     {
-        var text = ctx.GetInput<string>("text") ?? throw new InvalidOperationException("Input 'text' is required");
+        var text = ctx.GetInput<string>("text")
+            ?? ctx.GetInput<string>("item")
+            ?? ctx.GetInput<string>("body")
+            ?? throw new InvalidOperationException("Input 'text' is required (also accepts 'item' or 'body' from upstream nodes)");
         var categories = ctx.GetConfig<string>("categories") ?? throw new InvalidOperationException("Config 'categories' is required");
         var model = ctx.GetConfig<string>("model") ?? "default";
         var instructions = ctx.GetConfig<string>("instructions") ?? string.Empty;

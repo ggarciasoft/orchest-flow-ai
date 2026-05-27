@@ -25,7 +25,23 @@ public sealed class DataExtractorNode : IWorkflowNode
     /// <returns>Succeeded result with "extractedJson" and individual field outputs.</returns>
     public async Task<NodeExecutionResult> ExecuteAsync(WorkflowExecutionContext ctx, CancellationToken ct)
     {
-        var text = ctx.GetInput<string>("text") ?? throw new InvalidOperationException("Input 'text' is required");
+        // Accept 'text' directly, or fall back to 'item' (ForEach loop output) or 'body' (email body)
+        // If 'item' is a JSON object with a 'body' field (e.g. Gmail email), extract just the body
+        var rawText = ctx.GetInput<string>("text")
+            ?? ctx.GetInput<string>("item")
+            ?? ctx.GetInput<string>("body")
+            ?? throw new InvalidOperationException("Input 'text' is required (also accepts 'item' or 'body' from upstream nodes)");
+
+        // If the input looks like a JSON email object, prefer the body field for extraction
+        string text;
+        try
+        {
+            var doc = JsonDocument.Parse(rawText);
+            text = doc.RootElement.TryGetProperty("body", out var bodyEl) && bodyEl.ValueKind == JsonValueKind.String
+                ? bodyEl.GetString() ?? rawText
+                : rawText;
+        }
+        catch (JsonException) { text = rawText; }
         var fields = ctx.GetConfig<string>("fields") ?? throw new InvalidOperationException("Config 'fields' is required");
         var model = ctx.GetConfig<string>("model") ?? "default";
 
