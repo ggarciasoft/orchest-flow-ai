@@ -44,8 +44,7 @@
 ## 🔴 Critical / High Priority
 
 ### 1. Plain-text secrets in workflow config JSON
-- **Problem:** Node config (including API keys pasted into HTTP nodes, refresh tokens, etc.) is stored as plain JSON in `WorkflowVersion.DefinitionJson`. Anyone with DB access can read all secrets.
-- **Status:** ⚠️ Partially resolved — Secret vault infrastructure exists (`SecretService`, `IEncryptionService`, `{{secret:name}}` resolver in engine). Secrets Vault UI shipped (`/settings/secrets`). **Remaining:** no UI enforcement that sensitive fields *use* `{{secret:...}}` — users can still paste raw values. A node config field-level `isSensitive` flag with masking + auto-suggest would close this fully.
+- **Status:** ✅ Resolved — Secret vault infrastructure + UI (`/settings/secrets`). `isSensitive` flag on node config fields: sensitive inputs render as masked password fields with a `{{secret:name}}` prompt and link to the vault in the designer drawer.
 
 ### 2. ForEach is fan-out only — no true per-item subgraph loop
 - **Problem:** `logic.foreach` outputs `item_0..item_N` which only works for a fixed number of items wired at design time. Can't loop over 50 emails without 50 wired branches.
@@ -82,7 +81,7 @@
 | Webhook node — inbound signature verification | `WebhookOutNode` exists; inbound webhook validation (HMAC) not enforced |
 | Multi-tenant admin panel | No super-admin view across tenants |
 | Export/import workflow definitions | Download/upload workflow JSON |
-| Sensitive config field enforcement | Node config fields marked `isSensitive` should auto-mask values in drawer and suggest `{{secret:...}}` instead of raw paste |
+| Sensitive config field enforcement | Node config fields marked `isSensitive` should auto-mask values in drawer and suggest `{{secret:...}}` instead of raw paste | ✅ Done |
 | Ollama model list dynamic | `llm.ollama.models` setting not surfaced in UI; models are hardcoded in provider |
 | ForEach loop body branching | Loop body is linear only; no conditional branching inside a loop iteration |
 | Workflow run history per workflow | Executions list is global; no per-workflow filtered view |
@@ -121,6 +120,7 @@
 | Anthropic, Azure OpenAI, Ollama LLM providers + Settings cards | ✅ |
 | Gmail credential connect flow uses Settings-stored credentials | ✅ |
 | Secrets Vault UI (`/settings/secrets`) — list, add, rotate, delete | ✅ |
+| `isSensitive` node config fields — masked drawer inputs + `{{secret:name}}` suggestion | ✅ |
 | Backend unit tests | ✅ **351 / 351** |
 | Frontend unit tests | ✅ **62 / 62** |
 | XML / JSDoc docs on all public APIs | ✅ |
