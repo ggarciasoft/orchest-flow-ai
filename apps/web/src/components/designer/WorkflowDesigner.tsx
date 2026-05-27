@@ -5,6 +5,7 @@ import {
   addEdge, useNodesState, useEdgesState,
   type Connection, type Node, type Edge,
   type NodeMouseHandler,
+  type EdgeMouseHandler,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { Workflow, NodeDescriptor } from '@/lib/api';
@@ -32,6 +33,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 interface ContextMenu { x: number; y: number; nodeId: string; }
+interface EdgeContextMenu { x: number; y: number; edgeId: string; }
 
 /**
  * WorkflowDesigner — full-screen canvas for building workflow graphs.
@@ -46,12 +48,14 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   // Always derive selected node from current nodes state so config changes are reflected immediately
   const selected = selectedId ? (nodes.find(n => n.id === selectedId) ?? null) : null;
   const [showRunModal, setShowRunModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
+  const [edgeContextMenu, setEdgeContextMenu] = useState<EdgeContextMenu | null>(null);
 
   // Hydrate canvas from saved definition when the page loads
   useEffect(() => {
@@ -105,6 +109,12 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
     setSelectedId(node.id);
   };
 
+  /** Removes an edge by id. */
+  const deleteEdge = useCallback((edgeId: string) => {
+    setEdges(eds => eds.filter(e => e.id !== edgeId));
+    setSelectedEdgeId(null);
+  }, [setEdges]);
+
   /** Removes a node and all its connected edges by id. */
   const deleteNode = useCallback((nodeId: string) => {
     setNodes(nds => nds.filter(n => n.id !== nodeId));
@@ -113,14 +123,29 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
     setContextMenu(null);
   }, [setNodes, setEdges]);
 
-  /** Delete/Backspace removes the selected node; skips when typing in inputs. */
+  /** Delete/Backspace removes the selected node or edge; skips when typing in inputs. */
   const onKeyDown = useCallback((evt: React.KeyboardEvent) => {
-    if ((evt.key === 'Delete' || evt.key === 'Backspace') && selected) {
+    if (evt.key === 'Delete' || evt.key === 'Backspace') {
       const tag = (evt.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-      deleteNode(selected.id);
+      if (selectedEdgeId) { deleteEdge(selectedEdgeId); return; }
+      if (selected) { deleteNode(selected.id); }
     }
-  }, [selected, deleteNode]);
+  }, [selected, selectedId, selectedEdgeId, deleteNode, deleteEdge]);
+
+  const onEdgeClick: EdgeMouseHandler = useCallback((_evt, edge) => {
+    setSelectedId(null);
+    setSelectedEdgeId(edge.id);
+    setContextMenu(null);
+    setEdgeContextMenu(null);
+  }, []);
+
+  const onEdgeContextMenu: EdgeMouseHandler = useCallback((evt, edge) => {
+    evt.preventDefault();
+    setSelectedEdgeId(edge.id);
+    setEdgeContextMenu({ x: evt.clientX, y: evt.clientY, edgeId: edge.id });
+    setContextMenu(null);
+  }, []);
 
   const onNodeContextMenu: NodeMouseHandler = useCallback((evt, node) => {
     evt.preventDefault();
@@ -227,12 +252,21 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
         </div>
         <div className="flex-1" onClick={() => setContextMenu(null)}>
           <ReactFlow
-            nodes={nodes} edges={edges}
+            nodes={nodes} edges={edges.map(e => ({
+              ...e,
+              style: e.id === selectedEdgeId
+                ? { stroke: '#ef4444', strokeWidth: 3 }
+                : { stroke: '#94a3b8', strokeWidth: 2 },
+              animated: e.id === selectedEdgeId,
+              label: e.id === selectedEdgeId ? '✕ Del' : undefined,
+            }))}
             onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onNodeClick={onNodeClick}
+            onEdgeClick={onEdgeClick}
+            onEdgeContextMenu={onEdgeContextMenu}
             onNodeContextMenu={onNodeContextMenu}
-            onPaneClick={() => { setSelectedId(null); setContextMenu(null); }}
+            onPaneClick={() => { setSelectedId(null); setSelectedEdgeId(null); setContextMenu(null); setEdgeContextMenu(null); }}
             fitView>
             <Background />
             <Controls />
@@ -260,7 +294,7 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
         <RunWorkflowModal workflow={workflow} onClose={() => setShowRunModal(false)} />
       )}
 
-      {/* Right-click context menu */}
+      {/* Right-click context menu — nodes */}
       {contextMenu && (
         <div
           className="fixed z-50 bg-white border rounded-lg shadow-lg py-1 min-w-[140px]"
@@ -272,6 +306,22 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
             onClick={() => deleteNode(contextMenu.nodeId)}
           >
             <span>🗑️</span> Delete Node
+          </button>
+        </div>
+      )}
+
+      {/* Right-click context menu — edges */}
+      {edgeContextMenu && (
+        <div
+          className="fixed z-50 bg-white border rounded-lg shadow-lg py-1 min-w-[140px]"
+          style={{ top: edgeContextMenu.y, left: edgeContextMenu.x }}
+          onMouseLeave={() => setEdgeContextMenu(null)}
+        >
+          <button
+            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+            onClick={() => deleteEdge(edgeContextMenu.edgeId)}
+          >
+            <span>🗑️</span> Delete Line
           </button>
         </div>
       )}
