@@ -254,6 +254,15 @@ export const api = {
     testOllama: () =>
       apiFetch<{ success: boolean; message: string }>('/api/settings/test/ollama', { method: 'POST' }),
   },
+  /** AI Assist endpoint — generates or modifies workflow definitions from natural language. */
+  aiAssist: {
+    /** Generates or modifies a workflow definition based on a natural language prompt. */
+    generate: (prompt: string, currentDefinitionJson?: string, workflowName?: string) =>
+      apiFetch<AiAssistResult>('/api/workflows/ai-assist', {
+        method: 'POST',
+        body: JSON.stringify({ prompt, currentDefinitionJson, workflowName }),
+      }),
+  },
   /** Feedback submission endpoint. */
   feedback: {
     /** Submits user feedback with an optional rating (1–5). */
@@ -326,4 +335,7 @@ export interface GmailCredentialSummary { id: string; name: string; email: strin
 
 /** Response returned after a successful feedback submission. */
 export interface FeedbackResponse { id: string; createdAt: string; }
+
+/** Result returned by the AI Assist endpoint. */
+export interface AiAssistResult { definition: object; explanation: string; changes: string[]; }
 

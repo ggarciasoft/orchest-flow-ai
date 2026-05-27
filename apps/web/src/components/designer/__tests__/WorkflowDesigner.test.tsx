@@ -37,6 +37,10 @@ jest.mock("lucide-react", () => ({
   Undo2: () => <span>Undo</span>,
   Redo2: () => <span>Redo</span>,
   History: () => <span>History</span>,
+  Sparkles: () => <span>Sparkles</span>,
+  X: () => <span>X</span>,
+  Send: () => <span>Send</span>,
+  Loader2: () => <span>Loader2</span>,
 }));
 
 const mockWorkflow = {
@@ -75,5 +79,10 @@ describe("WorkflowDesigner", () => {
   it("renders the react flow canvas", () => {
     render(<WorkflowDesigner workflow={mockWorkflow} nodeCatalog={mockNodeCatalog} />);
     expect(screen.getByTestId("react-flow")).toBeInTheDocument();
+  });
+
+  it("renders AI assistant button", () => {
+    render(<WorkflowDesigner workflow={mockWorkflow} nodeCatalog={mockNodeCatalog} />);
+    expect(screen.getByTitle("AI Workflow Assistant")).toBeInTheDocument();
   });
 });

@@ -12,9 +12,10 @@ import type { Workflow, NodeDescriptor } from '@/lib/api';
 import { NodePalette } from './NodePalette';
 import { NodeConfigDrawer } from './NodeConfigDrawer';
 import { VersionHistoryPanel } from './VersionHistoryPanel';
+import { AiAssistPanel } from './AiAssistPanel';
 import { RunWorkflowModal } from '../RunWorkflowModal';
 import { api } from '@/lib/api';
-import { Save, Play, Undo2, Redo2, History } from 'lucide-react';
+import { Save, Play, Undo2, Redo2, History, Sparkles } from 'lucide-react';
 import { useHistory } from '@/hooks/useHistory';
 
 interface Props {
@@ -61,6 +62,7 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
 
   const { pushSnapshot, undo: historyUndo, redo: historyRedo, canUndo, canRedo } = useHistory({ nodes: [], edges: [] });
   const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [showAiAssist, setShowAiAssist] = useState(false);
   const [canvasVersionNumber, setCanvasVersionNumber] = useState<number | undefined>(activeVersionNumber);
 
   // Hydrate canvas from saved definition when the page loads
@@ -270,6 +272,26 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
     }
   };
 
+  /** Hydrates the canvas from a parsed definition object. */
+  const hydrate = useCallback((def: { nodes?: Array<{ id: string; type: string; position: { x: number; y: number }; data: Record<string, unknown> }>; edges?: Array<{ id: string; source: string; target: string }> }) => {
+    if (def.nodes?.length) {
+      const restoredNodes = def.nodes.map(n => {
+        const descriptor = nodeCatalog.find(d => d.type === ((n.data?.descriptor as { type?: string } | undefined)?.type ?? n.type));
+        const category = (descriptor?.category ?? 'system') as string;
+        return {
+          ...n, type: 'default' as const,
+          data: { ...n.data, label: descriptor?.displayName ?? (n.data?.label as string) ?? n.type, descriptor: descriptor ?? n.data?.descriptor },
+          style: { background: (CATEGORY_COLORS as Record<string, string>)[category] ?? '#94a3b8', color: 'white', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500 },
+        };
+      });
+      setNodes(restoredNodes);
+      const restoredEdges = (def.edges ?? []).map(e => ({ ...e, type: 'default' as const }));
+      setEdges(restoredEdges);
+      pushSnapshot({ nodes: restoredNodes, edges: restoredEdges });
+    }
+    setSelectedId(null);
+  }, [nodeCatalog, setNodes, setEdges, pushSnapshot]);
+
   /** Opens the Run Workflow modal for the current workflow. */
   const handleExecute = () => {
     setShowRunModal(true);
@@ -313,10 +335,19 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
               className={`border text-sm px-2 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
                 showVersionHistory ? 'bg-slate-100 text-slate-800' : 'hover:bg-gray-50 text-gray-600'
               }`}
-              onClick={() => setShowVersionHistory(v => !v)}
+              onClick={() => { setShowVersionHistory(v => !v); setShowAiAssist(false); }}
               title="Version history"
             >
               <History size={14} /> History
+            </button>
+            <button
+              className={`border text-sm px-2 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
+                showAiAssist ? 'bg-purple-100 text-purple-800 border-purple-300' : 'hover:bg-gray-50 text-gray-600'
+              }`}
+              onClick={() => { setShowAiAssist(v => !v); setShowVersionHistory(false); }}
+              title="AI Workflow Assistant"
+            >
+              <Sparkles size={14} /> AI
             </button>
             <button
               className={`border text-sm px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
@@ -365,7 +396,7 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
       </div>
 
       {/* Config drawer with delete button */}
-      {selected && !showVersionHistory && (
+      {selected && !showVersionHistory && !showAiAssist && (
         <NodeConfigDrawer
           node={selected}
           catalog={nodeCatalog}
@@ -390,35 +421,48 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
           currentVersionNumber={canvasVersionNumber}
           onClose={() => setShowVersionHistory(false)}
           onLoadVersion={(definitionJson, versionNumber) => {
-            // Hydrate canvas with the chosen version's definition
             try {
               const def = JSON.parse(definitionJson) as {
                 nodes?: Array<{ id: string; type: string; position: { x: number; y: number }; data: Record<string, unknown> }>;
                 edges?: Array<{ id: string; source: string; target: string }>;
               };
-              if (def.nodes?.length) {
-                const restoredNodes = def.nodes.map(n => {
-                  const descriptor = nodeCatalog.find(d => d.type === ((n.data?.descriptor as { type?: string } | undefined)?.type ?? n.type));
-                  const category = (descriptor?.category ?? 'system') as string;
-                  return {
-                    ...n, type: 'default' as const,
-                    data: { ...n.data, label: descriptor?.displayName ?? (n.data?.label as string) ?? n.type, descriptor: descriptor ?? n.data?.descriptor },
-                    style: { background: ({ ai: '#818cf8', documents: '#34d399', logic: '#fbbf24', human: '#f87171', system: '#94a3b8', integrations: '#60a5fa', data: '#a78bfa' } as Record<string, string>)[category] ?? '#94a3b8', color: 'white', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500 },
-                  };
-                });
-                setNodes(restoredNodes);
-                const restoredEdges = (def.edges ?? []).map(e => ({ ...e, type: 'default' as const }));
-                setEdges(restoredEdges);
-                pushSnapshot({ nodes: restoredNodes, edges: restoredEdges });
-              }
+              hydrate(def);
               setCanvasVersionNumber(versionNumber);
-              setSelectedId(null);
             } catch { /* ignore malformed */ }
           }}
           onActivated={() => {
-            // Refresh active version badge — reload active version number
             api.workflows.getActiveVersion(workflow.id).then(v => setCanvasVersionNumber(v.versionNumber)).catch(() => {});
           }}
+        />
+      )}
+
+      {/* AI Assist panel */}
+      {showAiAssist && (
+        <AiAssistPanel
+          workflowId={workflow.id}
+          workflowName={workflow.name}
+          nodeCatalog={nodeCatalog}
+          onClose={() => setShowAiAssist(false)}
+          onPreview={(def) => {
+            hydrate(def as { nodes?: Array<{ id: string; type: string; position: { x: number; y: number }; data: Record<string, unknown> }>; edges?: Array<{ id: string; source: string; target: string }> });
+          }}
+          onAccept={(def) => {
+            hydrate(def as { nodes?: Array<{ id: string; type: string; position: { x: number; y: number }; data: Record<string, unknown> }>; edges?: Array<{ id: string; source: string; target: string }> });
+            handleSave();
+          }}
+          getCurrentDefinitionJson={() => JSON.stringify({
+            id: workflow.id,
+            name: workflow.name,
+            version: 1,
+            nodes: nodes.map(n => ({
+              id: n.id,
+              type: (n.data?.descriptor as NodeDescriptor | undefined)?.type ?? n.type,
+              position: n.position,
+              data: n.data,
+              config: (n.data?.config as Record<string, unknown>) ?? {},
+            })),
+            edges: edges.map(e => ({ id: e.id, source: e.source, target: e.target })),
+          })}
         />
       )}
 

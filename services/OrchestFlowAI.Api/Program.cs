@@ -33,6 +33,7 @@ var _notifierCs = builder.Configuration.GetConnectionString("Default")
 if (!string.IsNullOrWhiteSpace(_notifierCs))
     builder.Services.AddScoped<IExecutionNotifier, SignalRExecutionNotifier>();
 
+builder.Services.AddScoped<OrchestFlowAI.Api.Services.WorkflowGenerationService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
