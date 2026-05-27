@@ -212,16 +212,25 @@ if (!descriptor) return null; // Return early if no descriptor is found
                       )}
                     </div>
                   ) : cfg.allowedValues ? (
-                    /* Static allowedValues dropdown */
-                    <select
-                      className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={String(config[cfg.key] ?? cfg.defaultValue ?? '')}
-                      onChange={e => onConfigChange({ ...config, [cfg.key]: e.target.value })}
-                    >
-                      {cfg.allowedValues.map(v => (
-                        <option key={v} value={v}>{v}</option>
-                      ))}
-                    </select>
+                    /* Static allowedValues dropdown with optional per-option descriptions */
+                    <div>
+                      <select
+                        className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={String(config[cfg.key] ?? cfg.defaultValue ?? '')}
+                        onChange={e => onConfigChange({ ...config, [cfg.key]: e.target.value })}
+                      >
+                        {cfg.allowedValues.map(v => (
+                          <option key={v} value={v}>{v}</option>
+                        ))}
+                      </select>
+                      {/* Show description for the currently selected option */}
+                      {cfg.optionDescriptions && config[cfg.key] != null &&
+                        cfg.optionDescriptions[String(config[cfg.key])] && (
+                        <pre className="mt-1.5 text-xs text-slate-500 bg-slate-50 border rounded p-2 whitespace-pre-wrap font-mono leading-relaxed">
+                          {cfg.optionDescriptions[String(config[cfg.key])]}
+                        </pre>
+                      )}
+                    </div>
                   ) : cfg.type === 'Boolean' ? (
                     /* Boolean toggle — saves true/false, not strings */
                     <select

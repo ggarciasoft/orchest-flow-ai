@@ -293,7 +293,7 @@ export interface PagedResponse<T> { items: T[]; page: number; pageSize: number; 
 export interface NodeDescriptor { type: string; displayName: string; description: string; category: string; version: string; iconKey?: string; inputs: NodePort[]; outputs: NodePort[]; configuration: NodePort[]; }
 
 /** A single input, output, or configuration port on a node descriptor. */
-export interface NodePort { key: string; displayName: string; description: string; type: string; required?: boolean; defaultValue?: unknown; allowedValues?: string[]; optionsSource?: string; }
+export interface NodePort { key: string; displayName: string; description: string; type: string; required?: boolean; defaultValue?: unknown; allowedValues?: string[]; optionsSource?: string; optionDescriptions?: Record<string, string>; }
 
 /** Result of a workflow definition validation check. */
 export interface ValidationResult { isValid: boolean; errors: { nodeId: string; message: string; }[]; }

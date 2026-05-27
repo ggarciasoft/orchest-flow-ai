@@ -180,7 +180,14 @@ public sealed class DataExtractorNodeDescriptor : IWorkflowNodeDescriptor
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
         new NodeConfigDefinition("fields", "Fields", "Comma-separated field names to extract e.g. 'name,date,amount'.", DataType.String, Required: true),
-        new NodeConfigDefinition("formatPreset", "Format Preset", "Built-in format rules. Merged with Format Instructions (custom rules append/override).", DataType.Enum, Required: false, DefaultValue: "none", AllowedValues: new[] { "none", "financial", "invoice", "contact" }),
+        new NodeConfigDefinition("formatPreset", "Format Preset", "Built-in format rules. Merged with Format Instructions (custom rules append/override).", DataType.Enum, Required: false, DefaultValue: "none", AllowedValues: new[] { "none", "financial", "invoice", "contact" },
+            OptionDescriptions: new Dictionary<string, string>
+            {
+                ["none"] = "No preset rules. Use Format Instructions for custom rules.",
+                ["financial"] = "Amount: numeric only (e.g. 150.00)\nDate: YYYY-MM-DD\nCategory: Food | Transport | Utilities | Entertainment | Healthcare | Other\nStore: merchant name only",
+                ["invoice"] = "Amount: numeric only (e.g. 1200.00)\nDate: YYYY-MM-DD\nInvoiceNumber: alphanumeric string\nVendor: company name only",
+                ["contact"] = "Name: full name, title-case\nEmail: lowercase email address\nPhone: E.164 format (e.g. +1234567890)\nCompany: company name only",
+            }),
         new NodeConfigDefinition("formatInstructions", "Format Instructions", "Custom per-field format rules appended to the prompt. Overrides preset rules for the same field. E.g. 'Amount: numeric only. Date: YYYY-MM-DD.'.", DataType.String, Required: false),
         new NodeConfigDefinition("textInput", "Text Input", "Which upstream output to use as the text source.", DataType.Enum, Required: false, DefaultValue: "text", AllowedValues: new[] { "text", "item", "body" }),
         new NodeConfigDefinition("model", "Model", "LLM model to use.", DataType.String, Required: false, DefaultValue: "default", OptionsSource: "llm-models")
