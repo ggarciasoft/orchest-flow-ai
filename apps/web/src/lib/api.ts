@@ -244,6 +244,21 @@ export const api = {
     /** Tests the OpenAI connection. */
     testOpenAI: () =>
       apiFetch<{ success: boolean; message: string }>('/api/settings/test/openai', { method: 'POST' }),
+    /** Tests the Anthropic connection. */
+    testAnthropic: () =>
+      apiFetch<{ success: boolean; message: string }>('/api/settings/test/anthropic', { method: 'POST' }),
+    /** Tests the Azure OpenAI connection. */
+    testAzure: () =>
+      apiFetch<{ success: boolean; message: string }>('/api/settings/test/azure', { method: 'POST' }),
+    /** Tests the Ollama connection. */
+    testOllama: () =>
+      apiFetch<{ success: boolean; message: string }>('/api/settings/test/ollama', { method: 'POST' }),
+  },
+  /** Feedback submission endpoint. */
+  feedback: {
+    /** Submits user feedback with an optional rating (1–5). */
+    submit: (message: string, rating?: number) =>
+      apiFetch<FeedbackResponse>('/api/feedback', { method: 'POST', body: JSON.stringify({ message, rating }) }),
   },
   /** Secret vault endpoints — encrypted named values for use in node config as {{secret:name}}. */
   secrets: {
@@ -308,4 +323,7 @@ export interface TenantInviteResponse { id: string; tenantId: string; email: str
 export interface SecretSummary { id: string; name: string; createdAt: string; updatedAt: string; }
 
 export interface GmailCredentialSummary { id: string; name: string; email: string | null; createdAt: string; updatedAt: string; }
+
+/** Response returned after a successful feedback submission. */
+export interface FeedbackResponse { id: string; createdAt: string; }
 

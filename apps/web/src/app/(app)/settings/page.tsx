@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/ui';
 import { api, SecretSummary } from '@/lib/api';
-import { CheckCircle, XCircle, Loader2, Eye, EyeOff, Trash2, Plus, Lock, Mail } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Eye, EyeOff, Trash2, Plus, Lock, Mail, Cpu, Cloud, Server } from 'lucide-react';
 
 type TestStatus = 'idle' | 'testing' | 'ok' | 'fail';
 
@@ -25,6 +25,31 @@ export default function SettingsPage() {
   const [gmailSaving, setGmailSaving] = useState(false);
   const [gmailSaved, setGmailSaved] = useState(false);
 
+  // Anthropic
+  const [anthropicKey, setAnthropicKey] = useState('');
+  const [showAnthropicKey, setShowAnthropicKey] = useState(false);
+  const [anthropicSaving, setAnthropicSaving] = useState(false);
+  const [anthropicSaved, setAnthropicSaved] = useState(false);
+  const [anthropicTestStatus, setAnthropicTestStatus] = useState<TestStatus>('idle');
+  const [anthropicTestMessage, setAnthropicTestMessage] = useState('');
+
+  // Azure OpenAI
+  const [azureEndpoint, setAzureEndpoint] = useState('');
+  const [azureApiKey, setAzureApiKey] = useState('');
+  const [azureDeployment, setAzureDeployment] = useState('');
+  const [showAzureKey, setShowAzureKey] = useState(false);
+  const [azureSaving, setAzureSaving] = useState(false);
+  const [azureSaved, setAzureSaved] = useState(false);
+  const [azureTestStatus, setAzureTestStatus] = useState<TestStatus>('idle');
+  const [azureTestMessage, setAzureTestMessage] = useState('');
+
+  // Ollama
+  const [ollamaBaseUrl, setOllamaBaseUrl] = useState('http://localhost:11434');
+  const [ollamaSaving, setOllamaSaving] = useState(false);
+  const [ollamaSaved, setOllamaSaved] = useState(false);
+  const [ollamaTestStatus, setOllamaTestStatus] = useState<TestStatus>('idle');
+  const [ollamaTestMessage, setOllamaTestMessage] = useState('');
+
   // Secret Vault
   const [secrets, setSecrets] = useState<SecretSummary[]>([]);
   const [secretsLoading, setSecretsLoading] = useState(false);
@@ -43,6 +68,9 @@ export default function SettingsPage() {
     api.settings.get().then(s => {
       if (s['llm.defaultModel']) setDefaultModel(s['llm.defaultModel'] ?? 'gpt-4o-mini');
       if (s['gmail.clientId']) setGmailClientId(s['gmail.clientId'] ?? '');
+      if (s['llm.azure.endpoint']) setAzureEndpoint(s['llm.azure.endpoint'] ?? '');
+      if (s['llm.azure.deploymentName']) setAzureDeployment(s['llm.azure.deploymentName'] ?? '');
+      if (s['llm.ollama.baseUrl']) setOllamaBaseUrl(s['llm.ollama.baseUrl'] ?? 'http://localhost:11434');
       // Never pre-fill secrets — user must re-enter to change
     }).catch(() => {});
     loadSecrets();
@@ -80,6 +108,71 @@ export default function SettingsPage() {
       setGmailSaved(true); setGmailClientSecret('');
       setTimeout(() => setGmailSaved(false), 3000);
     } finally { setGmailSaving(false); }
+  };
+
+  // ---- Anthropic handlers ----
+  const handleSaveAnthropic = async () => {
+    setAnthropicSaving(true); setAnthropicSaved(false);
+    try {
+      const updates: Record<string, string> = {};
+      if (anthropicKey) updates['llm.anthropic.apiKey'] = anthropicKey;
+      if (Object.keys(updates).length > 0) await api.settings.update(updates);
+      setAnthropicSaved(true); setAnthropicKey('');
+      setTimeout(() => setAnthropicSaved(false), 3000);
+    } finally { setAnthropicSaving(false); }
+  };
+
+  const handleTestAnthropic = async () => {
+    setAnthropicTestStatus('testing'); setAnthropicTestMessage('');
+    try {
+      const r = await api.settings.testAnthropic();
+      setAnthropicTestStatus(r.success ? 'ok' : 'fail');
+      setAnthropicTestMessage(r.message);
+    } catch { setAnthropicTestStatus('fail'); setAnthropicTestMessage('Request failed'); }
+  };
+
+  // ---- Azure OpenAI handlers ----
+  const handleSaveAzure = async () => {
+    setAzureSaving(true); setAzureSaved(false);
+    try {
+      const updates: Record<string, string> = {};
+      if (azureEndpoint) updates['llm.azure.endpoint'] = azureEndpoint;
+      if (azureApiKey) updates['llm.azure.apiKey'] = azureApiKey;
+      if (azureDeployment) updates['llm.azure.deploymentName'] = azureDeployment;
+      if (Object.keys(updates).length > 0) await api.settings.update(updates);
+      setAzureSaved(true); setAzureApiKey('');
+      setTimeout(() => setAzureSaved(false), 3000);
+    } finally { setAzureSaving(false); }
+  };
+
+  const handleTestAzure = async () => {
+    setAzureTestStatus('testing'); setAzureTestMessage('');
+    try {
+      const r = await api.settings.testAzure();
+      setAzureTestStatus(r.success ? 'ok' : 'fail');
+      setAzureTestMessage(r.message);
+    } catch { setAzureTestStatus('fail'); setAzureTestMessage('Request failed'); }
+  };
+
+  // ---- Ollama handlers ----
+  const handleSaveOllama = async () => {
+    setOllamaSaving(true); setOllamaSaved(false);
+    try {
+      const updates: Record<string, string> = {};
+      if (ollamaBaseUrl) updates['llm.ollama.baseUrl'] = ollamaBaseUrl;
+      if (Object.keys(updates).length > 0) await api.settings.update(updates);
+      setOllamaSaved(true);
+      setTimeout(() => setOllamaSaved(false), 3000);
+    } finally { setOllamaSaving(false); }
+  };
+
+  const handleTestOllama = async () => {
+    setOllamaTestStatus('testing'); setOllamaTestMessage('');
+    try {
+      const r = await api.settings.testOllama();
+      setOllamaTestStatus(r.success ? 'ok' : 'fail');
+      setOllamaTestMessage(r.message);
+    } catch { setOllamaTestStatus('fail'); setOllamaTestMessage('Request failed'); }
   };
 
   // ---- Secret handlers ----
@@ -157,6 +250,161 @@ export default function SettingsPage() {
             <button onClick={handleSave} disabled={saving}
               className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2">
               {saving && <Loader2 size={14} className="animate-spin" />}
+              Save changes
+            </button>
+          </div>
+        </div>
+
+        {/* ── Anthropic ── */}
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-3">
+            <div className="w-8 h-8 bg-amber-700 rounded-lg flex items-center justify-center text-white">
+              <Cpu size={16} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Anthropic</p>
+              <p className="text-xs text-slate-500">Claude 3.5 Sonnet, Claude 3 Haiku, Claude 3 Opus</p>
+            </div>
+          </div>
+          <div className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">API Key</label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type={showAnthropicKey ? 'text' : 'password'}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 pr-10"
+                    placeholder="sk-ant-... (leave blank to keep existing)"
+                    value={anthropicKey}
+                    onChange={e => setAnthropicKey(e.target.value)}
+                  />
+                  <button type="button" onClick={() => setShowAnthropicKey(v => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    {showAnthropicKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                <button onClick={handleTestAnthropic} disabled={anthropicTestStatus === 'testing'}
+                  className="px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-700 disabled:opacity-50 whitespace-nowrap flex items-center gap-2">
+                  {anthropicTestStatus === 'testing' && <Loader2 size={14} className="animate-spin" />}
+                  Test connection
+                </button>
+              </div>
+              {anthropicTestStatus === 'ok' && <p className="mt-1.5 text-xs text-green-600 flex items-center gap-1"><CheckCircle size={13} /> {anthropicTestMessage}</p>}
+              {anthropicTestStatus === 'fail' && <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1"><XCircle size={13} /> {anthropicTestMessage}</p>}
+            </div>
+          </div>
+          <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+            {anthropicSaved ? <p className="text-sm text-green-600 flex items-center gap-1"><CheckCircle size={14} /> Saved</p> : <span />}
+            <button onClick={handleSaveAnthropic} disabled={anthropicSaving}
+              className="bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-800 disabled:opacity-50 flex items-center gap-2">
+              {anthropicSaving && <Loader2 size={14} className="animate-spin" />}
+              Save changes
+            </button>
+          </div>
+        </div>
+
+        {/* ── Azure OpenAI ── */}
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
+              <Cloud size={16} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Azure OpenAI</p>
+              <p className="text-xs text-slate-500">Hosted GPT models via Azure deployment</p>
+            </div>
+          </div>
+          <div className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Endpoint</label>
+              <input type="text"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="https://your-resource.openai.azure.com"
+                value={azureEndpoint}
+                onChange={e => setAzureEndpoint(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">API Key</label>
+              <div className="relative">
+                <input type={showAzureKey ? 'text' : 'password'}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                  placeholder="Leave blank to keep existing"
+                  value={azureApiKey}
+                  onChange={e => setAzureApiKey(e.target.value)}
+                />
+                <button type="button" onClick={() => setShowAzureKey(v => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  {showAzureKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Deployment Name</label>
+              <input type="text"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g. gpt-4o-deployment"
+                value={azureDeployment}
+                onChange={e => setAzureDeployment(e.target.value)}
+              />
+            </div>
+            {azureTestStatus === 'ok' && <p className="text-xs text-green-600 flex items-center gap-1"><CheckCircle size={13} /> {azureTestMessage}</p>}
+            {azureTestStatus === 'fail' && <p className="text-xs text-red-600 flex items-center gap-1"><XCircle size={13} /> {azureTestMessage}</p>}
+          </div>
+          <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {azureSaved && <p className="text-sm text-green-600 flex items-center gap-1"><CheckCircle size={14} /> Saved</p>}
+              <button onClick={handleTestAzure} disabled={azureTestStatus === 'testing'}
+                className="px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-700 disabled:opacity-50 flex items-center gap-2">
+                {azureTestStatus === 'testing' && <Loader2 size={14} className="animate-spin" />}
+                Test connection
+              </button>
+            </div>
+            <button onClick={handleSaveAzure} disabled={azureSaving}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
+              {azureSaving && <Loader2 size={14} className="animate-spin" />}
+              Save changes
+            </button>
+          </div>
+        </div>
+
+        {/* ── Ollama ── */}
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-3">
+            <div className="w-8 h-8 bg-green-700 rounded-lg flex items-center justify-center text-white">
+              <Server size={16} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Ollama</p>
+              <p className="text-xs text-slate-500">Local models — Llama 3, Mistral, Phi-3, Gemma 2</p>
+            </div>
+          </div>
+          <div className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Base URL</label>
+              <input type="text"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder="http://localhost:11434"
+                value={ollamaBaseUrl}
+                onChange={e => setOllamaBaseUrl(e.target.value)}
+              />
+              <p className="text-xs text-slate-400 mt-1">Default: <code className="bg-slate-100 px-1 rounded">http://localhost:11434</code></p>
+            </div>
+            {ollamaTestStatus === 'ok' && <p className="text-xs text-green-600 flex items-center gap-1"><CheckCircle size={13} /> {ollamaTestMessage}</p>}
+            {ollamaTestStatus === 'fail' && <p className="text-xs text-red-600 flex items-center gap-1"><XCircle size={13} /> {ollamaTestMessage}</p>}
+          </div>
+          <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {ollamaSaved && <p className="text-sm text-green-600 flex items-center gap-1"><CheckCircle size={14} /> Saved</p>}
+              <button onClick={handleTestOllama} disabled={ollamaTestStatus === 'testing'}
+                className="px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-700 disabled:opacity-50 flex items-center gap-2">
+                {ollamaTestStatus === 'testing' && <Loader2 size={14} className="animate-spin" />}
+                Test connection
+              </button>
+            </div>
+            <button onClick={handleSaveOllama} disabled={ollamaSaving}
+              className="bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-800 disabled:opacity-50 flex items-center gap-2">
+              {ollamaSaving && <Loader2 size={14} className="animate-spin" />}
               Save changes
             </button>
           </div>

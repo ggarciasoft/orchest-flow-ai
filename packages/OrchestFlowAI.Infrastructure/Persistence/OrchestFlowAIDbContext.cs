@@ -27,6 +27,7 @@ public sealed class OrchestFlowAIDbContext : DbContext
     public DbSet<GmailCredential> GmailCredentials => Set<GmailCredential>();
     public DbSet<PlatformSetting> PlatformSettings => Set<PlatformSetting>();
     public DbSet<Secret> Secrets => Set<Secret>();
+    public DbSet<Feedback> Feedbacks => Set<Feedback>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -164,6 +165,13 @@ public sealed class OrchestFlowAIDbContext : DbContext
             e.Property(s => s.EncryptedValue).IsRequired();
             e.HasIndex(s => new { s.TenantId, s.Name }).IsUnique();
             e.HasIndex(s => s.TenantId);
+        });
+
+        modelBuilder.Entity<Feedback>(e =>
+        {
+            e.HasKey(f => f.Id);
+            e.Property(f => f.Message).IsRequired();
+            e.HasIndex(f => f.TenantId);
         });
 
         modelBuilder.Entity<ExecutionQueueItem>(e =>

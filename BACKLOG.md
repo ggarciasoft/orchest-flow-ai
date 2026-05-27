@@ -59,8 +59,7 @@
 - **Status:** ✅ Resolved — Version History panel in designer toolbar. Load (preview), Activate (set active). `GET /api/workflows/{id}/versions` + `GET /api/workflows/{id}/versions/{versionId}`.
 
 ### 4. Execution input UI
-- **Problem:** "Run" from the workflow list fires with an empty `{}` input. No way to pass input values to `system.start` outputs at run time.
-- **Proposed fix:** "Run workflow" dialog with dynamic input fields derived from the node config.
+- **Status:** ✅ Resolved — `RunWorkflowModal` parses the active version definition, discovers input keys from `system.start` outgoing edges, and renders a dynamic input form before execution.
 
 ### 5. Feedback endpoint not wired
 - **Problem:** `/feedback` page form submits but `POST /api/feedback` is a TODO stub — nothing is stored or sent.

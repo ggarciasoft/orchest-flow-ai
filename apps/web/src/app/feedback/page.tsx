@@ -3,24 +3,38 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { PublicFooter } from '@/components/PublicFooter';
 import { CheckCircle } from 'lucide-react';
+import { api } from '@/lib/api';
 
 export default function FeedbackPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: wire to backend endpoint POST /api/feedback
-    setSubmitted(true);
+    setError(null);
+    setSubmitting(true);
+    try {
+      await api.feedback.submit(message);
+      setName('');
+      setEmail('');
+      setMessage('');
+      setSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col">
       <header className="border-b border-slate-200 bg-white">
         <div className="max-w-3xl mx-auto px-6 h-14 flex items-center">
-          <Link href="/" className="text-sm font-semibold text-slate-900 hover:text-indigo-600 transition-colors">← OrchestFlowAI</Link>
+          <Link href="/" className="text-sm font-semibold text-slate-900 hover:text-indigo-600 transition-colors">🎼 OrchestFlowAI</Link>
         </div>
       </header>
       <main className="flex-1 flex items-center justify-center px-6 py-12">
@@ -52,8 +66,12 @@ export default function FeedbackPage() {
                   <textarea value={message} onChange={e => setMessage(e.target.value)} required rows={4}
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder:text-slate-400 resize-none" />
                 </div>
-                <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors">
-                  Send feedback
+                {error && (
+                  <p className="text-sm text-red-600">{error}</p>
+                )}
+                <button type="submit" disabled={submitting}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-medium py-2.5 rounded-lg text-sm transition-colors">
+                  {submitting ? 'Sending…' : 'Send feedback'}
                 </button>
               </form>
             </div>

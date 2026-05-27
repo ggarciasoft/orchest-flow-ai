@@ -10,9 +10,10 @@ public sealed class SettingsController : ControllerBase
 {
     private readonly IPlatformSettingsService _settings;
     private readonly OpenAIApiKeyHolder _openAiKeyHolder;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public SettingsController(IPlatformSettingsService settings, OpenAIApiKeyHolder openAiKeyHolder)
-    { _settings = settings; _openAiKeyHolder = openAiKeyHolder; }
+    public SettingsController(IPlatformSettingsService settings, OpenAIApiKeyHolder openAiKeyHolder, IHttpClientFactory httpClientFactory)
+    { _settings = settings; _openAiKeyHolder = openAiKeyHolder; _httpClientFactory = httpClientFactory; }
 
     /// <summary>Returns current platform settings. API keys are masked.</summary>
     [HttpGet]
@@ -35,6 +36,11 @@ public sealed class SettingsController : ControllerBase
         result.TryAdd("llm.openai.apiKey", null);
         result.TryAdd("llm.defaultModel", all.GetValueOrDefault("llm.defaultModel") ?? "gpt-4o-mini");
         result.TryAdd("llm.defaultProvider", all.GetValueOrDefault("llm.defaultProvider") ?? "openai");
+        result.TryAdd("llm.anthropic.apiKey", null);
+        result.TryAdd("llm.azure.endpoint", all.GetValueOrDefault("llm.azure.endpoint") ?? "");
+        result.TryAdd("llm.azure.apiKey", null);
+        result.TryAdd("llm.azure.deploymentName", all.GetValueOrDefault("llm.azure.deploymentName") ?? "");
+        result.TryAdd("llm.ollama.baseUrl", all.GetValueOrDefault("llm.ollama.baseUrl") ?? "http://localhost:11434");
 
         return Ok(result);
     }
@@ -69,9 +75,8 @@ public sealed class SettingsController : ControllerBase
 
         try
         {
-            var client = new System.Net.Http.HttpClient();
-            var req = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get,
-                "https://api.openai.com/v1/models");
+            var client = _httpClientFactory.CreateClient();
+            var req = new HttpRequestMessage(HttpMethod.Get, "https://api.openai.com/v1/models");
             req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", key);
             var resp = await client.SendAsync(req, ct);
             if (resp.IsSuccessStatusCode)
@@ -82,6 +87,107 @@ public sealed class SettingsController : ControllerBase
         catch (Exception ex)
         {
             return Ok(new { success = false, message = ex.Message });
+        }
+    }
+
+    /// <summary>Tests the Anthropic connection with the stored API key.</summary>
+    [HttpPost("test/anthropic")]
+    public async Task<IActionResult> TestAnthropic(CancellationToken ct)
+    {
+        var tenantId = GetTenantId();
+        var key = await _settings.GetAsync(tenantId, "llm.anthropic.apiKey", ct);
+        if (string.IsNullOrWhiteSpace(key))
+            return Ok(new { success = false, message = "No Anthropic API key configured." });
+
+        try
+        {
+            var client = _httpClientFactory.CreateClient();
+            var req = new HttpRequestMessage(HttpMethod.Post, "https://api.anthropic.com/v1/messages");
+            req.Headers.Add("x-api-key", key);
+            req.Headers.Add("anthropic-version", "2023-06-01");
+            req.Content = System.Net.Http.Json.JsonContent.Create(new
+            {
+                model = "claude-3-haiku-20240307",
+                max_tokens = 16,
+                messages = new[] { new { role = "user", content = "Hi" } }
+            });
+
+            var resp = await client.SendAsync(req, ct);
+            if (resp.IsSuccessStatusCode)
+                return Ok(new { success = true, message = "Connection successful." });
+            var body = await resp.Content.ReadAsStringAsync(ct);
+            return Ok(new { success = false, message = $"API returned {(int)resp.StatusCode}: {body[..Math.Min(200, body.Length)]}" });
+        }
+        catch (Exception ex)
+        {
+            return Ok(new { success = false, message = ex.Message });
+        }
+    }
+
+    /// <summary>Tests the Azure OpenAI connection with stored settings.</summary>
+    [HttpPost("test/azure")]
+    public async Task<IActionResult> TestAzure(CancellationToken ct)
+    {
+        var tenantId = GetTenantId();
+        var endpoint = await _settings.GetAsync(tenantId, "llm.azure.endpoint", ct);
+        var apiKey = await _settings.GetAsync(tenantId, "llm.azure.apiKey", ct);
+        var deploymentName = await _settings.GetAsync(tenantId, "llm.azure.deploymentName", ct);
+
+        if (string.IsNullOrWhiteSpace(endpoint) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(deploymentName))
+            return Ok(new { success = false, message = "Endpoint, API key, and deployment name are all required." });
+
+        try
+        {
+            var url = $"{endpoint.TrimEnd('/')}/openai/deployments/{deploymentName}/chat/completions?api-version=2024-02-01";
+            var client = _httpClientFactory.CreateClient();
+            var req = new HttpRequestMessage(HttpMethod.Post, url);
+            req.Headers.Add("api-key", apiKey);
+            req.Content = System.Net.Http.Json.JsonContent.Create(new
+            {
+                messages = new[] { new { role = "user", content = "Hi" } },
+                max_tokens = 16
+            });
+
+            var resp = await client.SendAsync(req, ct);
+            if (resp.IsSuccessStatusCode)
+                return Ok(new { success = true, message = "Connection successful." });
+            var body = await resp.Content.ReadAsStringAsync(ct);
+            return Ok(new { success = false, message = $"API returned {(int)resp.StatusCode}: {body[..Math.Min(200, body.Length)]}" });
+        }
+        catch (Exception ex)
+        {
+            return Ok(new { success = false, message = ex.Message });
+        }
+    }
+
+    /// <summary>Tests the Ollama connection with stored base URL.</summary>
+    [HttpPost("test/ollama")]
+    public async Task<IActionResult> TestOllama(CancellationToken ct)
+    {
+        var tenantId = GetTenantId();
+        var baseUrl = await _settings.GetAsync(tenantId, "llm.ollama.baseUrl", ct)
+                      ?? "http://localhost:11434";
+
+        try
+        {
+            var client = _httpClientFactory.CreateClient();
+            var req = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl.TrimEnd('/')}/api/generate");
+            req.Content = System.Net.Http.Json.JsonContent.Create(new
+            {
+                model = "llama3",
+                prompt = "Hi",
+                stream = false
+            });
+
+            var resp = await client.SendAsync(req, ct);
+            if (resp.IsSuccessStatusCode)
+                return Ok(new { success = true, message = "Ollama connection successful." });
+            var body = await resp.Content.ReadAsStringAsync(ct);
+            return Ok(new { success = false, message = $"Ollama returned {(int)resp.StatusCode}: {body[..Math.Min(200, body.Length)]}" });
+        }
+        catch (Exception ex)
+        {
+            return Ok(new { success = false, message = $"Could not connect to Ollama: {ex.Message}" });
         }
     }
 

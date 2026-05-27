@@ -30,6 +30,9 @@ public static class AIServiceExtensions
             ?? Environment.GetEnvironmentVariable("OPENAI_DEFAULT_MODEL")
             ?? "gpt-4o-mini";
 
+        // Ensure IHttpClientFactory is available (safe to call multiple times)
+        services.AddHttpClient();
+
         // Always register FakeLLMProvider so it's available for tests and dev mode
         services.AddSingleton<FakeLLMProvider>();
         services.AddSingleton<ILLMProvider>(sp => sp.GetRequiredService<FakeLLMProvider>());
@@ -41,6 +44,30 @@ public static class AIServiceExtensions
             new OpenAILLMProvider(holder, sp.GetRequiredService<ILogger<OpenAILLMProvider>>(),
                 sp.GetService<OrchestFlowAI.Application.Abstractions.IPlatformSettingsService>()));
         services.AddSingleton<ILLMProvider>(sp => sp.GetRequiredService<OpenAILLMProvider>());
+
+        // Anthropic
+        services.AddSingleton<AnthropicLLMProvider>(sp =>
+            new AnthropicLLMProvider(
+                sp.GetRequiredService<IHttpClientFactory>(),
+                sp.GetRequiredService<ILogger<AnthropicLLMProvider>>(),
+                sp.GetService<OrchestFlowAI.Application.Abstractions.IPlatformSettingsService>()));
+        services.AddSingleton<ILLMProvider>(sp => sp.GetRequiredService<AnthropicLLMProvider>());
+
+        // Azure OpenAI
+        services.AddSingleton<AzureOpenAILLMProvider>(sp =>
+            new AzureOpenAILLMProvider(
+                sp.GetRequiredService<IHttpClientFactory>(),
+                sp.GetRequiredService<ILogger<AzureOpenAILLMProvider>>(),
+                sp.GetService<OrchestFlowAI.Application.Abstractions.IPlatformSettingsService>()));
+        services.AddSingleton<ILLMProvider>(sp => sp.GetRequiredService<AzureOpenAILLMProvider>());
+
+        // Ollama
+        services.AddSingleton<OllamaLLMProvider>(sp =>
+            new OllamaLLMProvider(
+                sp.GetRequiredService<IHttpClientFactory>(),
+                sp.GetRequiredService<ILogger<OllamaLLMProvider>>(),
+                sp.GetService<OrchestFlowAI.Application.Abstractions.IPlatformSettingsService>()));
+        services.AddSingleton<ILLMProvider>(sp => sp.GetRequiredService<OllamaLLMProvider>());
 
         // Router resolves the correct provider based on the model string or default
         services.AddSingleton(sp =>
