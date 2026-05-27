@@ -211,7 +211,15 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
                         var iterNodeImpl = _registry.GetNode(iterNode.Type);
                         if (iterNodeImpl == null) break;
 
-                        var iterInputs = ResolveInputs(iterNode.Id, def.Edges, iterOutputs, inputs);
+                        // Build accumulated inputs: merge all outputs produced so far in this iteration
+                        // so every node in the loop body can access data from all predecessors,
+                        // not just the direct edge source. Direct edge wiring takes priority.
+                        var accumulatedInputs = new Dictionary<string, object?>(inputs);
+                        foreach (var nodeOut in iterOutputs.Values)
+                            foreach (var kv in nodeOut)
+                                accumulatedInputs.TryAdd(kv.Key, kv.Value);
+
+                        var iterInputs = ResolveInputs(iterNode.Id, def.Edges, iterOutputs, accumulatedInputs);
                         _logger.LogDebug("Loop body ResolveInputs for {NodeId}: edgeCount={EdgeCount} iterOutputsKeys=[{Keys}] resultKeys=[{ResultKeys}]",
                             iterNode.Id, def.Edges.Count(e => e.Target == iterNode.Id),
                             string.Join(",", iterOutputs.Keys.Select(k => k.Split('-')[0])),
