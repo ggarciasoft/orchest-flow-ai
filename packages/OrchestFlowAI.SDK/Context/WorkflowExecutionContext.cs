@@ -27,6 +27,14 @@ public sealed class WorkflowExecutionContext
     {
         if (NodeConfig.TryGetValue(key, out var val) && val is T typed) return typed;
         if (val is System.Text.Json.JsonElement je) return System.Text.Json.JsonSerializer.Deserialize<T>(je.GetRawText());
-        try { return (T?)Convert.ChangeType(val, typeof(T)); } catch { return default; }
+        // Handle Nullable<T> — Convert.ChangeType does not support nullable types
+        var targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+        // Handle string "true"/"false" → bool
+        if (targetType == typeof(bool) && val is string boolStr)
+        {
+            if (bool.TryParse(boolStr, out var b)) return (T)(object)b;
+            return default;
+        }
+        try { return (T?)Convert.ChangeType(val, targetType); } catch { return default; }
     }
 }

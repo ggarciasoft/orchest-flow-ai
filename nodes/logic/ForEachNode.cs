@@ -21,8 +21,13 @@ public sealed class ForEachNode : IWorkflowNode
     /// <inheritdoc />
     public Task<NodeExecutionResult> ExecuteAsync(WorkflowExecutionContext ctx, CancellationToken ct)
     {
-        // Resolve the input array from node inputs
-        var rawInput = ctx.NodeInputs.TryGetValue("inputArray", out var v) ? v : null;
+        // Resolve the input array from node inputs.
+        // Accept 'inputArray' (canonical), or common aliases when the upstream node uses a different key.
+        object? rawInput = null;
+        foreach (var key in new[] { "inputArray", "emails", "items", "data", "array", "results" })
+        {
+            if (ctx.NodeInputs.TryGetValue(key, out var v) && v != null) { rawInput = v; break; }
+        }
 
         List<JsonElement> items;
         try

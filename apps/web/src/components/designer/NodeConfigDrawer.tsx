@@ -222,6 +222,16 @@ if (!descriptor) return null; // Return early if no descriptor is found
                         <option key={v} value={v}>{v}</option>
                       ))}
                     </select>
+                  ) : cfg.type === 'Boolean' ? (
+                    /* Boolean toggle — saves true/false, not strings */
+                    <select
+                      className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={String(config[cfg.key] ?? cfg.defaultValue ?? 'false')}
+                      onChange={e => onConfigChange({ ...config, [cfg.key]: e.target.value === 'true' })}
+                    >
+                      <option value="false">false</option>
+                      <option value="true">true</option>
+                    </select>
                   ) : (
                     <input
                       className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
