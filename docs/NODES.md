@@ -494,7 +494,9 @@ Form nodes are dynamically registered at runtime � one node type per form you 
 
 > **Tip:** The form can also be filled via the public fill page: `/forms/<id>/fill?executionId=...&nodeExecutionId=...` (no login required). A link appears in the execution timeline when the node is waiting.
 
-> **Hot-reload:** The worker polls the database every **30 seconds**. A new form created while the worker is running will be available as a `form.<slug>` node type within one polling interval — no restart required.
+> **Hot-reload:** The worker polls the database every **30 seconds**. New, updated, or deleted forms (including version activations) are reflected automatically — no restart required.
+
+> **Versioning:** Every create/update snapshots the fields as a `FormVersion`. The engine always uses the **active version**'s field definitions. Activate a past version via `POST /api/forms/{id}/versions/{versionId}/activate` to roll back.
 
 **Using outputs downstream:**
 ```

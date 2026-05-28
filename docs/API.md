@@ -541,7 +541,40 @@ After creation, the node `form.expense-review` immediately appears in the workfl
 PUT /api/forms/{id}
 ```
 
-Same body as create. Updating a form hot-reloads the node in the catalog.
+Same body as create. **Each save automatically creates a new version** (version number increments) and activates it. The form's live `FieldsJson` always reflects the active version.
+
+### Form versions
+
+Forms are versioned. Every create or update snapshots the field definitions as an immutable `FormVersion` record. Users can browse, compare, and activate past versions to roll back.
+
+#### List versions
+
+```
+GET /api/forms/{id}/versions
+Authorization: Bearer <token>
+```
+
+Response `200`:
+```json
+[
+  { "id": "...", "versionNumber": 3, "isActive": true,  "createdBy": "...", "createdAt": "...", "fieldsJson": "[...]" },
+  { "id": "...", "versionNumber": 2, "isActive": false, "createdBy": "...", "createdAt": "...", "fieldsJson": "[...]" },
+  { "id": "...", "versionNumber": 1, "isActive": false, "createdBy": "...", "createdAt": "...", "fieldsJson": "[...]" }
+]
+```
+
+Ordered newest-first. `isActive` marks the version currently in use by the engine.
+
+#### Activate version
+
+```
+POST /api/forms/{id}/versions/{versionId}/activate
+Authorization: Bearer <token>
+```
+
+Response `204`. Deactivates all other versions, sets the target version as active, and syncs `Form.FieldsJson` to that version's field definitions. The worker and designer catalog update within the next polling interval (≤ 30 s).
+
+> **Rule:** Workflows always use the form's **active version** at execution time. Activating an older version is a full rollback — the engine will use those fields on the next execution.
 
 ### Delete form
 

@@ -145,6 +145,10 @@ Cards linking to sub-sections:
 - `/forms` — card grid; Copy node type (`form.<slug>`) to clipboard.
 - `/forms/[id]` — builder with Name, Slug (auto-generated from name, manually overridable), Description, field list (reorder, add/edit/delete), Preview modal.
 - `slug` is **required** and determines the node type. Must be unique per tenant.
+- **Version History panel** (existing forms only) — collapsible panel in the left column showing all saved versions. Each entry shows version number, date, field count, and active badge.
+  - **Activate** button on any past version rolls back the form's active definition. The builder immediately reflects the rolled-back fields. The engine picks up the change within 30 s (worker polling).
+  - Saving the form always creates a new version — previous versions are never overwritten.
+- Every save (create or update) automatically creates a `FormVersion` snapshot and activates it.
 
 ### Form Fill Page (`/forms/[id]/fill`)
 Public (no auth). Renders form + submits values to resume the paused execution.
