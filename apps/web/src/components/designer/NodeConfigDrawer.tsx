@@ -254,12 +254,12 @@ if (!descriptor) return null; // Return early if no descriptor is found
                         onChange={e => onConfigChange({ ...config, [cfg.key]: e.target.value })}
                       />
                       {cfg.isSensitive && (
-                        <p className="text-xs text-amber-600 flex items-center gap-1">
+                        <p className="text-xs text-amber-600 flex items-center gap-1.5 flex-wrap">
                           <span>🔒</span>
-                          Sensitive — use{' '}
-                          <code className="bg-amber-50 border border-amber-200 rounded px-1 font-mono">{`{{secret:name}}`}</code>{' '}
-                          to avoid storing raw values.
-                          <a href="/settings/secrets" target="_blank" className="underline ml-0.5">Manage secrets</a>
+                          <span>Sensitive field — store as</span>
+                          <code className="bg-amber-50 border border-amber-200 rounded px-1 font-mono">{'{{secret:name}}'}</code>
+                          <span>to avoid exposing raw values.</span>
+                          <a href="/settings/secrets" target="_blank" className="underline font-medium">Manage secrets →</a>
                         </p>
                       )}
                     </div>
