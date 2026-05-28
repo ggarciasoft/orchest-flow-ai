@@ -85,9 +85,9 @@
 | Ollama model list dynamic | `llm.ollama.models` setting not surfaced in UI; models are hardcoded in provider |
 | ForEach loop body branching | Loop body is linear only; no conditional branching inside a loop iteration |
 | Workflow run history per workflow | Executions list is global; no per-workflow filtered view |
-| **Parallel fan-out** | When a node has multiple outgoing edges, all target nodes should execute and receive the source outputs. Currently only the first matching edge is followed. Needed for: `query → http` + `query → db-execute` running in parallel. |
-| **Form field regex validation** | Form builder text/email fields should support an optional `validationRegex` + `validationMessage`. Fill page validates on submit; engine rejects invalid submissions. |
-| **External trigger / webhook wait nodes** | See plan below. |
+| **Parallel fan-out** | ? Done � engine now walks all outgoing edges; all targets execute sequentially and outputs are merged |
+| **Form field regex validation** | ? Done � `validationRegex` + `validationMessage` on FormFieldDefinition; client + server validation |
+| **External trigger / webhook wait nodes** | ? Done � see plan below (all three items shipped) |
 
 ---
 
@@ -126,7 +126,7 @@
 | `isSensitive` node config fields — masked drawer inputs + `{{secret:name}}` suggestion | ✅ |
 | AI Workflow Assistant (`POST /api/workflows/ai-assist` + `AiAssistPanel` in designer) | ✅ |
 | Custom Form Nodes — form builder UI, `form.<slug>` dynamic node, fill page, resume integration | ✅ |
-| Backend unit tests | ✅ **379 / 379** |
+| Backend unit tests | ✅ **392 / 392** |
 | Frontend unit tests | ✅ **63 / 63** |
 | XML / JSDoc docs on all public APIs | ✅ |
 
@@ -178,3 +178,4 @@ Similar to `human.approval` but driven by an API call instead of a UI click.
 | Tests | Token generation, resume flow, timeout handling |
 
 _Update this file as items are resolved._
+
