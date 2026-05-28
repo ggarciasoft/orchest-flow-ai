@@ -34,6 +34,8 @@ if (!string.IsNullOrWhiteSpace(_notifierCs))
     builder.Services.AddScoped<IExecutionNotifier, SignalRExecutionNotifier>();
 
 builder.Services.AddScoped<OrchestFlowAI.Api.Services.WorkflowGenerationService>();
+builder.Services.AddSingleton<OrchestFlowAI.Api.Services.FormNodeRegistrar>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<OrchestFlowAI.Api.Services.FormNodeRegistrar>());
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 

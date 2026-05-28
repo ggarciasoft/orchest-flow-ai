@@ -6,6 +6,7 @@
     <RootNamespace>OrchestFlowAI.Api</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.5" />
     <ProjectReference Include="..\..\packages\OrchestFlowAI.Application\OrchestFlowAI.Application.csproj" />
     <ProjectReference Include="..\..\packages\OrchestFlowAI.Infrastructure\OrchestFlowAI.Infrastructure.csproj" />
     <ProjectReference Include="..\..\packages\OrchestFlowAI.Contracts\OrchestFlowAI.Contracts.csproj" />
