@@ -48,17 +48,24 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
       redirectToLogin();
       return new Promise<T>(() => {});
     }
-    // Extract structured error message from API response if available
-    const err = await res.json().catch(() => ({})) as Record<string, unknown>;
-    // ASP.NET validation errors have field-level messages in `errors`
-    const validationErrors = err.errors as Record<string, string[]> | undefined;
+    // Try JSON first (ASP.NET problem details / validation errors), fall back to plain text
+    const errText = await res.text();
+    let errJson: Record<string, unknown> = {};
+    try { errJson = JSON.parse(errText); } catch { /* plain-text response */ }
+    // ASP.NET validation errors: { errors: { Field: ["msg"] } }
+    const validationErrors = errJson.errors as Record<string, string[]> | undefined;
     if (validationErrors && typeof validationErrors === 'object') {
       const messages = Object.entries(validationErrors)
         .flatMap(([field, msgs]) => msgs.map(m => `${field}: ${m}`))
         .join('; ');
       throw new Error(messages);
     }
-    throw new Error((err as Record<string, string>).detail ?? (err as Record<string, string>).title ?? `HTTP ${res.status}`);
+    // Problem details: { detail } or { title }
+    const detail = (errJson.detail ?? errJson.title) as string | undefined;
+    if (detail) throw new Error(detail);
+    // Plain-text body (e.g. BadRequest("Slug is required."))
+    if (errText && errText.trim()) throw new Error(errText.trim());
+    throw new Error(`HTTP ${res.status}`);
   }
   // 204 No Content or empty body — return undefined rather than attempting to parse
   if (res.status === 204) return undefined as T;
