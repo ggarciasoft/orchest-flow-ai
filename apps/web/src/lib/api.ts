@@ -389,7 +389,22 @@ export interface NodeExecution { id: string; workflowExecutionId: string; nodeId
 export interface ExecutionTimeline { executionId: string; nodes: NodeExecution[]; }
 
 /** A pending or resolved human approval request. */
-export interface ApprovalRequest { id: string; workflowExecutionId: string; nodeExecutionId: string; status: string; payloadJson: string; requestedAt: string; respondedAt?: string; decision?: string; comment?: string; }
+export interface ApprovalRequest {
+  id: string;
+  workflowExecutionId: string;
+  nodeExecutionId: string;
+  status: string;
+  payloadJson: string;
+  requestedAt: string;
+  respondedAt?: string;
+  decision?: string;
+  comment?: string;
+  // Enriched context
+  workflowName?: string;
+  workflowId?: string;
+  workflowVersionNumber?: number;
+  formVersionNumber?: number;
+}
 
 /** Metadata for an uploaded document. */
 export interface DocumentMeta { id: string; filename: string; mimeType: string; sizeBytes: number; sha256: string; createdAt: string; }

@@ -114,6 +114,19 @@ export default function ApprovalDetailPage() {
             </span>
           )}
         </div>
+
+        {/* Workflow / form context */}
+        <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-slate-500">
+          {approval.workflowName && (
+            <span>Workflow: <span className="font-medium text-slate-700">{approval.workflowName}</span></span>
+          )}
+          {approval.workflowVersionNumber != null && (
+            <span>Workflow version: <span className="font-medium text-slate-700">v{approval.workflowVersionNumber}</span></span>
+          )}
+          {isFormApproval && approval.formVersionNumber != null && (
+            <span>Form version: <span className="font-medium text-slate-700">v{approval.formVersionNumber}</span></span>
+          )}
+        </div>
         <p className="text-xs text-gray-400 flex items-center gap-1">
           <Clock size={12} /> Requested: {formatDate(approval.requestedAt)}
         </p>

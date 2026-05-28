@@ -60,6 +60,13 @@ export default function ApprovalsPage() {
                       </span>
                     )}
                   </div>
+                  {(a.workflowName || a.workflowVersionNumber != null) && (
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {a.workflowName && <span>{a.workflowName}</span>}
+                      {a.workflowVersionNumber != null && <span className="ml-1">v{a.workflowVersionNumber}</span>}
+                      {isFormApproval && a.formVersionNumber != null && <span className="ml-2 text-violet-500">Form v{a.formVersionNumber}</span>}
+                    </p>
+                  )}
                   <Badge variant="warning">{statusLabel(a.status)}</Badge>
                 </div>
 
