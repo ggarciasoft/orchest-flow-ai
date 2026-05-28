@@ -494,7 +494,7 @@ Form nodes are dynamically registered at runtime � one node type per form you 
 
 > **Tip:** The form can also be filled via the public fill page: `/forms/<id>/fill?executionId=...&nodeExecutionId=...` (no login required). A link appears in the execution timeline when the node is waiting.
 
-> **Worker startup note:** Form nodes are registered at worker startup. If you create a new form while the worker is running, restart the worker to make the new `form.<slug>` type available. Hot-reload is a planned improvement.
+> **Hot-reload:** The worker polls the database every **30 seconds**. A new form created while the worker is running will be available as a `form.<slug>` node type within one polling interval — no restart required.
 
 **Using outputs downstream:**
 ```

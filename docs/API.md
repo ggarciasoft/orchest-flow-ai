@@ -589,7 +589,7 @@ On success (`204`): creates a `FormSubmission` record and resumes the paused wor
 | User submits form | `POST /api/forms/{id}/submit` creates a `FormSubmission` and resumes the execution via the resume queue |
 | Resume (after submit) | Returns `Succeeded` with each field value as a named output key |
 
-> **Worker startup note:** The worker loads form node types from the database at startup. If you create a new form while the worker is running, restart the worker for the new `form.<slug>` node to be available. Hot-reload is a planned improvement.
+> **Hot-reload:** The worker polls the database every **30 seconds** (`WorkerFormNodeRegistrar.RefreshIntervalSeconds`). New, updated, or deleted forms are reflected automatically — no worker restart required.
 
 
 ---

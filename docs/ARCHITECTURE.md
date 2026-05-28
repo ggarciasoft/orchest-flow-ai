@@ -324,3 +324,37 @@ CREATE INDEX ON "ExecutionQueue" ("TenantId");
 - Multi-tenant strategy (row-level vs schema-per-tenant)
 - Workflow versioning strategy
 - Engine durability model
+
+
+---
+
+## 10. Dynamic Form Node Registry & Hot-Reload
+
+Custom forms (`form.<slug>` node types) are user-defined at runtime. The engine must know about them before it can execute a workflow containing a form node.
+
+### How form nodes are registered
+
+| Process | Mechanism |
+|---------|-----------|
+| **API** (`OrchestFlowAI.Api`) | `FormNodeRegistrar` (hosted service) loads all forms at startup and re-registers after every create/update/delete in `FormsController`. Deleted forms are unregistered immediately. |
+| **Worker** (`OrchestFlowAI.Worker`) | `WorkerFormNodeRegistrar` (background service) loads all forms at startup, then **polls the database every 30 seconds** to sync additions, updates, and deletions. |
+
+### Hot-reload lifecycle
+
+```
+Form created/updated/deleted
+        ¦
+        ?
+API: FormNodeRegistrar.RefreshAsync()    ? immediate (synchronous after DB write)
+        ¦
+        ?
+Worker: WorkerFormNodeRegistrar polls    ? within 30 s (configurable via WorkerFormNodeRegistrar.RefreshIntervalSeconds)
+```
+
+### Key points
+
+- Both API and Worker share the same singleton `NodeRegistry` within their own process.
+- `NodeRegistry` uses `ConcurrentDictionary` — registration and lookup are thread-safe.
+- Re-registering an existing type (`Register` overwrites) is safe and idempotent.
+- Removed forms are unregistered via `Unregister(type)` — stale entries are cleaned from both nodes and descriptors dictionaries.
+- The 30-second polling interval means a workflow execution that starts within 30 s of a new form being created **may** still get "node type not found". This window is acceptable for typical usage.
