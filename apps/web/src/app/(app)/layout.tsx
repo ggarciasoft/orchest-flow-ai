@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { isAuthenticated, clearToken } from '@/lib/auth';
 import {
   LayoutDashboard, GitBranch, Play, CheckSquare,
-  FileText, Settings, LogOut, KeyRound, ClipboardList
+  FileText, Settings, LogOut, KeyRound, ClipboardList, Cpu
 } from 'lucide-react';
 
 type NavItem = {
@@ -28,6 +28,7 @@ const nav: NavItem[] = [
     label: 'Settings',
     icon: Settings,
     children: [
+      { href: '/settings/providers', label: 'AI Providers', icon: Cpu },
       { href: '/settings/secrets', label: 'Secrets', icon: KeyRound },
     ],
   },
