@@ -9,15 +9,28 @@ import {
   FileText, Settings, LogOut, KeyRound, ClipboardList
 } from 'lucide-react';
 
-const nav = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  children?: { href: string; label: string; icon: React.ElementType }[];
+};
+
+const nav: NavItem[] = [
   { href: '/dashboard',  label: 'Dashboard',  icon: LayoutDashboard },
   { href: '/workflows',  label: 'Workflows',   icon: GitBranch },
   { href: '/forms',      label: 'Forms',       icon: ClipboardList },
   { href: '/executions', label: 'Executions',  icon: Play },
   { href: '/approvals',  label: 'Approvals',   icon: CheckSquare },
   { href: '/documents',  label: 'Documents',   icon: FileText },
-  { href: '/settings',   label: 'Settings',    icon: Settings },
-  { href: '/settings/secrets', label: 'Secrets', icon: KeyRound },
+  {
+    href: '/settings',
+    label: 'Settings',
+    icon: Settings,
+    children: [
+      { href: '/settings/secrets', label: 'Secrets', icon: KeyRound },
+    ],
+  },
 ];
 
 /**
@@ -52,22 +65,47 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          {nav.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href || pathname.startsWith(href + '/');
+          {nav.map(({ href, label, icon: Icon, children }) => {
+            const active = pathname === href || (pathname.startsWith(href + '/') && !children?.some(c => pathname.startsWith(c.href)));
+            const childActive = children?.some(c => pathname === c.href || pathname.startsWith(c.href + '/'));
             return (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                  active
-                    ? 'bg-indigo-50 text-indigo-700 font-medium'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              <div key={href}>
+                <Link
+                  href={href}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                    active || childActive
+                      ? 'bg-indigo-50 text-indigo-700 font-medium'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  )}
+                >
+                  <Icon size={16} />
+                  {label}
+                </Link>
+                {/* Sub-items — shown when parent or a child is active */}
+                {children && (active || childActive) && (
+                  <div className="ml-4 mt-0.5 space-y-0.5 border-l border-slate-200 pl-3">
+                    {children.map(({ href: chref, label: clabel, icon: CIcon }) => {
+                      const cActive = pathname === chref || pathname.startsWith(chref + '/');
+                      return (
+                        <Link
+                          key={chref}
+                          href={chref}
+                          className={cn(
+                            'flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors',
+                            cActive
+                              ? 'bg-indigo-50 text-indigo-700 font-medium'
+                              : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                          )}
+                        >
+                          <CIcon size={13} />
+                          {clabel}
+                        </Link>
+                      );
+                    })}
+                  </div>
                 )}
-              >
-                <Icon size={16} />
-                {label}
-              </Link>
+              </div>
             );
           })}
         </nav>
