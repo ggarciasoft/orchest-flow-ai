@@ -69,6 +69,8 @@ export interface FormFieldDefinition {
   required?: boolean;
   placeholder?: string;
   options?: string[];
+  /** For select fields: output key from a previous node whose value is a JSON array of strings. Resolved at fill time. */
+  optionsFrom?: string;
 }
 
 /** A custom form definition for collecting user input during workflow execution. */

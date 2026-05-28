@@ -20,9 +20,10 @@ public sealed class FormsController : ControllerBase
     private readonly IFormRepository _forms;
     private readonly IExecutionQueue _queue;
     private readonly FormNodeRegistrar _registrar;
+    private readonly IExecutionRepository _executions;
 
-    public FormsController(IFormRepository forms, IExecutionQueue queue, FormNodeRegistrar registrar)
-    { _forms = forms; _queue = queue; _registrar = registrar; }
+    public FormsController(IFormRepository forms, IExecutionQueue queue, FormNodeRegistrar registrar, IExecutionRepository executions)
+    { _forms = forms; _queue = queue; _registrar = registrar; _executions = executions; }
 
     private Guid TenantId => Guid.Parse(User.FindFirst("tenant_id")?.Value ?? Guid.Empty.ToString());
     private Guid UserId => Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString());
@@ -115,14 +116,74 @@ public sealed class FormsController : ControllerBase
     /// Does not require authentication — allows external users to fill the form.
     /// </summary>
     [HttpGet("{id:guid}/fill"), AllowAnonymous]
-    public async Task<ActionResult<FormResponse>> Fill(Guid id, [FromQuery] Guid? executionId, [FromQuery] string? nodeExecutionId, CancellationToken ct)
+    public async Task<ActionResult> Fill(Guid id, [FromQuery] Guid? executionId, [FromQuery] string? nodeExecutionId, CancellationToken ct)
     {
-        // Fetch by id without tenant filter for anonymous access
-        // Find the form across all tenants (public fill page)
         var forms = await _forms.ListAllAsync(ct);
         var form = forms.FirstOrDefault(f => f.Id == id);
         if (form == null) return NotFound();
-        return Ok(ToResponse(form));
+
+        var fields = JsonSerializer.Deserialize<List<FormFieldDefinition>>(form.FieldsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                     ?? new List<FormFieldDefinition>();
+
+        // Resolve optionsFrom: substitute dynamic options from execution node outputs
+        if (executionId.HasValue && fields.Any(f => !string.IsNullOrEmpty(f.OptionsFrom)))
+        {
+            var nodeExecs = await _executions.GetNodeExecutionsAsync(executionId.Value, ct);
+            // Build flat map of all succeeded-node output keys -> raw JSON value
+            var outputMap = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+            foreach (var ne in nodeExecs.Where(n => n.Status == Domain.Enums.NodeExecutionStatus.Succeeded && n.OutputJson != null))
+            {
+                try
+                {
+                    var doc = JsonDocument.Parse(ne.OutputJson!);
+                    foreach (var prop in doc.RootElement.EnumerateObject())
+                        outputMap.TryAdd(prop.Name, prop.Value.GetRawText());
+                }
+                catch { /* skip malformed */ }
+            }
+
+            fields = fields.Select(f =>
+            {
+                if (string.IsNullOrEmpty(f.OptionsFrom) || !outputMap.TryGetValue(f.OptionsFrom, out var raw) || raw == null)
+                    return f;
+                try
+                {
+                    var doc = JsonDocument.Parse(raw);
+                    string[] resolved;
+                    if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                    {
+                        resolved = doc.RootElement.EnumerateArray()
+                            .Select(el => el.ValueKind == JsonValueKind.String
+                                ? el.GetString() ?? el.GetRawText()
+                                : el.GetRawText())
+                            .Where(s => !string.IsNullOrWhiteSpace(s))
+                            .ToArray();
+                    }
+                    else if (doc.RootElement.ValueKind == JsonValueKind.String)
+                    {
+                        var inner = JsonDocument.Parse(doc.RootElement.GetString()!);
+                        resolved = inner.RootElement.ValueKind == JsonValueKind.Array
+                            ? inner.RootElement.EnumerateArray().Select(el => el.GetString() ?? el.GetRawText()).ToArray()
+                            : new[] { doc.RootElement.GetString()! };
+                    }
+                    else { return f; }
+                    return f with { Options = resolved, OptionsFrom = null };
+                }
+                catch { return f; }
+            }).ToList();
+        }
+
+        return Ok(new
+        {
+            id = form.Id,
+            tenantId = form.TenantId,
+            name = form.Name,
+            slug = form.Slug,
+            description = form.Description,
+            fields,
+            createdAt = form.CreatedAt,
+            updatedAt = form.UpdatedAt,
+        });
     }
 
     // ──────────────────────────────────────────

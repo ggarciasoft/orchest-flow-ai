@@ -325,17 +325,46 @@ export default function FormBuilderPage({ params }: { params: Promise<{ id: stri
             )}
 
             {editingField.type === 'select' && (
-              <div className="space-y-1">
-                <label className="block text-xs font-medium text-slate-700">Options <span className="text-slate-400">(comma-separated)</span></label>
-                <input
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                  placeholder="Option A, Option B, Option C"
-                  value={(editingField.options ?? []).join(', ')}
-                  onChange={e => setEditingField(f => ({
-                    ...f,
-                    options: e.target.value.split(',').map(s => s.trim()).filter(Boolean),
-                  }))}
-                />
+              <div className="space-y-3">
+                {/* Toggle: static options vs dynamic from output key */}
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                    <input type="radio" name="optionsMode" checked={!editingField.optionsFrom}
+                      onChange={() => setEditingField(f => ({ ...f, optionsFrom: undefined }))}
+                    /> Static options
+                  </label>
+                  <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                    <input type="radio" name="optionsMode" checked={!!editingField.optionsFrom}
+                      onChange={() => setEditingField(f => ({ ...f, optionsFrom: '', options: [] }))}
+                    /> Load from workflow output
+                  </label>
+                </div>
+
+                {!editingField.optionsFrom ? (
+                  <div className="space-y-1">
+                    <label className="block text-xs font-medium text-slate-700">Options <span className="text-slate-400">(comma-separated)</span></label>
+                    <input
+                      className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                      placeholder="Option A, Option B, Option C"
+                      value={(editingField.options ?? []).join(', ')}
+                      onChange={e => setEditingField(f => ({
+                        ...f,
+                        options: e.target.value.split(',').map(s => s.trim()).filter(Boolean),
+                      }))}
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <label className="block text-xs font-medium text-slate-700">Output key <span className="text-red-500">*</span></label>
+                    <input
+                      className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                      placeholder="e.g. rows  or  categories"
+                      value={editingField.optionsFrom ?? ''}
+                      onChange={e => setEditingField(f => ({ ...f, optionsFrom: e.target.value }))}
+                    />
+                    <p className="text-xs text-slate-400">The output key from a previous node whose value is a JSON array. E.g. a <code className="bg-slate-100 px-1 rounded">data.db-query</code> node outputting <code className="bg-slate-100 px-1 rounded">rows=["Food","Transport"]</code>.</p>
+                  </div>
+                )}
               </div>
             )}
 
