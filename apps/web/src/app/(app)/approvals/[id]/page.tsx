@@ -41,8 +41,12 @@ export default function ApprovalDetailPage() {
   const isFormApproval = !!payload._formId;
   const formId = payload._formId as string | undefined;
   const formName = payload._formName as string | undefined;
+  // _formFields can be a string (double-encoded JSON) or already a parsed array
   const formFields: FormFieldDefinition[] = (() => {
-    try { return JSON.parse(payload._formFields as string ?? '[]'); } catch { return []; }
+    const raw = payload._formFields;
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw as FormFieldDefinition[];
+    try { return JSON.parse(raw as string); } catch { return []; }
   })();
   const title = isFormApproval
     ? (formName ?? 'Form Submission Required')
@@ -122,7 +126,12 @@ export default function ApprovalDetailPage() {
       </div>
 
       {/* ── Form node: render form fields ── */}
-      {isFormApproval && approval.status === 'Pending' && formFields.length > 0 && (
+      {isFormApproval && approval.status?.toLowerCase() === 'pending' && formFields.length === 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+          Form fields could not be loaded. The form may have been deleted or its definition is unavailable.
+        </div>
+      )}
+      {isFormApproval && approval.status?.toLowerCase() === 'pending' && formFields.length > 0 && (
         <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-5">
           <FormRenderer
             name={formName ?? 'Form'}
@@ -163,7 +172,7 @@ export default function ApprovalDetailPage() {
             </div>
           )}
 
-          {approval.status === 'Pending' && (
+          {approval.status?.toLowerCase() === 'pending' && (
             <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
               <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wide">Decision</h3>
               <textarea
