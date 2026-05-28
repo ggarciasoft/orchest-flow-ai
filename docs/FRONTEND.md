@@ -211,3 +211,36 @@ Every screen explicitly handles:
 7. Avoid layout shift: reserve space with skeletons.
 8. No `any` in TypeScript; resolve types through the generated client or local Zod schemas.
 
+
+---
+
+## Forms Builder
+
+### Forms List (`/forms`)
+
+- Card grid of all defined forms showing name, `form.<slug>` node type, field count, created date
+- Actions: **Edit** (? builder), **Delete** (with confirmation), **Copy node type** (`form.<slug>` to clipboard)
+- **New Form** button ? `/forms/new`
+
+### Form Builder (`/forms/[id]` and `/forms/new`)
+
+Three-region layout:
+
+1. **Left panel** — metadata: Name, Slug (auto-generated, editable), Description. Shows live preview of node type: `form.<slug>`
+2. **Main panel** — field list with reorder (up/down arrows), add field, edit inline
+3. **Field editor** — Key (identifier), Label, Type, Required toggle, Placeholder, Options (select)
+
+Top bar: **Save**, **Preview** (modal showing rendered form), **Back**
+
+### Form Fill Page (`/forms/[id]/fill`)
+
+Standalone page — outside the `(app)` auth layout. Accessible without login via a link embedded in the execution timeline.
+
+- Fetches schema from `GET /api/forms/{id}/fill?executionId=&nodeExecutionId=`
+- Renders fields by type: text/number/email/date inputs, checkbox for boolean, select dropdown
+- Submit ? `POST /api/forms/{id}/submit`
+- Success state: "Form submitted. You can close this page."
+
+### Execution Timeline Integration
+
+When a `form.*` node is in `WaitingForApproval` state, the execution timeline shows a **"Fill form ?"** link pointing to the fill page with the correct `executionId` and `nodeExecutionId` query params.

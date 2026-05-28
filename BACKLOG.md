@@ -122,7 +122,8 @@
 | Secrets Vault UI (`/settings/secrets`) — list, add, rotate, delete | ✅ |
 | `isSensitive` node config fields — masked drawer inputs + `{{secret:name}}` suggestion | ✅ |
 | AI Workflow Assistant (`POST /api/workflows/ai-assist` + `AiAssistPanel` in designer) | ✅ |
-| Backend unit tests | ✅ **360 / 360** |
+| Custom Form Nodes — form builder UI, `form.<slug>` dynamic node, fill page, resume integration | ✅ |
+| Backend unit tests | ✅ **379 / 379** |
 | Frontend unit tests | ✅ **63 / 63** |
 | XML / JSDoc docs on all public APIs | ✅ |
 

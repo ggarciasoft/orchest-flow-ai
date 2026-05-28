@@ -461,3 +461,49 @@ Presets are **tenant-scoped** ï¿½ each tenant has its own isolated library. Pres
 Any string config field in a node can reference a secret from the vault using the {{secret:name}} syntax. The engine resolves these before passing config to the node.
 
 Example: set piKey to {{secret:openai-key}} and the engine will substitute the decrypted value at runtime. Secrets are managed via the Settings page or the /api/secrets endpoints.
+
+---
+
+## Forms
+
+Form nodes are dynamically registered at runtime — one node type per form you create in the **Forms** builder (`/forms`). They appear in the designer palette under the **Forms** category.
+
+### `form.<slug>`  ? Dynamic (created via Forms UI)
+
+**Category:** forms
+**Description:** Pauses workflow execution and waits for a user to fill out a custom form. Each form field becomes an output key once submitted.
+
+**Example:** A form named "Expense Review" with slug `expense-review` registers as node type `form.expense-review`.
+
+| Input | Type | Description |
+|-------|------|-------------|
+| *(one per field)* | String | Pre-filled values (optional, passed in on resume) |
+
+| Output | Type | Description |
+|--------|------|-------------|
+| *(one per field)* | String | User-submitted value, e.g. `amount`, `category`, `notes` |
+| `_formSubmitted` | Boolean | `true` once the form has been submitted |
+
+**Config:** None — behaviour is fully defined by the form schema.
+
+**Engine behaviour:**
+1. First execution ? returns `WaitingForApproval`; workflow pauses
+2. A fill link (`/forms/<id>/fill?executionId=...&nodeExecutionId=...`) is shown in the execution timeline
+3. User navigates to the link, fills the form, submits
+4. Engine resumes ? `Succeeded` with each field value as an output
+
+**Using outputs downstream:**
+```
+{{amount}}    ? numeric value submitted by user
+{{category}}  ? selected option
+{{notes}}     ? free-text notes
+```
+
+**Example workflow:**
+```
+Gmail Read ? ForEach (loopMode=true) ? ai.extract ? form.expense-review ? db-execute ? ForEachEnd ? End
+```
+The form node acts as a human review gate — the extracted AI data can be reviewed and corrected before being saved.
+
+**Field types supported:** `text` | `number` | `select` | `date` | `email` | `boolean`
+
