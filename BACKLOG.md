@@ -85,6 +85,9 @@
 | Ollama model list dynamic | `llm.ollama.models` setting not surfaced in UI; models are hardcoded in provider |
 | ForEach loop body branching | Loop body is linear only; no conditional branching inside a loop iteration |
 | Workflow run history per workflow | Executions list is global; no per-workflow filtered view |
+| **Parallel fan-out** | When a node has multiple outgoing edges, all target nodes should execute and receive the source outputs. Currently only the first matching edge is followed. Needed for: `query → http` + `query → db-execute` running in parallel. |
+| **Form field regex validation** | Form builder text/email fields should support an optional `validationRegex` + `validationMessage`. Fill page validates on submit; engine rejects invalid submissions. |
+| **External trigger / webhook wait nodes** | See plan below. |
 
 ---
 
@@ -128,5 +131,50 @@
 | XML / JSDoc docs on all public APIs | ✅ |
 
 ---
+
+## 🟡 Plan: External Trigger / Webhook Wait Nodes
+
+Three related capabilities, best implemented together:
+
+### A. External Trigger — start a workflow from outside
+
+A workflow with `TriggerType = Webhook` already supports `POST /api/webhooks/{id}` to start it. This just needs surfacing better in the UI and documentation. **Mostly done.**
+
+### B. `integration.wait-for-webhook` — pause and wait for external data
+
+A new node type that pauses the workflow and waits for a specific external event before proceeding. Use case: "start the approval process, then wait for the external ERP system to confirm before saving."
+
+**How it works:**
+1. Node executes, generates a unique `correlationToken` (UUID), returns `WaitingForApproval`
+2. Workflow pauses. Token is stored in `NodeExecution.OutputJson`.
+3. External system POSTs to `POST /api/webhooks/resume/{correlationToken}` with any payload it wants
+4. Engine resumes; the payload becomes node outputs available to downstream nodes
+
+**Config:** `timeoutSeconds` (optional, default none), `expectedFields` (optional list of field names to document what the external system should send)
+
+**Outputs:** whatever fields the external system POSTs + `_resumedAt`, `_correlationToken`
+
+### C. `integration.external-gate` — let external system approve/reject
+
+Similar to `human.approval` but driven by an API call instead of a UI click.
+
+**How it works:**
+1. Node generates a token, pauses
+2. External system calls `POST /api/webhooks/gate/{token}` with `{ "approved": true, "reason": "...", "data": {...} }`
+3. If `approved=true`: engine follows the approved edge; `data` fields flow downstream
+4. If `approved=false`: engine follows the rejected edge (or stops if none)
+
+### Implementation plan
+
+| Component | Work |
+|-----------|------|
+| `WaitForWebhookNode` | New node: generates token, returns `WaitingForApproval` |
+| `ExternalGateNode` | New node: generates token, returns `WaitingForApproval` with approve/reject outputs |
+| `CorrelationToken` entity | `Id`, `ExecutionId`, `NodeExecutionId`, `Token` (unique), `Kind` (wait/gate), `CreatedAt`, `ExpiresAt?` |
+| `POST /api/webhooks/resume/{token}` | Public endpoint; validates token, resumes execution with body as outputs |
+| `POST /api/webhooks/gate/{token}` | Public endpoint; accepts `approved`, `reason`, `data`; resumes on approved edge |
+| Designer | New `integrations` category nodes visible in palette |
+| Execution timeline | Show token + copyable resume URL when node is paused |
+| Tests | Token generation, resume flow, timeout handling |
 
 _Update this file as items are resolved._
