@@ -94,7 +94,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                           className={cn(
                             'flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors',
                             cActive
-                              ? 'bg-indigo-50 text-indigo-700 font-medium'
+                              ? 'bg-violet-50 text-violet-700 font-medium'
                               : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
                           )}
                         >
