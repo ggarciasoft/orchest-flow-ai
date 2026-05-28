@@ -49,7 +49,15 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
       return new Promise<T>(() => {});
     }
     // Extract structured error message from API response if available
-    const err = await res.json().catch(() => ({}));
+    const err = await res.json().catch(() => ({})) as Record<string, unknown>;
+    // ASP.NET validation errors have field-level messages in `errors`
+    const validationErrors = err.errors as Record<string, string[]> | undefined;
+    if (validationErrors && typeof validationErrors === 'object') {
+      const messages = Object.entries(validationErrors)
+        .flatMap(([field, msgs]) => msgs.map(m => `${field}: ${m}`))
+        .join('; ');
+      throw new Error(messages);
+    }
     throw new Error((err as Record<string, string>).detail ?? (err as Record<string, string>).title ?? `HTTP ${res.status}`);
   }
   // 204 No Content or empty body — return undefined rather than attempting to parse
@@ -304,10 +312,10 @@ export const api = {
     /** Fetches a single form by id. */
     get: (id: string) => apiFetch<WorkflowForm>(`/api/forms/${id}`),
     /** Creates a new form. */
-    create: (data: { name: string; description?: string; fields: FormFieldDefinition[] }) =>
+    create: (data: { name: string; slug: string; description?: string; fields: FormFieldDefinition[] }) =>
       apiFetch<WorkflowForm>('/api/forms', { method: 'POST', body: JSON.stringify(data) }),
     /** Updates an existing form. */
-    update: (id: string, data: { name: string; description?: string; fields: FormFieldDefinition[] }) =>
+    update: (id: string, data: { name: string; slug: string; description?: string; fields: FormFieldDefinition[] }) =>
       apiFetch<WorkflowForm>(`/api/forms/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     /** Deletes a form. */
     delete: (id: string) => apiFetch<void>(`/api/forms/${id}`, { method: 'DELETE' }),

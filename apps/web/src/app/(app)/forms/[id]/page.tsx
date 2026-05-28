@@ -79,7 +79,7 @@ export default function FormBuilderPage({ params }: { params: Promise<{ id: stri
 
   const saveMutation = useMutation({
     mutationFn: () => {
-      const data = { name, description, fields };
+      const data = { name, slug, description, fields };
       return isNew ? api.forms.create(data) : api.forms.update(id, data);
     },
     onSuccess: (saved) => {
