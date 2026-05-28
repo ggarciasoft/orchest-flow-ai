@@ -15,7 +15,7 @@ import { PageHeader, Badge, EmptyState, statusLabel } from '@/components/ui';
 export default function ApprovalsPage() {
   const qc = useQueryClient();
   const [comment, setComment] = useState<Record<string, string>>({});
-  const { data, isLoading } = useQuery({ queryKey: ['approvals', 'Pending'], queryFn: () => api.approvals.list('Pending') });
+  const { data, isLoading } = useQuery({ queryKey: ['approvals', 'Pending'], queryFn: () => api.approvals.list('Pending'), refetchInterval: 10_000 });
 
   const approve = useMutation({
     mutationFn: ({ id, c }: { id: string; c?: string }) => api.approvals.approve(id, c),

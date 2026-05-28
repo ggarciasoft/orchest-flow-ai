@@ -7,7 +7,7 @@ import { Play } from 'lucide-react';
 import { PageHeader, Badge, statusVariant, statusLabel, EmptyState } from '@/components/ui';
 
 export default function ExecutionsPage() {
-  const { data, isLoading } = useQuery({ queryKey: ['executions'], queryFn: () => api.executions.list() });
+  const { data, isLoading } = useQuery({ queryKey: ['executions'], queryFn: () => api.executions.list(), refetchInterval: 10_000 });
 
   return (
     <div>

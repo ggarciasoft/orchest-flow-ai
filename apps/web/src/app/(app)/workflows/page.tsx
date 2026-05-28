@@ -16,7 +16,7 @@ export default function WorkflowsPage() {
   const [cloningId, setCloningId] = useState<string | null>(null);
   const router = useRouter();
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery({ queryKey: ['workflows', search], queryFn: () => api.workflows.list({ search }) });
+  const { data, isLoading } = useQuery({ queryKey: ['workflows', search], queryFn: () => api.workflows.list({ search }), refetchOnWindowFocus: true });
 
   const cloneMutation = useMutation({
     mutationFn: (id: string) => api.workflows.clone(id),
