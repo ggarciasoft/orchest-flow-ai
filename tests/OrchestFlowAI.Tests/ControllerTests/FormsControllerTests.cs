@@ -13,6 +13,7 @@ using OrchestFlowAI.Domain.Entities;
 using OrchestFlowAI.Engine.Registry;
 using OrchestFlowAI.Infrastructure.Persistence;
 using OrchestFlowAI.Infrastructure.Repositories;
+using OrchestFlowAI.SDK.Interfaces;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -54,7 +55,9 @@ public sealed class FormsControllerTests
 
     private static FormNodeRegistrar BuildRegistrar(IFormRepository? repo = null)
     {
-        var registry = Mock.Of<INodeRegistry>();
+        var registryMock = new Mock<INodeRegistry>();
+        registryMock.Setup(r => r.GetAllDescriptors()).Returns(Array.Empty<IWorkflowNodeDescriptor>());
+        var registry = registryMock.Object;
         var logger = NullLogger<FormNodeRegistrar>.Instance;
 
         if (repo == null)

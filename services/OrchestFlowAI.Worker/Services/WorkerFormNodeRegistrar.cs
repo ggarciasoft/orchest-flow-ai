@@ -8,15 +8,22 @@ using OrchestFlowAI.Nodes.Human;
 namespace OrchestFlowAI.Worker.Services;
 
 /// <summary>
-/// Loads and registers all custom form nodes into the engine registry at worker startup.
-/// Mirrors the same service in OrchestFlowAI.Api so that the execution worker can resolve
-/// form.{slug} node types when running workflows.
+/// Loads and hot-reloads custom form nodes into the engine registry.
+///
+/// On startup: loads all forms from the DB and registers them as form.{slug} node types.
+/// Polling loop: every <see cref="RefreshIntervalSeconds"/> seconds, re-loads all forms,
+/// unregisters removed/changed entries, and registers new/updated ones.
+/// This means a new form created while the worker is running will be available within
+/// one polling interval — no worker restart required.
 /// </summary>
-public sealed class WorkerFormNodeRegistrar : IHostedService
+public sealed class WorkerFormNodeRegistrar : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly INodeRegistry _registry;
     private readonly ILogger<WorkerFormNodeRegistrar> _logger;
+
+    /// <summary>How often the registry refreshes from the database (default 30 s).</summary>
+    public static int RefreshIntervalSeconds { get; set; } = 30;
 
     public WorkerFormNodeRegistrar(
         IServiceScopeFactory scopeFactory,
@@ -28,25 +35,61 @@ public sealed class WorkerFormNodeRegistrar : IHostedService
         _logger = logger;
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        // Initial load — run before ExecutionWorker starts dequeuing jobs
+        await RefreshAsync(stoppingToken);
+
+        // Polling loop
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(RefreshIntervalSeconds), stoppingToken);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+
+            await RefreshAsync(stoppingToken);
+        }
+    }
+
+    private async Task RefreshAsync(CancellationToken ct)
     {
         try
         {
             using var scope = _scopeFactory.CreateScope();
             var repo = scope.ServiceProvider.GetRequiredService<IFormRepository>();
-            var forms = await repo.ListAllAsync(cancellationToken);
-            foreach (var form in forms)
+            var forms = await repo.ListAllAsync(ct);
+
+            // Build a set of currently known form types from the DB
+            var dbTypes = new HashSet<string>(forms.Select(f => $"form.{f.Slug}"));
+
+            // Unregister any form nodes that no longer exist in the DB
+            var existingFormDescriptors = _registry.GetAllDescriptors()
+                .Where(d => d.Type.StartsWith("form.", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            foreach (var descriptor in existingFormDescriptors)
             {
-                _registry.Register(new DynamicFormNode(form), new DynamicFormNodeDescriptor(form));
+                if (!dbTypes.Contains(descriptor.Type))
+                {
+                    _registry.Unregister(descriptor.Type);
+                    _logger.LogInformation("WorkerFormNodeRegistrar: unregistered removed form node {Type}", descriptor.Type);
+                }
             }
-            _logger.LogInformation("WorkerFormNodeRegistrar: registered {Count} form nodes.", forms.Count);
+
+            // Register / re-register all current forms (Register overwrites in ConcurrentDictionary)
+            foreach (var form in forms)
+                _registry.Register(new DynamicFormNode(form), new DynamicFormNodeDescriptor(form));
+
+            _logger.LogDebug("WorkerFormNodeRegistrar: refreshed {Count} form nodes.", forms.Count);
         }
         catch (Exception ex)
         {
-            // Non-fatal at startup (DB may not be ready yet), but log so it's visible
-            _logger.LogWarning(ex, "WorkerFormNodeRegistrar: failed to load form nodes at startup.");
+            _logger.LogWarning(ex, "WorkerFormNodeRegistrar: failed to refresh form nodes.");
         }
     }
-
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

@@ -16,13 +16,18 @@ public sealed class NodeRegistry : INodeRegistry
     public IReadOnlyCollection<IWorkflowNodeDescriptor> GetAllDescriptors() => _descriptors.Values.ToList().AsReadOnly();
 
     /// <summary>
-/// Registers a workflow node and its related descriptor.
-/// </summary>
-/// <param name="node">The workflow node to register.</param>
-/// <param name="descriptor">The descriptor providing metadata about the node.</param>
-public void Register(IWorkflowNode node, IWorkflowNodeDescriptor descriptor)
+    /// Registers a workflow node and its related descriptor.
+    /// </summary>
+    public void Register(IWorkflowNode node, IWorkflowNodeDescriptor descriptor)
     {
         _nodes[node.Type] = node;
         _descriptors[descriptor.Type] = descriptor;
+    }
+
+    /// <summary>Removes a node and its descriptor from the registry. No-op if not found.</summary>
+    public void Unregister(string type)
+    {
+        _nodes.TryRemove(type, out _);
+        _descriptors.TryRemove(type, out _);
     }
 }

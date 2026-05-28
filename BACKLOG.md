@@ -88,7 +88,7 @@
 | **Parallel fan-out** | ? Done � engine now walks all outgoing edges; all targets execute sequentially and outputs are merged |
 | **Form field regex validation** | ? Done � `validationRegex` + `validationMessage` on FormFieldDefinition; client + server validation |
 | **External trigger / webhook wait nodes** | ✅ Done — see plan below (all three items shipped) |
-| Worker doesn't reload form nodes when a new form is created after startup | When a new form is created while the worker is running, the new `form.{slug}` node type won't be available until the worker restarts. Needs a polling mechanism or pub/sub notification to the worker. |
+| Worker doesn't reload form nodes when a new form is created after startup | ✅ Done — `WorkerFormNodeRegistrar` now polls the DB every 30 s; new/updated/deleted forms are reflected without a restart. |
 
 ---
 

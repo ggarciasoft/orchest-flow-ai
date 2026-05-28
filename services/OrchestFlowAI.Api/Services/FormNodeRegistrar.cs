@@ -8,8 +8,9 @@ using OrchestFlowAI.Nodes.Human;
 namespace OrchestFlowAI.Api.Services;
 
 /// <summary>
-/// Loads and registers all custom form nodes at startup and provides an on-demand refresh
-/// method called by <see cref="Controllers.FormsController"/> after create/update/delete.
+/// Loads and registers all custom form nodes at API startup.
+/// RefreshAsync is called by FormsController after every create/update/delete
+/// to keep the registry and node catalog in sync immediately.
 /// </summary>
 public sealed class FormNodeRegistrar : IHostedService
 {
@@ -44,24 +45,43 @@ public sealed class FormNodeRegistrar : IHostedService
         }
         catch (Exception ex)
         {
-            // Non-fatal: forms may not have been seeded yet (e.g. no DB at startup)
             _logger.LogWarning(ex, "FormNodeRegistrar: failed to load form nodes at startup.");
         }
     }
 
+    /// <summary>
+    /// Full refresh for a tenant: unregisters deleted form nodes, registers new/updated ones.
+    /// Called by FormsController after any create/update/delete.
+    /// </summary>
     public async Task RefreshAsync(Guid tenantId, CancellationToken ct = default)
     {
         using var scope = _scopeFactory.CreateScope();
         var repo = scope.ServiceProvider.GetRequiredService<IFormRepository>();
-        var forms = await repo.ListAsync(tenantId, ct);
-        foreach (var form in forms)
+        var forms = await repo.ListAllAsync(ct);
+
+        // Determine which form types should exist for this tenant
+        var tenantForms = forms.Where(f => f.TenantId == tenantId).ToList();
+        var expectedTypes = tenantForms.Select(f => $"form.{f.Slug}").ToHashSet();
+
+        // Unregister stale form types for this tenant
+        var stale = _registry.GetAllDescriptors()
+            .Where(d => d.Type.StartsWith("form.", StringComparison.OrdinalIgnoreCase)
+                     && !expectedTypes.Contains(d.Type))
+            .ToList();
+
+        foreach (var d in stale)
+        {
+            _registry.Unregister(d.Type);
+            _logger.LogInformation("FormNodeRegistrar: unregistered stale form node {Type}", d.Type);
+        }
+
+        // Register / re-register current forms
+        foreach (var form in tenantForms)
             Register(form);
     }
 
     private void Register(OrchestFlowAI.Domain.Entities.Form form)
     {
-        var node = new DynamicFormNode(form);
-        var descriptor = new DynamicFormNodeDescriptor(form);
-        _registry.Register(node, descriptor);
+        _registry.Register(new DynamicFormNode(form), new DynamicFormNodeDescriptor(form));
     }
 }
