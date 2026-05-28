@@ -13,5 +13,9 @@ public sealed record FormFieldDefinition(
     /// Resolved at fill-page load time by reading the execution's node outputs.
     /// Example: if a db-query node outputs rows=["Food","Transport","Other"], set optionsFrom="rows".
     /// </summary>
-    string? OptionsFrom = null
+    string? OptionsFrom = null,
+    /// <summary>Optional regex pattern applied to the submitted value. If the value does not match, the submission is rejected.</summary>
+    string? ValidationRegex = null,
+    /// <summary>Human-readable message returned when ValidationRegex does not match.</summary>
+    string? ValidationMessage = null
 );

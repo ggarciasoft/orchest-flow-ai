@@ -310,3 +310,22 @@ public sealed class StubSecretRepository : ISecretRepository
     public Task DeleteAsync(Guid id, Guid tenantId, CancellationToken ct = default)
     { _store.RemoveAll(s => s.Id == id && s.TenantId == tenantId); return Task.CompletedTask; }
 }
+
+/// <summary>In-memory stub implementation of <see cref="ICorrelationTokenRepository"/>.</summary>
+public sealed class StubCorrelationTokenRepository : ICorrelationTokenRepository
+{
+    private readonly List<CorrelationToken> _store = new();
+
+    public Task<CorrelationToken> CreateAsync(CorrelationToken token, CancellationToken ct = default)
+    { _store.Add(token); return Task.FromResult(token); }
+
+    public Task<CorrelationToken?> GetByTokenAsync(string token, CancellationToken ct = default)
+        => Task.FromResult(_store.FirstOrDefault(t => t.Token == token));
+
+    public Task UpdateAsync(CorrelationToken token, CancellationToken ct = default)
+    {
+        var i = _store.FindIndex(t => t.Id == token.Id);
+        if (i >= 0) _store[i] = token;
+        return Task.CompletedTask;
+    }
+}

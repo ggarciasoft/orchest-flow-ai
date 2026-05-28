@@ -21,6 +21,7 @@ export default function FormFillPage({ params }: { params: Promise<{ id: string 
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const { data: form, isLoading, error } = useQuery<WorkflowForm>({
     queryKey: ['forms', id, 'fill', executionId, nodeExecutionId],
@@ -41,16 +42,35 @@ export default function FormFillPage({ params }: { params: Promise<{ id: string 
 
   const handleChange = (key: string, value: unknown) => {
     setValues(prev => ({ ...prev, [key]: value }));
+    // Clear per-field error on change
+    setFieldErrors(prev => { const next = { ...prev }; delete next[key]; return next; });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
-    // Check required fields
     if (form) {
       const missing = form.fields.filter(f => f.required && !values[f.key] && values[f.key] !== false);
       if (missing.length > 0) {
         setSubmitError(`Please fill in required fields: ${missing.map(f => f.label).join(', ')}`);
+        return;
+      }
+      // Client-side regex validation
+      const newFieldErrors: Record<string, string> = {};
+      for (const field of form.fields) {
+        if (!field.validationRegex) continue;
+        const val = values[field.key];
+        if (typeof val !== 'string' || val === '') continue;
+        try {
+          if (!new RegExp(field.validationRegex).test(val)) {
+            newFieldErrors[field.key] = field.validationMessage ?? 'Invalid format';
+          }
+        } catch {
+          // ignore malformed regex on client
+        }
+      }
+      if (Object.keys(newFieldErrors).length > 0) {
+        setFieldErrors(newFieldErrors);
         return;
       }
     }
@@ -89,6 +109,7 @@ export default function FormFillPage({ params }: { params: Promise<{ id: string 
               fields={form.fields}
               values={values}
               onChange={handleChange}
+              fieldErrors={fieldErrors}
             />
 
             {submitError && (

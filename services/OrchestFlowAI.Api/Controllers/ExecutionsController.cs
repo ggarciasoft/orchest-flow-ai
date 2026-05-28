@@ -105,7 +105,25 @@ public sealed class ExecutionsController : ControllerBase
         var e = await _executions.GetAsync(id, ct);
         if (e == null || e.TenantId != TenantId) return NotFound();
         var nodes = await _executions.GetNodeExecutionsAsync(id, ct);
-        var nodeResponses = nodes.Select(n => new NodeExecutionResponse(n.Id, n.WorkflowExecutionId, n.NodeId, n.NodeType, n.Status.ToString(), n.StartedAt, n.CompletedAt, n.InputJson, n.OutputJson, n.ErrorMessage, n.RetryCount, n.Step)).ToList();
+        var nodeResponses = nodes.Select(n =>
+        {
+            string? corrToken = null;
+            string? resumeUrl = null;
+            if (n.OutputJson != null)
+            {
+                try
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(n.OutputJson);
+                    if (doc.RootElement.TryGetProperty("_correlationToken", out var ctEl))
+                    {
+                        corrToken = ctEl.GetString();
+                        resumeUrl = $"/api/webhooks/resume/{corrToken}";
+                    }
+                }
+                catch { /* ignore malformed JSON */ }
+            }
+            return new NodeExecutionResponse(n.Id, n.WorkflowExecutionId, n.NodeId, n.NodeType, n.Status.ToString(), n.StartedAt, n.CompletedAt, n.InputJson, n.OutputJson, n.ErrorMessage, n.RetryCount, n.Step, corrToken, resumeUrl);
+        }).ToList();
         return Ok(new ExecutionTimelineResponse(id, nodeResponses));
     }
 }

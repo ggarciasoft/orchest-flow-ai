@@ -3,7 +3,7 @@ import { useState, useEffect, use } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { api, FormFieldDefinition, WorkflowForm } from '@/lib/api';
-import { ArrowLeft, Plus, ArrowUp, ArrowDown, Pencil, Trash2, Eye, Save } from 'lucide-react';
+import { ArrowLeft, Plus, ArrowUp, ArrowDown, Pencil, Trash2, Eye, Save, FlaskConical } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import FormRenderer from '../_components/FormRenderer';
 
@@ -50,6 +50,8 @@ export default function FormBuilderPage({ params }: { params: Promise<{ id: stri
   const [editingField, setEditingField] = useState<FormFieldDefinition>(emptyField());
   const [showPreview, setShowPreview] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [regexTestValue, setRegexTestValue] = useState('');
+  const [showRegexTest, setShowRegexTest] = useState(false);
 
   // Load existing form
   const { data: form } = useQuery<WorkflowForm>({
@@ -93,11 +95,15 @@ export default function FormBuilderPage({ params }: { params: Promise<{ id: stri
   const openNew = () => {
     setEditingField(emptyField());
     setEditingIndex(fields.length); // sentinel = new
+    setRegexTestValue('');
+    setShowRegexTest(false);
   };
 
   const openEdit = (idx: number) => {
     setEditingField({ ...fields[idx] });
     setEditingIndex(idx);
+    setRegexTestValue('');
+    setShowRegexTest(false);
   };
 
   const saveField = () => {
@@ -321,6 +327,52 @@ export default function FormBuilderPage({ params }: { params: Promise<{ id: stri
                   value={editingField.placeholder ?? ''}
                   onChange={e => setEditingField(f => ({ ...f, placeholder: e.target.value }))}
                 />
+              </div>
+            )}
+
+            {(editingField.type === 'text' || editingField.type === 'number' || editingField.type === 'email') && (
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <label className="block text-xs font-medium text-slate-700">Regex validation</label>
+                  <div className="flex gap-2">
+                    <input
+                      className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                      placeholder="^[A-Za-z]+$"
+                      value={editingField.validationRegex ?? ''}
+                      onChange={e => setEditingField(f => ({ ...f, validationRegex: e.target.value || undefined }))}
+                    />
+                    <button
+                      type="button"
+                      title="Test regex"
+                      onClick={() => { setShowRegexTest(v => !v); setRegexTestValue(''); }}
+                      className="flex items-center gap-1 px-3 py-2 text-xs rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                    >
+                      <FlaskConical size={13} /> Test
+                    </button>
+                  </div>
+                  {showRegexTest && editingField.validationRegex && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                        placeholder="Enter sample value…"
+                        value={regexTestValue}
+                        onChange={e => setRegexTestValue(e.target.value)}
+                      />
+                      <span className="text-lg">
+                        {regexTestValue === '' ? '—' : (() => { try { return new RegExp(editingField.validationRegex!).test(regexTestValue) ? '✅' : '❌'; } catch { return '⚠️'; } })()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-medium text-slate-700">Validation message</label>
+                  <input
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    placeholder="Invalid format"
+                    value={editingField.validationMessage ?? ''}
+                    onChange={e => setEditingField(f => ({ ...f, validationMessage: e.target.value || undefined }))}
+                  />
+                </div>
               </div>
             )}
 

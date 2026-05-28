@@ -41,6 +41,8 @@ RegisterNode<TranslationNode, TranslationNodeDescriptor>(services);
         RegisterNode<SlackNotifyNode, SlackNotifyNodeDescriptor>(services);
         RegisterNode<WebhookOutNode, WebhookOutNodeDescriptor>(services);
         RegisterNode<SendEmailNode, SendEmailNodeDescriptor>(services);
+        RegisterNode<WaitForWebhookNode, WaitForWebhookNodeDescriptor>(services);
+        RegisterNode<ExternalGateNode, ExternalGateNodeDescriptor>(services);
 
         services.AddHttpClient();
         services.AddHostedService<NodeRegistrationHostedService>();

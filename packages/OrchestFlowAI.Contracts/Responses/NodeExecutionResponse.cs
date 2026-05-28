@@ -1,2 +1,2 @@
 namespace OrchestFlowAI.Contracts.Responses;
-public sealed record NodeExecutionResponse(Guid Id, Guid WorkflowExecutionId, string NodeId, string NodeType, string Status, DateTime? StartedAt, DateTime? CompletedAt, string? InputJson, string? OutputJson, string? ErrorMessage, int RetryCount, int Step);
+public sealed record NodeExecutionResponse(Guid Id, Guid WorkflowExecutionId, string NodeId, string NodeType, string Status, DateTime? StartedAt, DateTime? CompletedAt, string? InputJson, string? OutputJson, string? ErrorMessage, int RetryCount, int Step, string? CorrelationToken = null, string? ResumeUrl = null);

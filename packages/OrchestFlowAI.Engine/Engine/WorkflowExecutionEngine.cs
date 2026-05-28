@@ -102,7 +102,7 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
             nodeExec.Start(JsonSerializer.Serialize(nodeInputs));
             await execRepo.CreateNodeExecutionAsync(nodeExec, ct);
 
-            var ctx = BuildContext(executionId, execution, nodeInputs, config, nodeOutputs, inputs, step, scope.ServiceProvider, ct);
+            var ctx = BuildContext(executionId, execution, nodeInputs, config, nodeOutputs, inputs, step, scope.ServiceProvider, ct, nodeExec.Id);
 
             await _notifier.NotifyNodeStarted(executionId, nodeExec.Id, current.Type, ct);
 
@@ -127,7 +127,7 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
                 await Task.Delay(delay, ct);
                 nodeExec.Start(nodeExec.InputJson);
                 await execRepo.UpdateNodeExecutionAsync(nodeExec, ct);
-                ctx = BuildContext(executionId, execution, nodeInputs, config, nodeOutputs, inputs, step, scope.ServiceProvider, ct);
+                ctx = BuildContext(executionId, execution, nodeInputs, config, nodeOutputs, inputs, step, scope.ServiceProvider, ct, nodeExec.Id);
                 try { result = await node.ExecuteAsync(ctx, ct); }
                 catch (Exception retryEx)
                 {
@@ -311,7 +311,46 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
                 continue; // skip normal ResolveNextNode
             }
 
-            current = ResolveNextNode(current.Id, def.Edges, nodeMap, result.Outputs, nodeOutputs);
+            // Fan-out: get all matching next nodes
+            var nextNodes = ResolveNextNodes(current.Id, def.Edges, nodeMap, result.Outputs, nodeOutputs);
+
+            if (nextNodes.Count == 0)
+            {
+                current = null;
+            }
+            else if (nextNodes.Count == 1)
+            {
+                current = nextNodes[0];
+            }
+            else
+            {
+                // Fan-out: execute all branch nodes sequentially
+                foreach (var branchNode in nextNodes.Where(n => n != null))
+                {
+                    if (branchNode!.Type == "system.end")
+                    {
+                        // Branch leads to end — execute it and complete
+                        var (endResult, endStep) = await ExecuteNodeAsync(branchNode, executionId, execution, def, nodeOutputs, nodeMap, inputs, step, execRepo, retryPolicy, scope.ServiceProvider, ct);
+                        step = endStep;
+                        if (endResult != null && endResult.Status == SDK.Models.NodeExecutionStatus.Succeeded)
+                            nodeOutputs[branchNode.Id] = endResult.Outputs;
+                        execution.Complete(JsonSerializer.Serialize(nodeOutputs));
+                        await execRepo.UpdateExecutionAsync(execution, ct);
+                        await _notifier.NotifyExecutionCompleted(executionId, "Completed", ct);
+                        return;
+                    }
+
+                    var (fanResult, fanStep) = await ExecuteNodeAsync(branchNode, executionId, execution, def, nodeOutputs, nodeMap, inputs, step, execRepo, retryPolicy, scope.ServiceProvider, ct);
+                    step = fanStep;
+                    if (fanResult != null && fanResult.Status == SDK.Models.NodeExecutionStatus.Succeeded)
+                        nodeOutputs[branchNode.Id] = fanResult.Outputs;
+                    else if (fanResult?.Status != SDK.Models.NodeExecutionStatus.Skipped)
+                        _logger.LogWarning("Fan-out branch node {NodeId} failed, skipping branch", branchNode.Id);
+                }
+
+                // Find convergence: first node that all branches connect to
+                current = FindConvergenceNode(nextNodes!, def.Edges, nodeMap);
+            }
         }
 
         execution.Complete(null);
@@ -419,7 +458,8 @@ public async Task ResumeAsync(Guid executionId, ResumeSignal signal, Cancellatio
     private WorkflowExecutionContext BuildContext(Guid executionId, WorkflowExecution execution,
         Dictionary<string, object?> nodeInputs, Dictionary<string, object?> config,
         Dictionary<string, IReadOnlyDictionary<string, object?>> nodeOutputs,
-        Dictionary<string, object?> workflowInputs, int step, IServiceProvider services, CancellationToken ct) => new()
+        Dictionary<string, object?> workflowInputs, int step, IServiceProvider services, CancellationToken ct,
+        Guid nodeExecutionId = default) => new()
     {
         ExecutionId = executionId,
         WorkflowId = execution.WorkflowId,
@@ -432,6 +472,7 @@ public async Task ResumeAsync(Guid executionId, ResumeSignal signal, Cancellatio
         NodeInputs = nodeInputs,
         NodeConfig = config,
         Step = step,
+        NodeExecutionId = nodeExecutionId,
         Services = services,
         CancellationToken = ct
     };
@@ -449,6 +490,125 @@ public async Task ResumeAsync(Guid executionId, ResumeSignal signal, Cancellatio
             if (_evaluator.Evaluate(edge.Condition, scope)) return nodeMap.GetValueOrDefault(edge.Target);
         }
         return null;
+    }
+
+    private List<WorkflowNodeDefinition?> ResolveNextNodes(string sourceId, List<WorkflowEdgeDefinition> edges,
+        Dictionary<string, WorkflowNodeDefinition> nodeMap, Dictionary<string, object?> currentOutputs,
+        Dictionary<string, IReadOnlyDictionary<string, object?>> allOutputs)
+    {
+        var result = new List<WorkflowNodeDefinition?>();
+        var outEdges = edges.Where(e => e.Source == sourceId).ToList();
+        foreach (var edge in outEdges)
+        {
+            if (string.IsNullOrEmpty(edge.Condition))
+            {
+                result.Add(nodeMap.GetValueOrDefault(edge.Target));
+            }
+            else
+            {
+                var scope = new Dictionary<string, object?>(currentOutputs);
+                foreach (var kv2 in allOutputs) foreach (var pair in kv2.Value) scope.TryAdd(pair.Key, pair.Value);
+                if (_evaluator.Evaluate(edge.Condition, scope))
+                    result.Add(nodeMap.GetValueOrDefault(edge.Target));
+            }
+        }
+        return result;
+    }
+
+    private WorkflowNodeDefinition? FindConvergenceNode(
+        List<WorkflowNodeDefinition?> branchNodes,
+        List<WorkflowEdgeDefinition> edges,
+        Dictionary<string, WorkflowNodeDefinition> nodeMap)
+    {
+        var branchIds = branchNodes.Where(n => n != null).Select(n => n!.Id).ToHashSet();
+        if (branchIds.Count == 0) return null;
+
+        return edges
+            .Where(e => branchIds.Contains(e.Source))
+            .GroupBy(e => e.Target)
+            .Where(g => branchIds.All(bid => g.Any(e => e.Source == bid)))
+            .Select(g => nodeMap.GetValueOrDefault(g.Key))
+            .FirstOrDefault(n => n != null);
+    }
+
+    private async Task<(NodeExecutionResult? Result, int Step)> ExecuteNodeAsync(
+        WorkflowNodeDefinition current,
+        Guid executionId,
+        WorkflowExecution execution,
+        WorkflowDefinition def,
+        Dictionary<string, IReadOnlyDictionary<string, object?>> nodeOutputs,
+        Dictionary<string, WorkflowNodeDefinition> nodeMap,
+        Dictionary<string, object?> inputs,
+        int step,
+        IEngineExecutionRepository execRepo,
+        RetryPolicy retryPolicy,
+        IServiceProvider serviceProvider,
+        CancellationToken ct)
+    {
+        var node = _registry.GetNode(current.Type);
+        if (node == null)
+        {
+            _logger.LogWarning("Node type '{NodeType}' not found during fan-out", current.Type);
+            return (null, step);
+        }
+
+        step++;
+        var nodeInputs = ResolveInputs(current.Id, def.Edges, nodeOutputs, inputs);
+        var config = current.Config.ToDictionary(kv => kv.Key, kv => (object?)kv.Value);
+
+        var secretService = serviceProvider.GetService<ISecretResolver>();
+        if (secretService != null)
+            config = await secretService.ResolveConfigAsync(config, execution.TenantId, ct);
+
+        var nodeExec = NodeExecution.Create(executionId, current.Id, current.Type, step);
+        nodeExec.Start(JsonSerializer.Serialize(nodeInputs));
+        await execRepo.CreateNodeExecutionAsync(nodeExec, ct);
+
+        var ctx = BuildContext(executionId, execution, nodeInputs, config, nodeOutputs, inputs, step, serviceProvider, ct);
+        await _notifier.NotifyNodeStarted(executionId, nodeExec.Id, current.Type, ct);
+
+        NodeExecutionResult result;
+        try { result = await node.ExecuteAsync(ctx, ct); }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Node {NodeType} threw exception during fan-out", current.Type);
+            result = SDK.Models.NodeExecutionResult.Failed(ex.Message);
+        }
+
+        // Retry loop
+        while (result.Status == SDK.Models.NodeExecutionStatus.Failed
+               && nodeExec.AttemptNumber < retryPolicy.MaxAttempts)
+        {
+            var delay = retryPolicy.GetDelay(nodeExec.AttemptNumber);
+            nodeExec.IncrementAttempt();
+            await execRepo.UpdateNodeExecutionAsync(nodeExec, ct);
+            await Task.Delay(delay, ct);
+            nodeExec.Start(nodeExec.InputJson);
+            await execRepo.UpdateNodeExecutionAsync(nodeExec, ct);
+            ctx = BuildContext(executionId, execution, nodeInputs, config, nodeOutputs, inputs, step, serviceProvider, ct);
+            try { result = await node.ExecuteAsync(ctx, ct); }
+            catch (Exception retryEx) { result = SDK.Models.NodeExecutionResult.Failed(retryEx.Message); }
+        }
+
+        switch (result.Status)
+        {
+            case SDK.Models.NodeExecutionStatus.Skipped:
+                nodeExec.Skip();
+                await execRepo.UpdateNodeExecutionAsync(nodeExec, ct);
+                break;
+            case SDK.Models.NodeExecutionStatus.Failed:
+                nodeExec.Fail(result.ErrorMessage ?? "error");
+                await execRepo.UpdateNodeExecutionAsync(nodeExec, ct);
+                await _notifier.NotifyNodeFailed(executionId, nodeExec.Id, current.Type, result.ErrorMessage ?? "error", ct);
+                break;
+            default:
+                nodeExec.Succeed(JsonSerializer.Serialize(result.Outputs));
+                await execRepo.UpdateNodeExecutionAsync(nodeExec, ct);
+                await _notifier.NotifyNodeCompleted(executionId, nodeExec.Id, current.Type, ct);
+                break;
+        }
+
+        return (result, step);
     }
 
     private Dictionary<string, object?> ResolveInputs(string nodeId, List<WorkflowEdgeDefinition> edges,

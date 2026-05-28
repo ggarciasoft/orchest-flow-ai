@@ -75,6 +75,7 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<IPlatformSettingsRepository, EfPlatformSettingsRepository>();
             services.AddScoped<ISecretRepository, EfSecretRepository>();
             services.AddScoped<IFormRepository, EfFormRepository>();
+            services.AddScoped<ICorrelationTokenRepository, EfCorrelationTokenRepository>();
             services.AddScoped<IPersistentExecutionQueue, PostgresExecutionQueue>();
         }
         else
@@ -95,6 +96,7 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<IPlatformSettingsRepository, StubPlatformSettingsRepository>();
             services.AddScoped<ISecretRepository, StubSecretRepository>();
             services.AddScoped<IFormRepository, StubFormRepository>();
+            services.AddScoped<ICorrelationTokenRepository, StubCorrelationTokenRepository>();
             // In-memory stub persistent queue
         }
 

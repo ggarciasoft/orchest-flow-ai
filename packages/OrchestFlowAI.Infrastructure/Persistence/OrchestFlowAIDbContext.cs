@@ -30,6 +30,7 @@ public sealed class OrchestFlowAIDbContext : DbContext
     public DbSet<Feedback> Feedbacks => Set<Feedback>();
     public DbSet<Form> Forms => Set<Form>();
     public DbSet<FormSubmission> FormSubmissions => Set<FormSubmission>();
+    public DbSet<CorrelationToken> CorrelationTokens => Set<CorrelationToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -193,6 +194,15 @@ public sealed class OrchestFlowAIDbContext : DbContext
             e.Property(fs => fs.ValuesJson).IsRequired().HasColumnType("text");
             e.HasIndex(fs => fs.WorkflowExecutionId);
             e.HasIndex(fs => fs.FormId);
+        });
+
+        modelBuilder.Entity<CorrelationToken>(e =>
+        {
+            e.HasKey(ct => ct.Id);
+            e.Property(ct => ct.Token).IsRequired().HasMaxLength(64);
+            e.Property(ct => ct.Kind).IsRequired().HasMaxLength(20);
+            e.HasIndex(ct => ct.Token).IsUnique();
+            e.HasIndex(ct => ct.ExecutionId);
         });
 
         modelBuilder.Entity<ExecutionQueueItem>(e =>

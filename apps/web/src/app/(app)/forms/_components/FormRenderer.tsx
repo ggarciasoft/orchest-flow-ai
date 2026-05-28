@@ -9,13 +9,15 @@ interface FormRendererProps {
   preview?: boolean;
   values?: Record<string, unknown>;
   onChange?: (key: string, value: unknown) => void;
+  /** Per-field validation error messages keyed by field key. */
+  fieldErrors?: Record<string, string>;
 }
 
 /**
  * FormRenderer — renders a WorkflowForm's fields as HTML inputs.
  * Used both for the fill page and the preview modal in the builder.
  */
-export default function FormRenderer({ name, description, fields, preview = false, values = {}, onChange }: FormRendererProps) {
+export default function FormRenderer({ name, description, fields, preview = false, values = {}, onChange, fieldErrors = {} }: FormRendererProps) {
   const inputClass =
     'w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white';
 
@@ -73,6 +75,9 @@ export default function FormRenderer({ name, description, fields, preview = fals
               onChange={e => handleChange(field.key, e.target.value)}
               disabled={preview}
             />
+          )}
+          {fieldErrors[field.key] && (
+            <p className="text-xs text-red-600 mt-0.5">{fieldErrors[field.key]}</p>
           )}
         </div>
       ))}

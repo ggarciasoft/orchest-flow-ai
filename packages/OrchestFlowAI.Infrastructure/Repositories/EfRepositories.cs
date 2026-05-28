@@ -385,3 +385,19 @@ public sealed class EfPlatformSettingsRepository : IPlatformSettingsRepository
         await _db.SaveChangesAsync(ct);
     }
 }
+
+/// <summary>EF Core implementation of <see cref="ICorrelationTokenRepository"/>.</summary>
+public sealed class EfCorrelationTokenRepository : ICorrelationTokenRepository
+{
+    private readonly OrchestFlowAIDbContext _db;
+    public EfCorrelationTokenRepository(OrchestFlowAIDbContext db) => _db = db;
+
+    public async Task<CorrelationToken> CreateAsync(CorrelationToken token, CancellationToken ct = default)
+    { _db.CorrelationTokens.Add(token); await _db.SaveChangesAsync(ct); return token; }
+
+    public Task<CorrelationToken?> GetByTokenAsync(string token, CancellationToken ct = default)
+        => _db.CorrelationTokens.AsNoTracking().FirstOrDefaultAsync(t => t.Token == token, ct);
+
+    public async Task UpdateAsync(CorrelationToken token, CancellationToken ct = default)
+    { _db.CorrelationTokens.Update(token); await _db.SaveChangesAsync(ct); }
+}

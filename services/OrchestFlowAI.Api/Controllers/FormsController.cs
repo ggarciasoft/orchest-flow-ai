@@ -7,6 +7,7 @@ using OrchestFlowAI.Contracts.Responses;
 using OrchestFlowAI.Domain.Entities;
 using OrchestFlowAI.Api.Services;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace OrchestFlowAI.Api.Controllers;
 
@@ -218,6 +219,25 @@ public sealed class FormsController : ControllerBase
             var sub = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (Guid.TryParse(sub, out var uid)) submittedBy = uid;
         }
+
+        // Validate regex rules on submitted values
+        var fields2 = JsonSerializer.Deserialize<List<FormFieldDefinition>>(form.FieldsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                      ?? new List<FormFieldDefinition>();
+        var regexErrors = new List<object>();
+        foreach (var field in fields2.Where(f => !string.IsNullOrEmpty(f.ValidationRegex)))
+        {
+            if (!valuesDict.TryGetValue(field.Key, out var rawVal)) continue;
+            var strVal = rawVal as string;
+            if (string.IsNullOrEmpty(strVal)) continue; // skip empty unless required (handled above)
+            try
+            {
+                if (!Regex.IsMatch(strVal, field.ValidationRegex!))
+                    regexErrors.Add(new { field = field.Key, message = field.ValidationMessage ?? "Invalid format" });
+            }
+            catch { /* ignore malformed regex */ }
+        }
+        if (regexErrors.Count > 0)
+            return BadRequest(new { detail = "Validation failed", errors = regexErrors });
 
         // Store the submission record
         var submission = FormSubmission.Create(

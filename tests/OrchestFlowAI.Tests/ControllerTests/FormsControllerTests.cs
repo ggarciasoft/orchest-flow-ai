@@ -31,11 +31,12 @@ public sealed class FormsControllerTests
         return new OrchestFlowAIDbContext(options);
     }
 
-    private static FormsController BuildController(IFormRepository repo, IExecutionQueue? queue = null, FormNodeRegistrar? registrar = null)
+    private static FormsController BuildController(IFormRepository repo, IExecutionQueue? queue = null, FormNodeRegistrar? registrar = null, IExecutionRepository? executions = null)
     {
         queue ??= Mock.Of<IExecutionQueue>();
         registrar ??= BuildRegistrar(repo);
-        var ctrl = new FormsController(repo, queue, registrar);
+        executions ??= Mock.Of<IExecutionRepository>();
+        var ctrl = new FormsController(repo, queue, registrar, executions);
         ctrl.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext
@@ -217,5 +218,64 @@ public sealed class FormsControllerTests
         var ctrl = BuildController(repo);
         var result = await ctrl.Delete(Guid.NewGuid(), CancellationToken.None);
         result.Should().BeOfType<NotFoundResult>();
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // Submit — regex validation
+    // ────────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Submit_WithRegexValidation_InvalidValue_Returns400()
+    {
+        var repo = BuildStubRepo();
+        var fieldDef = new OrchestFlowAI.Domain.Entities.FormFieldDefinition(
+            Key: "amount",
+            Label: "Amount",
+            Type: "text",
+            ValidationRegex: @"^[0-9]+(\.[0-9]{1,2})?$",
+            ValidationMessage: "Must be a valid decimal number");
+        var fieldsJson = System.Text.Json.JsonSerializer.Serialize(new[] { fieldDef });
+        var form = Form.Create(TenantId, "Payment", "payment", null, fieldsJson);
+        await repo.CreateAsync(form);
+
+        var ctrl = BuildController(repo);
+        var valuesJson = System.Text.Json.JsonDocument.Parse("{\"amount\":\"not-a-number\"}").RootElement;
+        var nodeExecId = Guid.NewGuid().ToString();
+        var req = new OrchestFlowAI.Contracts.Requests.SubmitFormRequest(
+            Guid.NewGuid(),
+            nodeExecId,
+            valuesJson);
+        var result = await ctrl.Submit(form.Id, req, CancellationToken.None);
+        result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
+    public async Task Submit_WithRegexValidation_ValidValue_Returns204()
+    {
+        var repo = BuildStubRepo();
+        var queueMock = new Mock<IExecutionQueue>();
+        queueMock
+            .Setup(q => q.EnqueueResumeAsync(It.IsAny<OrchestFlowAI.Contracts.Events.ExecutionResumeMessage>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var fieldDef = new OrchestFlowAI.Domain.Entities.FormFieldDefinition(
+            Key: "amount",
+            Label: "Amount",
+            Type: "text",
+            ValidationRegex: @"^[0-9]+(\.[0-9]{1,2})?$",
+            ValidationMessage: "Must be a valid decimal number");
+        var fieldsJson = System.Text.Json.JsonSerializer.Serialize(new[] { fieldDef });
+        var form = Form.Create(TenantId, "Payment", "payment", null, fieldsJson);
+        await repo.CreateAsync(form);
+
+        var ctrl = BuildController(repo, queueMock.Object);
+        var nodeExecId = Guid.NewGuid();
+        var valuesJson = System.Text.Json.JsonDocument.Parse($"{{\"amount\":\"12.50\"}}").RootElement;
+        var req = new OrchestFlowAI.Contracts.Requests.SubmitFormRequest(
+            Guid.NewGuid(),
+            nodeExecId.ToString(),
+            valuesJson);
+        var result = await ctrl.Submit(form.Id, req, CancellationToken.None);
+        result.Should().BeOfType<NoContentResult>();
     }
 }

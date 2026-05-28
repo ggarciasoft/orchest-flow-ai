@@ -71,6 +71,10 @@ export interface FormFieldDefinition {
   options?: string[];
   /** For select fields: output key from a previous node whose value is a JSON array of strings. Resolved at fill time. */
   optionsFrom?: string;
+  /** Optional regex pattern to validate the submitted value. */
+  validationRegex?: string;
+  /** Human-readable message shown when validationRegex does not match. */
+  validationMessage?: string;
 }
 
 /** A custom form definition for collecting user input during workflow execution. */

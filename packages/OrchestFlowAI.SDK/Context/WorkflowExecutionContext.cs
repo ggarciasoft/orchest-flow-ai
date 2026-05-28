@@ -10,6 +10,7 @@ public sealed class WorkflowExecutionContext
     public IReadOnlyDictionary<string, object?> WorkflowInputs { get; init; } = new Dictionary<string, object?>();
     public IReadOnlyDictionary<string, IReadOnlyDictionary<string, object?>> NodeOutputs { get; init; } = new Dictionary<string, IReadOnlyDictionary<string, object?>>();
     public string CurrentNodeId { get; init; } = default!;
+    public Guid NodeExecutionId { get; init; }
     public IReadOnlyDictionary<string, object?> NodeConfig { get; init; } = new Dictionary<string, object?>();
     public IReadOnlyDictionary<string, object?> NodeInputs { get; init; } = new Dictionary<string, object?>();
     public int Step { get; init; }
