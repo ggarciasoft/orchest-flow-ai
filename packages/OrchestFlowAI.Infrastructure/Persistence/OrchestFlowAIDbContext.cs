@@ -28,6 +28,8 @@ public sealed class OrchestFlowAIDbContext : DbContext
     public DbSet<PlatformSetting> PlatformSettings => Set<PlatformSetting>();
     public DbSet<Secret> Secrets => Set<Secret>();
     public DbSet<Feedback> Feedbacks => Set<Feedback>();
+    public DbSet<Form> Forms => Set<Form>();
+    public DbSet<FormSubmission> FormSubmissions => Set<FormSubmission>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -172,6 +174,25 @@ public sealed class OrchestFlowAIDbContext : DbContext
             e.HasKey(f => f.Id);
             e.Property(f => f.Message).IsRequired();
             e.HasIndex(f => f.TenantId);
+        });
+
+        modelBuilder.Entity<Form>(e =>
+        {
+            e.HasKey(f => f.Id);
+            e.Property(f => f.Name).IsRequired().HasMaxLength(300);
+            e.Property(f => f.Slug).IsRequired().HasMaxLength(200);
+            e.Property(f => f.Description).HasMaxLength(2000);
+            e.Property(f => f.FieldsJson).IsRequired().HasColumnType("text");
+            e.HasIndex(f => new { f.TenantId, f.Slug });
+        });
+
+        modelBuilder.Entity<FormSubmission>(e =>
+        {
+            e.HasKey(fs => fs.Id);
+            e.Property(fs => fs.NodeExecutionId).IsRequired().HasMaxLength(200);
+            e.Property(fs => fs.ValuesJson).IsRequired().HasColumnType("text");
+            e.HasIndex(fs => fs.WorkflowExecutionId);
+            e.HasIndex(fs => fs.FormId);
         });
 
         modelBuilder.Entity<ExecutionQueueItem>(e =>

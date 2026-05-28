@@ -74,6 +74,7 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<OrchestFlowAI.Engine.IEngineExecutionRepository, EfEngineExecutionRepository>();
             services.AddScoped<IPlatformSettingsRepository, EfPlatformSettingsRepository>();
             services.AddScoped<ISecretRepository, EfSecretRepository>();
+            services.AddScoped<IFormRepository, EfFormRepository>();
             services.AddScoped<IPersistentExecutionQueue, PostgresExecutionQueue>();
         }
         else
@@ -93,6 +94,7 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<OrchestFlowAI.Engine.IEngineExecutionRepository, StubEngineExecutionRepository>();
             services.AddScoped<IPlatformSettingsRepository, StubPlatformSettingsRepository>();
             services.AddScoped<ISecretRepository, StubSecretRepository>();
+            services.AddScoped<IFormRepository, StubFormRepository>();
             // In-memory stub persistent queue
         }
 

@@ -60,6 +60,28 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 /** All OrchestFlowAI API methods organized by resource domain. */
+
+/** A single field definition in a custom form. */
+export interface FormFieldDefinition {
+  key: string;
+  label: string;
+  type: 'text' | 'number' | 'select' | 'date' | 'email' | 'boolean';
+  required?: boolean;
+  placeholder?: string;
+  options?: string[];
+}
+
+/** A custom form definition for collecting user input during workflow execution. */
+export interface WorkflowForm {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  fields: FormFieldDefinition[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 /**
  * Node configuration presets — reusable named config sets.
  */
@@ -268,6 +290,27 @@ export const api = {
     /** Submits user feedback with an optional rating (1–5). */
     submit: (message: string, rating?: number) =>
       apiFetch<FeedbackResponse>('/api/feedback', { method: 'POST', body: JSON.stringify({ message, rating }) }),
+  },
+  /** Custom forms — build and fill data-collection forms that pause workflow execution. */
+  forms: {
+    /** Lists all custom forms for the tenant. */
+    list: () => apiFetch<WorkflowForm[]>('/api/forms'),
+    /** Fetches a single form by id. */
+    get: (id: string) => apiFetch<WorkflowForm>(`/api/forms/${id}`),
+    /** Creates a new form. */
+    create: (data: { name: string; description?: string; fields: FormFieldDefinition[] }) =>
+      apiFetch<WorkflowForm>('/api/forms', { method: 'POST', body: JSON.stringify(data) }),
+    /** Updates an existing form. */
+    update: (id: string, data: { name: string; description?: string; fields: FormFieldDefinition[] }) =>
+      apiFetch<WorkflowForm>(`/api/forms/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    /** Deletes a form. */
+    delete: (id: string) => apiFetch<void>(`/api/forms/${id}`, { method: 'DELETE' }),
+    /** Returns the fill schema for a form during a paused workflow execution. */
+    getFillSchema: (id: string, executionId: string, nodeExecutionId: string) =>
+      apiFetch<WorkflowForm>(`/api/forms/${id}/fill?executionId=${executionId}&nodeExecutionId=${nodeExecutionId}`),
+    /** Submits form values to resume a paused workflow execution. */
+    submit: (id: string, data: { workflowExecutionId: string; nodeExecutionId: string; values: Record<string, unknown> }) =>
+      apiFetch<void>(`/api/forms/${id}/submit`, { method: 'POST', body: JSON.stringify(data) }),
   },
   /** Secret vault endpoints — encrypted named values for use in node config as {{secret:name}}. */
   secrets: {

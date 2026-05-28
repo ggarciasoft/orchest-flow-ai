@@ -257,6 +257,37 @@ public sealed class StubPlatformSettingsRepository : IPlatformSettingsRepository
     }
 }
 
+/// <summary>In-memory stub implementation of <see cref="IFormRepository"/>.</summary>
+public sealed class StubFormRepository : IFormRepository
+{
+    private readonly List<Form> _forms = new();
+    private readonly List<FormSubmission> _submissions = new();
+
+    public Task<IReadOnlyList<Form>> ListAsync(Guid tenantId, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<Form>>(_forms.Where(f => f.TenantId == tenantId && !f.IsDeleted).OrderBy(f => f.Name).ToList());
+
+    public Task<IReadOnlyList<Form>> ListAllAsync(CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<Form>>(_forms.Where(f => !f.IsDeleted).ToList());
+
+    public Task<Form?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default)
+        => Task.FromResult(_forms.FirstOrDefault(f => f.Id == id && f.TenantId == tenantId && !f.IsDeleted));
+
+    public Task<Form?> GetBySlugAsync(string slug, Guid tenantId, CancellationToken ct = default)
+        => Task.FromResult(_forms.FirstOrDefault(f => f.Slug == slug && f.TenantId == tenantId && !f.IsDeleted));
+
+    public Task<Form> CreateAsync(Form form, CancellationToken ct = default)
+    { _forms.Add(form); return Task.FromResult(form); }
+
+    public Task UpdateAsync(Form form, CancellationToken ct = default)
+    { var i = _forms.FindIndex(f => f.Id == form.Id); if (i >= 0) _forms[i] = form; return Task.CompletedTask; }
+
+    public Task<FormSubmission> CreateSubmissionAsync(FormSubmission submission, CancellationToken ct = default)
+    { _submissions.Add(submission); return Task.FromResult(submission); }
+
+    public Task<FormSubmission?> GetSubmissionByExecutionAsync(Guid executionId, string nodeExecutionId, CancellationToken ct = default)
+        => Task.FromResult(_submissions.FirstOrDefault(s => s.WorkflowExecutionId == executionId && s.NodeExecutionId == nodeExecutionId));
+}
+
 public sealed class StubSecretRepository : ISecretRepository
 {
     private readonly List<Secret> _store = new();

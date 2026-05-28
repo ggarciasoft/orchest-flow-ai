@@ -327,6 +327,37 @@ public sealed class EfSecretRepository : ISecretRepository
     }
 }
 
+/// <summary>EF Core implementation of <see cref="IFormRepository"/>.</summary>
+public sealed class EfFormRepository : IFormRepository
+{
+    private readonly OrchestFlowAIDbContext _db;
+    public EfFormRepository(OrchestFlowAIDbContext db) => _db = db;
+
+    public async Task<IReadOnlyList<Form>> ListAsync(Guid tenantId, CancellationToken ct = default)
+        => await _db.Forms.AsNoTracking().Where(f => f.TenantId == tenantId && !f.IsDeleted).OrderBy(f => f.Name).ToListAsync(ct);
+
+    public async Task<IReadOnlyList<Form>> ListAllAsync(CancellationToken ct = default)
+        => await _db.Forms.AsNoTracking().Where(f => !f.IsDeleted).ToListAsync(ct);
+
+    public Task<Form?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default)
+        => _db.Forms.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id && f.TenantId == tenantId && !f.IsDeleted, ct);
+
+    public Task<Form?> GetBySlugAsync(string slug, Guid tenantId, CancellationToken ct = default)
+        => _db.Forms.AsNoTracking().FirstOrDefaultAsync(f => f.Slug == slug && f.TenantId == tenantId && !f.IsDeleted, ct);
+
+    public async Task<Form> CreateAsync(Form form, CancellationToken ct = default)
+    { _db.Forms.Add(form); await _db.SaveChangesAsync(ct); return form; }
+
+    public async Task UpdateAsync(Form form, CancellationToken ct = default)
+    { _db.Forms.Update(form); await _db.SaveChangesAsync(ct); }
+
+    public async Task<FormSubmission> CreateSubmissionAsync(FormSubmission submission, CancellationToken ct = default)
+    { _db.FormSubmissions.Add(submission); await _db.SaveChangesAsync(ct); return submission; }
+
+    public Task<FormSubmission?> GetSubmissionByExecutionAsync(Guid executionId, string nodeExecutionId, CancellationToken ct = default)
+        => _db.FormSubmissions.AsNoTracking().FirstOrDefaultAsync(s => s.WorkflowExecutionId == executionId && s.NodeExecutionId == nodeExecutionId, ct);
+}
+
 /// <summary>EF Core implementation of <see cref="IPlatformSettingsRepository"/>.</summary>
 public sealed class EfPlatformSettingsRepository : IPlatformSettingsRepository
 {

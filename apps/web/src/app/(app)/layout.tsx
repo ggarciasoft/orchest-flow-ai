@@ -6,12 +6,13 @@ import { cn } from '@/lib/utils';
 import { isAuthenticated, clearToken } from '@/lib/auth';
 import {
   LayoutDashboard, GitBranch, Play, CheckSquare,
-  FileText, Settings, LogOut, KeyRound
+  FileText, Settings, LogOut, KeyRound, ClipboardList
 } from 'lucide-react';
 
 const nav = [
   { href: '/dashboard',  label: 'Dashboard',  icon: LayoutDashboard },
   { href: '/workflows',  label: 'Workflows',   icon: GitBranch },
+  { href: '/forms',      label: 'Forms',       icon: ClipboardList },
   { href: '/executions', label: 'Executions',  icon: Play },
   { href: '/approvals',  label: 'Approvals',   icon: CheckSquare },
   { href: '/documents',  label: 'Documents',   icon: FileText },
