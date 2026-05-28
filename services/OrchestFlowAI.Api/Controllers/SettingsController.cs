@@ -69,9 +69,18 @@ public sealed class SettingsController : ControllerBase
     [HttpPost("test/openai")]
     public async Task<IActionResult> TestOpenAI(CancellationToken ct)
     {
+        var tenantId = GetTenantId();
+        // Prefer the in-memory holder (hot-reloaded on save); fall back to DB
+        // for keys that were stored before this process started.
         var key = _openAiKeyHolder.ApiKey;
         if (string.IsNullOrWhiteSpace(key))
+            key = await _settings.GetAsync(tenantId, "llm.openai.apiKey", ct);
+
+        if (string.IsNullOrWhiteSpace(key))
             return Ok(new { success = false, message = "No API key configured." });
+
+        // Keep the holder warm for future calls
+        _openAiKeyHolder.Update(key);
 
         try
         {
