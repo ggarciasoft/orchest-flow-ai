@@ -25,10 +25,23 @@ export function Badge({ variant = 'default', className, children }: {
 /** Map execution/approval status string to Badge variant */
 export function statusVariant(status: string): BadgeVariant {
   switch (status?.toLowerCase()) {
-    case 'completed': case 'approved': return 'success';
+    case 'completed': case 'approved': case 'succeeded': return 'success';
     case 'failed': case 'rejected': return 'danger';
     case 'running': case 'processing': return 'info';
     case 'pending': return 'warning';
+    case 'waitingforapproval': return 'warning';
     default: return 'default';
+  }
+}
+
+/** Human-readable label for status strings (e.g. enum names from backend) */
+export function statusLabel(status: string): string {
+  switch (status?.toLowerCase()) {
+    case 'waitingforapproval': return 'Waiting for Approval';
+    case 'inprogress': return 'In Progress';
+    case 'notstarted': return 'Not Started';
+    default:
+      // Insert space before each uppercase letter: "MyStatus" → "My Status"
+      return status?.replace(/([A-Z])/g, ' $1').trim() ?? status;
   }
 }
