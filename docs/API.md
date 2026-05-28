@@ -57,7 +57,19 @@ Body:
 Get the workflow with its active version definition.
 
 ### `PUT /api/workflows/{workflowId}`
-Update workflow metadata (name/description) â€” does **not** modify versions.
+Update workflow metadata â€” does **not** modify versions.
+
+Body:
+```json
+{ "name": "My Workflow", "description": "Optional description" }
+```
+
+Response `200`: updated workflow object.
+
+### `POST /api/workflows/{workflowId}/clone`
+Duplicate a workflow. Creates a new workflow named `"Copy of {name}"` with the source's active version definition as v1 (immediately activated). Copies trigger type, retry policy, and cron/webhook config.
+
+Response `201`: new workflow object. The clone opens ready in the designer.
 
 ### `DELETE /api/workflows/{workflowId}`
 Soft-delete a workflow.
@@ -436,7 +448,7 @@ Content-Type: application/json
 | currentDefinitionJson | string | ? | Current canvas definition JSON. When provided, the AI updates the existing workflow instead of creating a new one |
 | workflowName | string | ? | Name for the workflow (used in the generated definition) |
 
-**Example — create new:**
+**Example ï¿½ create new:**
 ```json
 {
   "prompt": "Read Gmail emails labelled recibos-pagos-facturas, extract Amount, Currency, Date and Store using the financial preset, save each row to PostgreSQL",
@@ -444,7 +456,7 @@ Content-Type: application/json
 }
 ```
 
-**Example — update existing:**
+**Example ï¿½ update existing:**
 ```json
 {
   "prompt": "Add an HTTP webhook notification after the database insert step",
@@ -472,7 +484,7 @@ Content-Type: application/json
 
 **Notes:**
 - Requires EditorOrAbove role
-- The returned definition is not saved — the client previews it and calls POST /api/workflows/{id}/versions + activate when accepted
+- The returned definition is not saved ï¿½ the client previews it and calls POST /api/workflows/{id}/versions + activate when accepted
 - The AI is given a compact node catalog (all types, key inputs/outputs/config) so it knows what nodes exist
 - Current definition is injected as context when updating; unchanged nodes are preserved
 
@@ -507,6 +519,7 @@ Body:
 ```json
 {
   "name": "Expense Review",
+  "slug": "expense-review",
   "description": "Human review of extracted expense data",
   "fields": [
     { "key": "amount",   "label": "Amount",   "type": "number", "required": true },
@@ -517,6 +530,8 @@ Body:
 ```
 
 Field types: `text` | `number` | `select` | `date` | `email` | `boolean`
+
+> **`slug` is required** and must be unique per tenant. It determines the node type: `form.<slug>`. Use lowercase letters, numbers, and hyphens only.
 
 After creation, the node `form.expense-review` immediately appears in the workflow designer node catalog under the **Forms** category.
 
@@ -534,7 +549,7 @@ Same body as create. Updating a form hot-reloads the node in the catalog.
 DELETE /api/forms/{id}
 ```
 
-Soft delete — form is removed from the catalog.
+Soft delete ï¿½ form is removed from the catalog.
 
 ### Get fill schema (public)
 
@@ -542,7 +557,7 @@ Soft delete — form is removed from the catalog.
 GET /api/forms/{id}/fill?executionId={execId}&nodeExecutionId={nodeId}
 ```
 
-`AllowAnonymous` — returns the form schema so the fill page can render it. The `executionId` and `nodeExecutionId` are embedded in the fill link shown in the execution timeline.
+`AllowAnonymous` ï¿½ returns the form schema so the fill page can render it. The `executionId` and `nodeExecutionId` are embedded in the fill link shown in the execution timeline.
 
 ### Submit form
 
@@ -563,12 +578,21 @@ Body:
 }
 ```
 
-On success (`204`): creates a `FormSubmission` record and resumes the paused workflow execution. Each submitted value is injected as a node output — `{{amount}}`, `{{category}}`, `{{notes}}` become available to downstream nodes.
+On success (`204`): creates a `FormSubmission` record and resumes the paused workflow execution. Each submitted value is injected as a node output ï¿½ `{{amount}}`, `{{category}}`, `{{notes}}` become available to downstream nodes.
 
 ### Form node behaviour in engine
 
 | State | Engine action |
-|-------|--------------|
+|-------|---------------|
+| First execution | Returns `WaitingForApproval` â†’ workflow pauses; an `ApprovalRequest` record is created with `_formId`, `_formName`, and `_formFields` in `payloadJson` |
+| Approval inbox | The approval detail page detects `_formId` in the payload and renders the form fields instead of the standard Approve/Reject buttons |
+| User submits form | `POST /api/forms/{id}/submit` creates a `FormSubmission` and resumes the execution via the resume queue |
+| Resume (after submit) | Returns `Succeeded` with each field value as a named output key |
+
+> **Worker startup note:** The worker loads form node types from the database at startup. If you create a new form while the worker is running, restart the worker for the new `form.<slug>` node to be available. Hot-reload is a planned improvement.
+
+
+---
 | First execution | Returns `WaitingForApproval` ? workflow pauses |
 | Resume (after submit) | Returns `Succeeded` with each field as an output key |
 
@@ -577,7 +601,7 @@ On success (`204`): creates a `FormSubmission` record and resumes the paused wor
 
 ## 17. External Webhooks (Correlation Tokens)
 
-These endpoints are **public (no auth required)** — designed to be called by external systems.
+These endpoints are **public (no auth required)** ï¿½ designed to be called by external systems.
 
 ### Resume a paused workflow
 
@@ -593,10 +617,10 @@ Body: any JSON object. All fields become node outputs.
 ```
 
 Response:
-- `200 { "status": "resumed" }` — workflow resumed, body fields available as `{{orderId}}` etc.
-- `404` — token not found
-- `410` — token already used or expired
-- `400` — token is a gate token, not a wait token
+- `200 { "status": "resumed" }` ï¿½ workflow resumed, body fields available as `{{orderId}}` etc.
+- `404` ï¿½ token not found
+- `410` ï¿½ token already used or expired
+- `400` ï¿½ token is a gate token, not a wait token
 
 The `token` value is available in the execution timeline when a `integrations.wait-for-webhook` node is paused (`_correlationToken` output).
 
@@ -617,6 +641,6 @@ Body:
 ```
 
 Response:
-- `200 { "status": "resumed" }` — workflow resumed with outputs `approved`, `reason`, `data.*` fields
-- `404` / `410` / `400` — same as above
+- `200 { "status": "resumed" }` ï¿½ workflow resumed with outputs `approved`, `reason`, `data.*` fields
+- `404` / `410` / `400` ï¿½ same as above
 
