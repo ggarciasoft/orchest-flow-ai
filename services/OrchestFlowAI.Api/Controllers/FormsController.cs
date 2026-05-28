@@ -270,6 +270,9 @@ public sealed class FormsController : ControllerBase
         return NoContent();
     }
 
-    private static FormResponse ToResponse(Form f) =>
-        new(f.Id, f.TenantId, f.Name, f.Slug, f.Description, f.FieldsJson, f.CreatedAt, f.UpdatedAt);
+    private static FormResponse ToResponse(Form f)
+    {
+        var fields = JsonSerializer.Deserialize<JsonElement>(f.FieldsJson.Length > 0 ? f.FieldsJson : "[]");
+        return new(f.Id, f.TenantId, f.Name, f.Slug, f.Description, fields, f.CreatedAt, f.UpdatedAt);
+    }
 }

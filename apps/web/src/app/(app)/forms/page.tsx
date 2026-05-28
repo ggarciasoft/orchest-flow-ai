@@ -70,7 +70,7 @@ export default function FormsPage() {
             >
               <div className="flex items-start justify-between">
                 <h3 className="font-semibold text-slate-900">{form.name}</h3>
-                <Badge variant="default">{form.fields.length} field{form.fields.length !== 1 ? 's' : ''}</Badge>
+                <Badge variant="default">{(form.fields ?? []).length} field{(form.fields ?? []).length !== 1 ? 's' : ''}</Badge>
               </div>
 
               {form.description && (

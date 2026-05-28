@@ -6,7 +6,7 @@ public sealed record FormResponse(
     string Name,
     string Slug,
     string? Description,
-    string FieldsJson,
+    System.Text.Json.JsonElement Fields,
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
