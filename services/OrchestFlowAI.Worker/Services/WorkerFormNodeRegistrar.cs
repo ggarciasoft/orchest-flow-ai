@@ -83,7 +83,10 @@ public sealed class WorkerFormNodeRegistrar : BackgroundService
 
             // Register / re-register all current forms (Register overwrites in ConcurrentDictionary)
             foreach (var form in forms)
-                _registry.Register(new DynamicFormNode(form), new DynamicFormNodeDescriptor(form));
+            {
+                var activeVersion = await repo.GetActiveVersionAsync(form.Id, ct);
+                _registry.Register(new DynamicFormNode(form, activeVersion?.VersionNumber), new DynamicFormNodeDescriptor(form));
+            }
 
             _logger.LogDebug("WorkerFormNodeRegistrar: refreshed {Count} form nodes.", forms.Count);
         }

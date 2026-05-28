@@ -8,16 +8,24 @@ namespace OrchestFlowAI.Nodes.Human;
 
 /// <summary>
 /// A dynamically-generated workflow node that pauses execution and presents a custom form to the user.
-/// On the first execution pass it suspends with WaitingForApproval; on resume (when all required fields
-/// are present in NodeInputs) it propagates the submitted values as outputs.
+/// On the first execution pass it suspends with WaitingForApproval; on resume (when _formSubmitted is present)
+/// it propagates the submitted values as outputs.
 /// </summary>
 public sealed class DynamicFormNode : IWorkflowNode
 {
     private readonly Form _form;
+    /// <summary>The version number of the active FormVersion snapshot used by this node instance.</summary>
+    private readonly int? _activeVersionNumber;
 
     public string Type => $"form.{_form.Slug}";
 
-    public DynamicFormNode(Form form) { _form = form; }
+    /// <param name="form">The form entity. FieldsJson must reflect the active version's fields.</param>
+    /// <param name="activeVersionNumber">Version number of the active FormVersion — stored in the approval payload so the UI can display the exact version used at execution time.</param>
+    public DynamicFormNode(Form form, int? activeVersionNumber = null)
+    {
+        _form = form;
+        _activeVersionNumber = activeVersionNumber;
+    }
 
     public Task<NodeExecutionResult> ExecuteAsync(WorkflowExecutionContext ctx, CancellationToken ct)
     {
@@ -25,8 +33,6 @@ public sealed class DynamicFormNode : IWorkflowNode
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
 
         // Resume path: engine calls ExecuteAsync again after form is submitted.
-        // Check for the explicit _formSubmitted signal rather than inferring from field presence
-        // (the old approach breaks when all fields are optional).
         if (ctx.NodeInputs.TryGetValue("_formSubmitted", out var submitted) && submitted is true or "true")
         {
             var outputs = new Dictionary<string, object?>();
@@ -37,14 +43,18 @@ public sealed class DynamicFormNode : IWorkflowNode
             return Task.FromResult(NodeExecutionResult.Succeeded(outputs));
         }
 
-        // Not yet submitted — pause and wait
-        return Task.FromResult(NodeExecutionResult.WaitingForApproval(new Dictionary<string, object?>
+        // Not yet submitted — pause and wait, embedding the version number used at this moment
+        var payload = new Dictionary<string, object?>
         {
             ["_formId"] = _form.Id.ToString(),
             ["_formSlug"] = _form.Slug,
             ["_formName"] = _form.Name,
             ["_formFields"] = _form.FieldsJson,
-        }));
+        };
+        if (_activeVersionNumber.HasValue)
+            payload["_formVersionNumber"] = _activeVersionNumber.Value;
+
+        return Task.FromResult(NodeExecutionResult.WaitingForApproval(payload));
     }
 }
 

@@ -21,20 +21,17 @@ public sealed class ApprovalsController : ControllerBase
     private readonly IExecutionQueue _queue;
     private readonly IExecutionRepository _executions;
     private readonly IWorkflowRepository _workflows;
-    private readonly IFormRepository _forms;
 
     public ApprovalsController(
         IApprovalRepository approvals,
         IExecutionQueue queue,
         IExecutionRepository executions,
-        IWorkflowRepository workflows,
-        IFormRepository forms)
+        IWorkflowRepository workflows)
     {
         _approvals = approvals;
         _queue = queue;
         _executions = executions;
         _workflows = workflows;
-        _forms = forms;
     }
 
     private Guid TenantId => Guid.Parse(User.FindFirst("tenant_id")?.Value ?? Guid.Empty.ToString());
@@ -61,18 +58,12 @@ public sealed class ApprovalsController : ControllerBase
             workflowVersionNumber = version?.VersionNumber;
         }
 
-        // If this is a form approval, find the active form version number
+        // If this is a form approval, read the version number baked into the payload at execution time
         try
         {
             var payload = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(a.PayloadJson);
-            if (payload != null && payload.TryGetValue("_formId", out var formIdEl))
-            {
-                if (Guid.TryParse(formIdEl.GetString(), out var formId))
-                {
-                    var activeVersion = await _forms.GetActiveVersionAsync(formId, ct);
-                    formVersionNumber = activeVersion?.VersionNumber;
-                }
-            }
+            if (payload != null && payload.TryGetValue("_formVersionNumber", out var fvEl))
+                formVersionNumber = fvEl.ValueKind == JsonValueKind.Number ? fvEl.GetInt32() : null;
         }
         catch { /* ignore - enrichment is best-effort */ }
 

@@ -40,7 +40,10 @@ public sealed class FormNodeRegistrar : IHostedService
             var repo = scope.ServiceProvider.GetRequiredService<IFormRepository>();
             var forms = await repo.ListAllAsync(ct);
             foreach (var form in forms)
-                Register(form);
+            {
+                var activeVersion = await repo.GetActiveVersionAsync(form.Id, ct);
+                Register(form, activeVersion?.VersionNumber);
+            }
             _logger.LogInformation("FormNodeRegistrar: registered {Count} form nodes.", forms.Count);
         }
         catch (Exception ex)
@@ -75,13 +78,16 @@ public sealed class FormNodeRegistrar : IHostedService
             _logger.LogInformation("FormNodeRegistrar: unregistered stale form node {Type}", d.Type);
         }
 
-        // Register / re-register current forms
+        // Register / re-register current forms with their active version number
         foreach (var form in tenantForms)
-            Register(form);
+        {
+            var activeVersion = await repo.GetActiveVersionAsync(form.Id, ct);
+            Register(form, activeVersion?.VersionNumber);
+        }
     }
 
-    private void Register(OrchestFlowAI.Domain.Entities.Form form)
+    private void Register(OrchestFlowAI.Domain.Entities.Form form, int? activeVersionNumber = null)
     {
-        _registry.Register(new DynamicFormNode(form), new DynamicFormNodeDescriptor(form));
+        _registry.Register(new DynamicFormNode(form, activeVersionNumber), new DynamicFormNodeDescriptor(form));
     }
 }
