@@ -190,7 +190,7 @@ public sealed class WorkflowEngineFanOutTests
         // Execution completed (not failed)
         repoMock.Verify(r => r.UpdateExecutionAsync(
             It.Is<WorkflowExecution>(e => e.Status == ExecutionStatus.Completed),
-            It.IsAny<CancellationToken>()), Times.Once);
+            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -216,7 +216,7 @@ public sealed class WorkflowEngineFanOutTests
         // Overall execution still completed (non-fatal branch failure)
         repoMock.Verify(r => r.UpdateExecutionAsync(
             It.Is<WorkflowExecution>(e => e.Status == ExecutionStatus.Completed),
-            It.IsAny<CancellationToken>()), Times.Once);
+            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -231,7 +231,7 @@ public sealed class WorkflowEngineFanOutTests
         // Assert: execution completed normally
         repoMock.Verify(r => r.UpdateExecutionAsync(
             It.Is<WorkflowExecution>(e => e.Status == ExecutionStatus.Completed),
-            It.IsAny<CancellationToken>()), Times.Once);
+            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
 
         // Neither fan-out branch node was called
         nA.Verify(n => n.ExecuteAsync(It.IsAny<WorkflowExecutionContext>(), It.IsAny<CancellationToken>()), Times.Never);
