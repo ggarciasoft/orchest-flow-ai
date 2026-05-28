@@ -82,8 +82,27 @@ public sealed class WorkflowsController : ControllerBase
     }
 
     /// <summary>
-    /// Gets a single workflow by id, including its active version number.
+    /// Updates a workflow's name and description.
     /// </summary>
+    /// <param name="id">The workflow id.</param>
+    /// <param name="req">New name and description.</param>
+    /// <response code="200">Updated workflow.</response>
+    /// <response code="404">Workflow not found.</response>
+    [HttpPut("{id}"), Authorize(Policy = "EditorOrAbove")]
+    public async Task<ActionResult<WorkflowResponse>> Update(Guid id, [FromBody] UpdateWorkflowRequest req, CancellationToken ct)
+    {
+        var w = await _workflows.GetAsync(id, TenantId, ct);
+        if (w == null) return NotFound();
+        if (string.IsNullOrWhiteSpace(req.Name)) return BadRequest("Name is required.");
+        w.Update(req.Name.Trim(), req.Description ?? "");
+        await _workflows.UpdateAsync(w, ct);
+        var activeVersion = await _workflows.GetActiveVersionAsync(id, ct);
+        return Ok(new WorkflowResponse(w.Id, w.Name, w.Description, activeVersion?.VersionNumber, w.CreatedAt, w.UpdatedAt,
+            (OrchestFlowAI.Contracts.TriggerType)(int)w.TriggerType, w.WebhookSecret, w.CronExpression,
+            w.RetryPolicy.MaxAttempts, w.RetryPolicy.BackoffMs, w.RetryPolicy.BackoffMultiplier));
+    }
+
+    /// <summary>
     /// <param name="id">The workflow id.</param>
     /// <response code="200">Workflow found.</response>
     /// <response code="404">Workflow not found or belongs to a different tenant.</response>

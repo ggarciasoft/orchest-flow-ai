@@ -1,5 +1,13 @@
 import { render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WorkflowDesigner } from "../WorkflowDesigner";
+
+const createWrapper = () => {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={qc}>{children}</QueryClientProvider>
+  );
+};
 
 jest.mock("../NodePalette", () => ({
   NodePalette: ({ onAdd }: { onAdd: (type: string) => void }) => (
@@ -27,6 +35,7 @@ jest.mock("@/lib/api", () => ({
   api: {
     workflows: {
       execute: jest.fn().mockResolvedValue({ executionId: "exec-1" }),
+      update: jest.fn().mockResolvedValue({}),
     },
   },
 }));
@@ -39,6 +48,8 @@ jest.mock("lucide-react", () => ({
   History: () => <span>History</span>,
   Sparkles: () => <span>Sparkles</span>,
   X: () => <span>X</span>,
+  Check: () => <span>Check</span>,
+  Pencil: () => <span>Pencil</span>,
   Send: () => <span>Send</span>,
   Loader2: () => <span>Loader2</span>,
 }));
@@ -67,22 +78,22 @@ const mockNodeCatalog = [
 
 describe("WorkflowDesigner", () => {
   it("renders without crashing", () => {
-    render(<WorkflowDesigner workflow={mockWorkflow} nodeCatalog={mockNodeCatalog} />);
+    render(<WorkflowDesigner workflow={mockWorkflow} nodeCatalog={mockNodeCatalog} />, { wrapper: createWrapper() });
     expect(document.body).toBeTruthy();
   });
 
   it("shows the workflow name", () => {
-    render(<WorkflowDesigner workflow={mockWorkflow} nodeCatalog={mockNodeCatalog} />);
+    render(<WorkflowDesigner workflow={mockWorkflow} nodeCatalog={mockNodeCatalog} />, { wrapper: createWrapper() });
     expect(screen.getByText("Test Workflow")).toBeInTheDocument();
   });
 
   it("renders the react flow canvas", () => {
-    render(<WorkflowDesigner workflow={mockWorkflow} nodeCatalog={mockNodeCatalog} />);
+    render(<WorkflowDesigner workflow={mockWorkflow} nodeCatalog={mockNodeCatalog} />, { wrapper: createWrapper() });
     expect(screen.getByTestId("react-flow")).toBeInTheDocument();
   });
 
   it("renders AI assistant button", () => {
-    render(<WorkflowDesigner workflow={mockWorkflow} nodeCatalog={mockNodeCatalog} />);
+    render(<WorkflowDesigner workflow={mockWorkflow} nodeCatalog={mockNodeCatalog} />, { wrapper: createWrapper() });
     expect(screen.getByTitle("AI Workflow Assistant")).toBeInTheDocument();
   });
 });

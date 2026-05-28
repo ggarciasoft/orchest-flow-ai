@@ -135,6 +135,9 @@ export const api = {
     },
     /** Fetches a single workflow by id. */
     get: (id: string) => apiFetch<Workflow>(`/api/workflows/${id}`),
+    /** Updates a workflow's name and description. */
+    update: (id: string, data: { name: string; description?: string }) =>
+      apiFetch<Workflow>(`/api/workflows/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     /** Creates a new workflow with an initial empty version. */
     create: (data: { name: string; description: string; definition: object }) =>
       apiFetch<Workflow>('/api/workflows', { method: 'POST', body: JSON.stringify(data) }),

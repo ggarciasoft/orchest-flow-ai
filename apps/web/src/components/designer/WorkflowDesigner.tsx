@@ -15,8 +15,9 @@ import { VersionHistoryPanel } from './VersionHistoryPanel';
 import { AiAssistPanel } from './AiAssistPanel';
 import { RunWorkflowModal } from '../RunWorkflowModal';
 import { api } from '@/lib/api';
-import { Save, Play, Undo2, Redo2, History, Sparkles } from 'lucide-react';
+import { Save, Play, Undo2, Redo2, History, Sparkles, Pencil, Check, X } from 'lucide-react';
 import { useHistory } from '@/hooks/useHistory';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface Props {
   /** Workflow metadata (id, name, description). */
@@ -59,6 +60,20 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
   const [edgeContextMenu, setEdgeContextMenu] = useState<EdgeContextMenu | null>(null);
+
+  // Inline name/description editing
+  const qc = useQueryClient();
+  const [editingName, setEditingName] = useState(false);
+  const [editName, setEditName] = useState(workflow.name);
+  const [editDescription, setEditDescription] = useState(workflow.description ?? '');
+  const renameMutation = useMutation({
+    mutationFn: () => api.workflows.update(workflow.id, { name: editName.trim(), description: editDescription.trim() }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['workflow', workflow.id] });
+      qc.invalidateQueries({ queryKey: ['workflows'] });
+      setEditingName(false);
+    },
+  });
 
   const { pushSnapshot, undo: historyUndo, redo: historyRedo, canUndo, canRedo } = useHistory({ nodes: [], edges: [] });
   const [showVersionHistory, setShowVersionHistory] = useState(false);
@@ -303,11 +318,44 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
       <div className="flex-1 flex flex-col min-w-0">
         <div className="flex items-center justify-between px-5 py-3 border-b bg-white shrink-0">
           <div>
-            <div className="flex items-center gap-2"><h2 className="font-semibold text-gray-900">{workflow.name}</h2>{canvasVersionNumber != null && (<span className="text-xs text-slate-500 border border-slate-200 rounded px-2 py-0.5 bg-slate-50">v{canvasVersionNumber}</span>)}</div>
-            <p className="text-xs text-gray-400">
-              Click a node to configure · Right-click or <kbd className="text-xs bg-gray-100 border rounded px-1">Del</kbd> to delete · <kbd className="text-xs bg-gray-100 border rounded px-1">Ctrl+Z</kbd> undo · <kbd className="text-xs bg-gray-100 border rounded px-1">Ctrl+Y</kbd> redo
-              {savedAt && <span className="ml-3 text-green-600">✓ Saved at {savedAt}</span>}
-            </p>
+            {editingName ? (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <input
+                    autoFocus
+                    className="font-semibold text-gray-900 border border-indigo-300 rounded px-2 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') renameMutation.mutate(); if (e.key === 'Escape') setEditingName(false); }}
+                  />
+                  <button onClick={() => renameMutation.mutate()} disabled={!editName.trim() || renameMutation.isPending}
+                    className="text-green-600 hover:text-green-700 disabled:opacity-40"><Check size={15} /></button>
+                  <button onClick={() => setEditingName(false)} className="text-slate-400 hover:text-slate-600"><X size={15} /></button>
+                </div>
+                <input
+                  className="text-xs text-gray-500 border border-slate-200 rounded px-2 py-0.5 w-full focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                  placeholder="Description (optional)"
+                  value={editDescription}
+                  onChange={e => setEditDescription(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') renameMutation.mutate(); if (e.key === 'Escape') setEditingName(false); }}
+                />
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <h2 className="font-semibold text-gray-900">{editName || workflow.name}</h2>
+                {canvasVersionNumber != null && (<span className="text-xs text-slate-500 border border-slate-200 rounded px-2 py-0.5 bg-slate-50">v{canvasVersionNumber}</span>)}
+                <button onClick={() => { setEditName(workflow.name); setEditDescription(workflow.description ?? ''); setEditingName(true); }}
+                  className="text-slate-300 hover:text-indigo-500 transition-colors" title="Rename workflow">
+                  <Pencil size={13} />
+                </button>
+              </div>
+            )}
+            {!editingName && (
+              <p className="text-xs text-gray-400">
+                Click a node to configure · Right-click or <kbd className="text-xs bg-gray-100 border rounded px-1">Del</kbd> to delete · <kbd className="text-xs bg-gray-100 border rounded px-1">Ctrl+Z</kbd> undo · <kbd className="text-xs bg-gray-100 border rounded px-1">Ctrl+Y</kbd> redo
+                {savedAt && <span className="ml-3 text-green-600">✓ Saved at {savedAt}</span>}
+              </p>
+            )}
           </div>
           <div className="flex gap-2">
             {/* Undo/Redo buttons */}
