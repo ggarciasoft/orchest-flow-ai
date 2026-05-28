@@ -1,0 +1,74 @@
+page.tsx:143 A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ScrollAndMaybeFocusHandler cacheNode={{rsc:{...}, ...}}>
+      <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="new/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <InnerLayoutRouter url="/forms/new" tree={[...]} params={{id:"new"}} cacheNode={{rsc:{...}, ...}} ...>
+                    <SegmentViewNode type="page" pagePath="(app)/form...">
+                      <SegmentTrieNode>
+                      <ClientPageRoot Component={function FormBuilderPage} serverProvidedParams={{...}}>
+                        <FormBuilderPage params={Promise} searchParams={Promise}>
+                          <div className="p-8 space-y-6">
+                            <div className="flex items...">
+                              <button
+                                onClick={function onClick}
+                                className="flex items-center gap-2 text-slate-500 hover:text-slate-800 text-sm"
+-                               fdprocessedid="v29kgn"
+                              >
+                              <div className="flex gap-3">
+                                <button
+                                  onClick={function onClick}
+                                  className="flex items-center gap-2 border border-slate-200 text-slate-700 hover:bg-s..."
+-                                 fdprocessedid="4c7on"
+                                >
+                                ...
+                            <div className="grid grid-...">
+                              <div className="lg:col-spa...">
+                                <div className="bg-white b...">
+                                  <h2>
+                                  <div className="space-y-1">
+                                    <label>
+                                    <input
+                                      className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:out..."
+                                      placeholder="e.g. Customer Intake"
+                                      value=""
+                                      onChange={function onChange}
+-                                     fdprocessedid="g0xxu6"
+                                    >
+                                  <div className="space-y-1">
+                                    <label>
+                                    <input
+                                      className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono..."
+                                      value=""
+                                      onChange={function onChange}
+-                                     fdprocessedid="d2i3w8"
+                                    >
+                                  ...
+                              <div className="lg:col-spa...">
+                                <div className="bg-white b...">
+                                  <div className="flex items...">
+                                    <h2>
+                                    <button
+                                      onClick={function openNew}
+                                      className="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-8..."
+-                                     fdprocessedid="dfvcj9"
+                                    >
+                                  ...
+                    ...
+                  ...
+        ...

@@ -226,4 +226,46 @@ public sealed class WorkflowsController : ControllerBase
             definitionJson = version.DefinitionJson,
         });
     }
+
+    /// <summary>
+    /// Clones an existing workflow: creates a new workflow named "Copy of {name}"
+    /// with version 1 containing the source workflow's active version definition.
+    /// </summary>
+    /// <param name="id">The source workflow id.</param>
+    /// <response code="201">Clone created and activated.</response>
+    /// <response code="400">Source workflow has no active version.</response>
+    /// <response code="404">Source workflow not found.</response>
+    [HttpPost("{id}/clone"), Authorize(Policy = "EditorOrAbove")]
+    public async Task<ActionResult<WorkflowResponse>> Clone(Guid id, CancellationToken ct)
+    {
+        var source = await _workflows.GetAsync(id, TenantId, ct);
+        if (source == null) return NotFound();
+
+        var activeVersion = await _workflows.GetActiveVersionAsync(id, ct);
+        if (activeVersion == null) return BadRequest("Source workflow has no active version to clone.");
+
+        // Create new workflow as a copy
+        var clone = Workflow.Create(
+            TenantId,
+            $"Copy of {source.Name}",
+            source.Description,
+            UserId,
+            source.TriggerType,
+            source.WebhookSecret,
+            source.CronExpression);
+
+        clone.SetRetryPolicy(source.RetryPolicy);
+        await _workflows.CreateAsync(clone, ct);
+
+        // Copy the active version definition as version 1 (activated)
+        var cloneVersion = WorkflowVersion.Create(clone.Id, 1, activeVersion.DefinitionJson, UserId);
+        cloneVersion.Activate();
+        await _workflows.CreateVersionAsync(cloneVersion, ct);
+
+        return CreatedAtAction(nameof(Get), new { id = clone.Id },
+            new WorkflowResponse(clone.Id, clone.Name, clone.Description, 1, clone.CreatedAt, clone.UpdatedAt,
+                (OrchestFlowAI.Contracts.TriggerType)(int)clone.TriggerType,
+                clone.WebhookSecret, clone.CronExpression,
+                clone.RetryPolicy.MaxAttempts, clone.RetryPolicy.BackoffMs, clone.RetryPolicy.BackoffMultiplier));
+    }
 }

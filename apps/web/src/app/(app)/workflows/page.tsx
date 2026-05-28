@@ -1,18 +1,32 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import type { Workflow } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
-import { Plus, Search, GitBranch, Play } from 'lucide-react';
+import { Plus, Search, GitBranch, Play, Copy, Loader2 } from 'lucide-react';
 import { PageHeader, Button, EmptyState } from '@/components/ui';
 import { RunWorkflowModal } from '@/components/RunWorkflowModal';
 
 export default function WorkflowsPage() {
   const [search, setSearch] = useState('');
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
+  const [cloningId, setCloningId] = useState<string | null>(null);
+  const router = useRouter();
+  const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ['workflows', search], queryFn: () => api.workflows.list({ search }) });
+
+  const cloneMutation = useMutation({
+    mutationFn: (id: string) => api.workflows.clone(id),
+    onMutate: (id) => setCloningId(id),
+    onSettled: () => setCloningId(null),
+    onSuccess: (cloned) => {
+      qc.invalidateQueries({ queryKey: ['workflows'] });
+      router.push(`/workflows/${cloned.id}/designer`);
+    },
+  });
 
   return (
     <div>
@@ -69,6 +83,15 @@ export default function WorkflowsPage() {
                   className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   <Play size={12} />Run
+                </button>
+                <button
+                  onClick={() => cloneMutation.mutate(w.id)}
+                  disabled={cloningId === w.id || !w.activeVersion}
+                  title={!w.activeVersion ? 'No active version to clone' : 'Duplicate workflow'}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  {cloningId === w.id ? <Loader2 size={12} className="animate-spin" /> : <Copy size={12} />}
+                  Duplicate
                 </button>
                 <Link href={`/workflows/${w.id}/designer`}>
                   <Button variant="ghost" size="sm">Designer</Button>

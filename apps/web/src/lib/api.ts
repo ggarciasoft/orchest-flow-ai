@@ -158,6 +158,9 @@ export const api = {
     /** Fetches the full definition JSON for a specific version. */
     getVersion: (workflowId: string, versionId: string) =>
       apiFetch<WorkflowVersionDetail>(`/api/workflows/${workflowId}/versions/${versionId}`),
+    /** Clones a workflow: creates a new workflow named 'Copy of {name}' with the source's active version. */
+    clone: (id: string) =>
+      apiFetch<Workflow>(`/api/workflows/${id}/clone`, { method: 'POST' }),
   },
   /** Workflow execution history and node timeline endpoints. */
   executions: {
