@@ -1,0 +1,293 @@
+{
+    "id": "7bb1a1bf-1a64-4dcf-a9bb-e31b8d668cd9",
+    "name": "Save User Information In database",
+    "version": 1,
+    "nodes": [
+        {
+            "id": "system.start-1779763136365",
+            "type": "system.start",
+            "position": {
+                "x": 353.02386306827947,
+                "y": 97.76632201927436
+            },
+            "data": {
+                "label": "Start",
+                "descriptor": {
+                    "type": "system.start",
+                    "displayName": "Start",
+                    "description": "Entry point of the workflow. Surfaces workflow inputs.",
+                    "category": "system",
+                    "version": "1.0.0",
+                    "iconKey": "play",
+                    "inputs": [],
+                    "outputs": [],
+                    "configuration": []
+                },
+                "config": {}
+            },
+            "config": {}
+        },
+        {
+            "id": "data.db-execute-1779764769722",
+            "type": "data.db-execute",
+            "position": {
+                "x": 355.77311207727047,
+                "y": 428.2733443325947
+            },
+            "data": {
+                "label": "Database Execute",
+                "descriptor": {
+                    "type": "data.db-execute",
+                    "displayName": "Database Execute",
+                    "description": "Executes an INSERT, UPDATE, or DELETE statement and returns the number of rows affected. Supports PostgreSQL, SQL Server, and MySQL.",
+                    "category": "data",
+                    "version": "1.0.0",
+                    "iconKey": "database",
+                    "inputs": [
+                        {
+                            "key": "connectionString",
+                            "displayName": "Connection String",
+                            "description": "Optional — override the config connection string at runtime.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "key": "rowsAffected",
+                            "displayName": "Rows Affected",
+                            "description": "Number of rows affected by the statement.",
+                            "type": "Number",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        },
+                        {
+                            "key": "success",
+                            "displayName": "Success",
+                            "description": "True if the statement executed without error.",
+                            "type": "Boolean",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        }
+                    ],
+                    "configuration": [
+                        {
+                            "key": "provider",
+                            "displayName": "Provider",
+                            "description": "Database provider.",
+                            "type": "Enum",
+                            "required": true,
+                            "defaultValue": "postgresql",
+                            "allowedValues": [
+                                "postgresql",
+                                "sqlserver",
+                                "mysql"
+                            ],
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        },
+                        {
+                            "key": "connectionString",
+                            "displayName": "Connection String",
+                            "description": "Database connection string. Can also be passed as a runtime input.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": true
+                        },
+                        {
+                            "key": "statement",
+                            "displayName": "SQL Statement",
+                            "description": "Parameterized INSERT/UPDATE/DELETE statement. Use @paramName placeholders.",
+                            "type": "String",
+                            "required": true,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        },
+                        {
+                            "key": "parameters",
+                            "displayName": "Parameters",
+                            "description": "JSON object of statement parameters, e.g. {\"id\": \"abc\", \"status\": \"active\"}.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        },
+                        {
+                            "key": "timeoutSeconds",
+                            "displayName": "Timeout (s)",
+                            "description": "Statement timeout in seconds.",
+                            "type": "Number",
+                            "required": false,
+                            "defaultValue": 30,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        }
+                    ]
+                },
+                "config": {
+                    "connectionString": "Host=localhost;Database=OrchestFlowAI;Username=OrchestFlowAI;Password=OrchestFlowAI",
+                    "statement": "INSERT INTO test_table(create_time, data_value) VALUES (NOW(), @first_name || ' ' || @last_name);",
+                    "parameters": "{\"first_name\": \"{{first_name}}\", \"last_name\": \"{{last_name}}\"}"
+                }
+            },
+            "config": {
+                "connectionString": "Host=localhost;Database=OrchestFlowAI;Username=OrchestFlowAI;Password=OrchestFlowAI",
+                "statement": "INSERT INTO test_table(create_time, data_value) VALUES (NOW(), @first_name || ' ' || @last_name);",
+                "parameters": "{\"first_name\": \"{{first_name}}\", \"last_name\": \"{{last_name}}\"}"
+            }
+        },
+        {
+            "id": "system.end-1779765045164",
+            "type": "system.end",
+            "position": {
+                "x": 309.47615590471827,
+                "y": 730.7129656247408
+            },
+            "data": {
+                "label": "End",
+                "descriptor": {
+                    "type": "system.end",
+                    "displayName": "End",
+                    "description": "Terminal node. Marks workflow completion.",
+                    "category": "system",
+                    "version": "1.0.0",
+                    "iconKey": "stop",
+                    "inputs": [],
+                    "outputs": [],
+                    "configuration": []
+                },
+                "config": {}
+            },
+            "config": {}
+        },
+        {
+            "id": "form.user-information-1779982456124",
+            "type": "form.user-information",
+            "position": {
+                "x": 388.1554554690712,
+                "y": 231.08887760123184
+            },
+            "data": {
+                "label": "User Information",
+                "descriptor": {
+                    "type": "form.user-information",
+                    "displayName": "User Information",
+                    "description": "",
+                    "category": "forms",
+                    "version": "1.0.0",
+                    "iconKey": "clipboard-list",
+                    "inputs": [
+                        {
+                            "key": "first_name",
+                            "displayName": "First Name",
+                            "description": "First Name",
+                            "type": "String",
+                            "required": true,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        },
+                        {
+                            "key": "last_name",
+                            "displayName": "Last Name",
+                            "description": "Last Name",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "key": "first_name",
+                            "displayName": "First Name",
+                            "description": "User-submitted value for First Name",
+                            "type": "String",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        },
+                        {
+                            "key": "last_name",
+                            "displayName": "Last Name",
+                            "description": "User-submitted value for Last Name",
+                            "type": "String",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        },
+                        {
+                            "key": "_formSubmitted",
+                            "displayName": "Form Submitted",
+                            "description": "True when the form was submitted.",
+                            "type": "Boolean",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        }
+                    ],
+                    "configuration": []
+                },
+                "config": {}
+            },
+            "config": {}
+        }
+    ],
+    "edges": [
+        {
+            "id": "xy-edge__system.start-1779763136365-form.user-information-1779982456124",
+            "source": "system.start-1779763136365",
+            "target": "form.user-information-1779982456124"
+        },
+        {
+            "id": "xy-edge__form.user-information-1779982456124-data.db-execute-1779764769722",
+            "source": "form.user-information-1779982456124",
+            "target": "data.db-execute-1779764769722"
+        },
+        {
+            "id": "xy-edge__data.db-execute-1779764769722-system.end-1779765045164",
+            "source": "data.db-execute-1779764769722",
+            "target": "system.end-1779765045164"
+        }
+    ]
+}

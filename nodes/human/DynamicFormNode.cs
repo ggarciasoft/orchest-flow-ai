@@ -24,9 +24,10 @@ public sealed class DynamicFormNode : IWorkflowNode
         var fields = JsonSerializer.Deserialize<List<FormFieldDefinition>>(_form.FieldsJson ?? "[]",
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
 
-        // Resume path: all required fields present in NodeInputs
-        var allPresent = fields.Where(f => f.Required).All(f => ctx.NodeInputs.ContainsKey(f.Key));
-        if (allPresent && fields.Count > 0)
+        // Resume path: engine calls ExecuteAsync again after form is submitted.
+        // Check for the explicit _formSubmitted signal rather than inferring from field presence
+        // (the old approach breaks when all fields are optional).
+        if (ctx.NodeInputs.TryGetValue("_formSubmitted", out var submitted) && submitted is true or "true")
         {
             var outputs = new Dictionary<string, object?>();
             foreach (var field in fields)
