@@ -56,6 +56,12 @@ public sealed class FormsController : ControllerBase
         var fieldsJson = req.Fields.GetRawText();
         var form = Form.Create(TenantId, req.Name.Trim(), req.Slug.Trim(), req.Description, fieldsJson);
         await _forms.CreateAsync(form, ct);
+
+        // Create version 1 and activate it
+        var version = FormVersion.Create(form.Id, 1, fieldsJson, UserId);
+        version.Activate();
+        await _forms.CreateVersionAsync(version, ct);
+
         await _registrar.RefreshAsync(TenantId, ct);
         return StatusCode(201, ToResponse(form));
     }
@@ -89,6 +95,15 @@ public sealed class FormsController : ControllerBase
 
         form.Update(req.Name.Trim(), req.Slug.Trim(), req.Description, req.Fields.GetRawText());
         await _forms.UpdateAsync(form, ct);
+
+        // Create a new version and activate it
+        var nextNum = await _forms.GetNextVersionNumberAsync(id, ct);
+        var version = FormVersion.Create(id, nextNum, req.Fields.GetRawText(), UserId);
+        version.Activate();
+        await _forms.CreateVersionAsync(version, ct);
+        // Deactivate previous versions
+        await _forms.ActivateVersionAsync(version.Id, id, ct);
+
         await _registrar.RefreshAsync(TenantId, ct);
         return Ok(ToResponse(form));
     }
@@ -117,6 +132,54 @@ public sealed class FormsController : ControllerBase
     /// Public endpoint that returns the form schema for the fill page.
     /// Does not require authentication — allows external users to fill the form.
     /// </summary>
+    // ──────────────────────────────────────────
+    // GET /api/forms/{id}/versions
+    // ──────────────────────────────────────────
+
+    /// <summary>Lists all versions of a form ordered newest first.</summary>
+    [HttpGet("{id:guid}/versions"), Authorize(Policy = "ViewerOrAbove")]
+    public async Task<ActionResult> ListVersions(Guid id, CancellationToken ct)
+    {
+        var form = await _forms.GetAsync(id, TenantId, ct);
+        if (form == null) return NotFound();
+        var versions = await _forms.ListVersionsAsync(id, ct);
+        return Ok(versions.Select(v => new
+        {
+            id = v.Id,
+            versionNumber = v.VersionNumber,
+            isActive = v.IsActive,
+            createdBy = v.CreatedBy,
+            createdAt = v.CreatedAt,
+            fieldsJson = v.FieldsJson,
+        }));
+    }
+
+    // ──────────────────────────────────────────
+    // POST /api/forms/{id}/versions/{versionId}/activate
+    // ──────────────────────────────────────────
+
+    /// <summary>Activates a specific form version, deactivating all others. The form's FieldsJson is updated to match.</summary>
+    [HttpPost("{id:guid}/versions/{versionId:guid}/activate"), Authorize(Policy = "EditorOrAbove")]
+    public async Task<IActionResult> ActivateVersion(Guid id, Guid versionId, CancellationToken ct)
+    {
+        var form = await _forms.GetAsync(id, TenantId, ct);
+        if (form == null) return NotFound();
+        var version = await _forms.GetVersionAsync(versionId, ct);
+        if (version == null || version.FormId != id) return NotFound();
+
+        await _forms.ActivateVersionAsync(versionId, id, ct);
+
+        // Sync the form's live FieldsJson to the activated version
+        form.Update(form.Name, form.Slug, form.Description, version.FieldsJson);
+        await _forms.UpdateAsync(form, ct);
+        await _registrar.RefreshAsync(TenantId, ct);
+        return NoContent();
+    }
+
+    // ──────────────────────────────────────────
+    // GET /api/forms/{id}/fill  (public)
+    // ──────────────────────────────────────────
+
     [HttpGet("{id:guid}/fill"), AllowAnonymous]
     public async Task<ActionResult> Fill(Guid id, [FromQuery] Guid? executionId, [FromQuery] string? nodeExecutionId, CancellationToken ct)
     {

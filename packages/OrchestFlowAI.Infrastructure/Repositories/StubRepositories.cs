@@ -263,6 +263,7 @@ public sealed class StubFormRepository : IFormRepository
 {
     private readonly List<Form> _forms = new();
     private readonly List<FormSubmission> _submissions = new();
+    private readonly List<FormVersion> _versions = new();
 
     public Task<IReadOnlyList<Form>> ListAsync(Guid tenantId, CancellationToken ct = default)
         => Task.FromResult<IReadOnlyList<Form>>(_forms.Where(f => f.TenantId == tenantId && !f.IsDeleted).OrderBy(f => f.Name).ToList());
@@ -287,6 +288,33 @@ public sealed class StubFormRepository : IFormRepository
 
     public Task<FormSubmission?> GetSubmissionByExecutionAsync(Guid executionId, string nodeExecutionId, CancellationToken ct = default)
         => Task.FromResult(_submissions.FirstOrDefault(s => s.WorkflowExecutionId == executionId && s.NodeExecutionId == nodeExecutionId));
+
+    // ── Versions ─────────────────────────────────────────────────────────────────────────
+    public Task<FormVersion> CreateVersionAsync(FormVersion version, CancellationToken ct = default)
+    { _versions.Add(version); return Task.FromResult(version); }
+
+    public Task<IReadOnlyList<FormVersion>> ListVersionsAsync(Guid formId, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<FormVersion>>(_versions.Where(v => v.FormId == formId).OrderByDescending(v => v.VersionNumber).ToList());
+
+    public Task<FormVersion?> GetVersionAsync(Guid versionId, CancellationToken ct = default)
+        => Task.FromResult(_versions.FirstOrDefault(v => v.Id == versionId));
+
+    public Task<FormVersion?> GetActiveVersionAsync(Guid formId, CancellationToken ct = default)
+        => Task.FromResult(_versions.FirstOrDefault(v => v.FormId == formId && v.IsActive));
+
+    public Task ActivateVersionAsync(Guid versionId, Guid formId, CancellationToken ct = default)
+    {
+        foreach (var v in _versions.Where(v => v.FormId == formId)) v.Deactivate();
+        var target = _versions.FirstOrDefault(v => v.Id == versionId);
+        target?.Activate();
+        return Task.CompletedTask;
+    }
+
+    public Task<int> GetNextVersionNumberAsync(Guid formId, CancellationToken ct = default)
+    {
+        var max = _versions.Where(v => v.FormId == formId).Select(v => (int?)v.VersionNumber).Max();
+        return Task.FromResult((max ?? 0) + 1);
+    }
 }
 
 public sealed class StubSecretRepository : ISecretRepository

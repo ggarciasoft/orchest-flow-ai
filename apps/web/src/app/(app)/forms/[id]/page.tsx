@@ -2,10 +2,11 @@
 import { useState, useEffect, use } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { api, FormFieldDefinition, WorkflowForm } from '@/lib/api';
+import { api, FormFieldDefinition, FormVersionSummary, WorkflowForm } from '@/lib/api';
 import { ArrowLeft, Plus, ArrowUp, ArrowDown, Pencil, Trash2, Eye, Save, FlaskConical } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import FormRenderer from '../_components/FormRenderer';
+import FormVersionHistory from '../_components/FormVersionHistory';
 
 /** Auto-generates a slug from a display name (kebab-case, alphanumeric + dash). */
 function slugify(name: string): string {
@@ -209,6 +210,21 @@ export default function FormBuilderPage({ params }: { params: Promise<{ id: stri
             </div>
           </div>
         </div>
+
+        {/* Version history — only shown for existing forms */}
+        {!isNew && (
+          <div className="lg:col-span-1 mt-0">
+            <FormVersionHistory
+              formId={id}
+              onActivate={(v: FormVersionSummary) => {
+                try {
+                  const parsed = JSON.parse(v.fieldsJson);
+                  setFields(parsed);
+                } catch { /* ignore */ }
+              }}
+            />
+          </div>
+        )}
 
         {/* Right panel — fields */}
         <div className="lg:col-span-2 space-y-4">

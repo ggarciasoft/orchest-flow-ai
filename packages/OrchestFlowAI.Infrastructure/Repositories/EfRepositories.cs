@@ -359,6 +359,35 @@ public sealed class EfFormRepository : IFormRepository
 
     public Task<FormSubmission?> GetSubmissionByExecutionAsync(Guid executionId, string nodeExecutionId, CancellationToken ct = default)
         => _db.FormSubmissions.AsNoTracking().FirstOrDefaultAsync(s => s.WorkflowExecutionId == executionId && s.NodeExecutionId == nodeExecutionId, ct);
+
+    // ── Version management ───────────────────────────────────────────────────────────────────
+    public async Task<FormVersion> CreateVersionAsync(FormVersion version, CancellationToken ct = default)
+    { _db.FormVersions.Add(version); await _db.SaveChangesAsync(ct); return version; }
+
+    public async Task<IReadOnlyList<FormVersion>> ListVersionsAsync(Guid formId, CancellationToken ct = default)
+        => await _db.FormVersions.AsNoTracking().Where(v => v.FormId == formId).OrderByDescending(v => v.VersionNumber).ToListAsync(ct);
+
+    public Task<FormVersion?> GetVersionAsync(Guid versionId, CancellationToken ct = default)
+        => _db.FormVersions.AsNoTracking().FirstOrDefaultAsync(v => v.Id == versionId, ct);
+
+    public Task<FormVersion?> GetActiveVersionAsync(Guid formId, CancellationToken ct = default)
+        => _db.FormVersions.AsNoTracking().FirstOrDefaultAsync(v => v.FormId == formId && v.IsActive, ct);
+
+    public async Task ActivateVersionAsync(Guid versionId, Guid formId, CancellationToken ct = default)
+    {
+        var versions = await _db.FormVersions.Where(v => v.FormId == formId).ToListAsync(ct);
+        foreach (var v in versions) v.Deactivate();
+        var target = versions.FirstOrDefault(v => v.Id == versionId)
+            ?? throw new InvalidOperationException($"FormVersion {versionId} not found");
+        target.Activate();
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task<int> GetNextVersionNumberAsync(Guid formId, CancellationToken ct = default)
+    {
+        var max = await _db.FormVersions.Where(v => v.FormId == formId).MaxAsync(v => (int?)v.VersionNumber, ct);
+        return (max ?? 0) + 1;
+    }
 }
 
 /// <summary>EF Core implementation of <see cref="IPlatformSettingsRepository"/>.</summary>

@@ -29,6 +29,7 @@ public sealed class OrchestFlowAIDbContext : DbContext
     public DbSet<Secret> Secrets => Set<Secret>();
     public DbSet<Feedback> Feedbacks => Set<Feedback>();
     public DbSet<Form> Forms => Set<Form>();
+    public DbSet<FormVersion> FormVersions => Set<FormVersion>();
     public DbSet<FormSubmission> FormSubmissions => Set<FormSubmission>();
     public DbSet<CorrelationToken> CorrelationTokens => Set<CorrelationToken>();
 
@@ -185,6 +186,14 @@ public sealed class OrchestFlowAIDbContext : DbContext
             e.Property(f => f.Description).HasMaxLength(2000);
             e.Property(f => f.FieldsJson).IsRequired().HasColumnType("text");
             e.HasIndex(f => new { f.TenantId, f.Slug });
+        });
+
+        modelBuilder.Entity<FormVersion>(e =>
+        {
+            e.HasKey(v => v.Id);
+            e.Property(v => v.FieldsJson).IsRequired().HasColumnType("text");
+            e.HasIndex(v => v.FormId);
+            e.HasIndex(v => new { v.FormId, v.VersionNumber }).IsUnique();
         });
 
         modelBuilder.Entity<FormSubmission>(e =>

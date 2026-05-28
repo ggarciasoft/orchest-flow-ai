@@ -93,6 +93,15 @@ export interface FormFieldDefinition {
 }
 
 /** A custom form definition for collecting user input during workflow execution. */
+export interface FormVersionSummary {
+  id: string;
+  versionNumber: number;
+  isActive: boolean;
+  createdBy: string;
+  createdAt: string;
+  fieldsJson: string;
+}
+
 export interface WorkflowForm {
   id: string;
   name: string;
@@ -338,6 +347,12 @@ export const api = {
     /** Submits form values to resume a paused workflow execution. */
     submit: (id: string, data: { workflowExecutionId: string; nodeExecutionId: string; values: Record<string, unknown> }) =>
       apiFetch<void>(`/api/forms/${id}/submit`, { method: 'POST', body: JSON.stringify(data) }),
+    /** Lists all versions of a form ordered newest first. */
+    listVersions: (id: string) =>
+      apiFetch<FormVersionSummary[]>(`/api/forms/${id}/versions`),
+    /** Activates a specific form version. */
+    activateVersion: (formId: string, versionId: string) =>
+      apiFetch<void>(`/api/forms/${formId}/versions/${versionId}/activate`, { method: 'POST' }),
   },
   /** Secret vault endpoints — encrypted named values for use in node config as {{secret:name}}. */
   secrets: {

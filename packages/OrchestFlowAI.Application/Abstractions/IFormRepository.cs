@@ -12,4 +12,12 @@ public interface IFormRepository
     Task UpdateAsync(Form form, CancellationToken ct = default);
     Task<FormSubmission> CreateSubmissionAsync(FormSubmission submission, CancellationToken ct = default);
     Task<FormSubmission?> GetSubmissionByExecutionAsync(Guid executionId, string nodeExecutionId, CancellationToken ct = default);
+
+    // ── Version management ──────────────────────────────────────────────────
+    Task<FormVersion> CreateVersionAsync(FormVersion version, CancellationToken ct = default);
+    Task<IReadOnlyList<FormVersion>> ListVersionsAsync(Guid formId, CancellationToken ct = default);
+    Task<FormVersion?> GetVersionAsync(Guid versionId, CancellationToken ct = default);
+    Task<FormVersion?> GetActiveVersionAsync(Guid formId, CancellationToken ct = default);
+    Task ActivateVersionAsync(Guid versionId, Guid formId, CancellationToken ct = default);
+    Task<int> GetNextVersionNumberAsync(Guid formId, CancellationToken ct = default);
 }
