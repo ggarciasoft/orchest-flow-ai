@@ -22,9 +22,10 @@ public sealed class FormsController : ControllerBase
     private readonly IExecutionQueue _queue;
     private readonly FormNodeRegistrar _registrar;
     private readonly IExecutionRepository _executions;
+    private readonly IApprovalRepository _approvals;
 
-    public FormsController(IFormRepository forms, IExecutionQueue queue, FormNodeRegistrar registrar, IExecutionRepository executions)
-    { _forms = forms; _queue = queue; _registrar = registrar; _executions = executions; }
+    public FormsController(IFormRepository forms, IExecutionQueue queue, FormNodeRegistrar registrar, IExecutionRepository executions, IApprovalRepository approvals)
+    { _forms = forms; _queue = queue; _registrar = registrar; _executions = executions; _approvals = approvals; }
 
     private Guid TenantId => Guid.Parse(User.FindFirst("tenant_id")?.Value ?? Guid.Empty.ToString());
     private Guid UserId => Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString());
@@ -266,6 +267,15 @@ public sealed class FormsController : ControllerBase
         await _queue.EnqueueResumeAsync(
             new ExecutionResumeMessage(req.WorkflowExecutionId, nodeExecGuid, nodeExecGuid, resumeOutputs),
             ct);
+
+        // Mark the corresponding ApprovalRequest as approved so it leaves the pending inbox
+        var approvalRequest = await _approvals.GetByNodeExecutionIdAsync(nodeExecGuid, ct);
+        if (approvalRequest != null && approvalRequest.Status == OrchestFlowAI.Domain.Enums.ApprovalStatus.Pending)
+        {
+            var submitterId = submittedBy ?? Guid.Empty;
+            approvalRequest.Approve(submitterId, "Form submitted");
+            await _approvals.UpdateAsync(approvalRequest, ct);
+        }
 
         return NoContent();
     }

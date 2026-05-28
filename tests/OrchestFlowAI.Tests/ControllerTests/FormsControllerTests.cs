@@ -36,7 +36,8 @@ public sealed class FormsControllerTests
         queue ??= Mock.Of<IExecutionQueue>();
         registrar ??= BuildRegistrar(repo);
         executions ??= Mock.Of<IExecutionRepository>();
-        var ctrl = new FormsController(repo, queue, registrar, executions);
+        var approvals = Mock.Of<IApprovalRepository>();
+        var ctrl = new FormsController(repo, queue, registrar, executions, approvals);
         ctrl.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext

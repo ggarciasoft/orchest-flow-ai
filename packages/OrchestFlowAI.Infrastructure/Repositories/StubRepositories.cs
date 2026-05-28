@@ -98,6 +98,7 @@ public sealed class StubApprovalRepository : IApprovalRepository
     private static readonly ConcurrentDictionary<Guid, ApprovalRequest> _store = new();
 
     public Task<ApprovalRequest?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default) => Task.FromResult(_store.GetValueOrDefault(id));
+    public Task<ApprovalRequest?> GetByNodeExecutionIdAsync(Guid nodeExecutionId, CancellationToken ct = default) => Task.FromResult(_store.Values.FirstOrDefault(a => a.NodeExecutionId == nodeExecutionId));
     public Task<ApprovalRequest> CreateAsync(ApprovalRequest approval, CancellationToken ct = default) { _store[approval.Id] = approval; return Task.FromResult(approval); }
     public Task UpdateAsync(ApprovalRequest approval, CancellationToken ct = default) { _store[approval.Id] = approval; return Task.CompletedTask; }
 

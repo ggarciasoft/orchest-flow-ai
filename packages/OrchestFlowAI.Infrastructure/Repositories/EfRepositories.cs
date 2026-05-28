@@ -120,6 +120,9 @@ public sealed class EfApprovalRepository : IApprovalRepository
     public Task<ApprovalRequest?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default)
         => _db.ApprovalRequests.FirstOrDefaultAsync(a => a.Id == id && a.TenantId == tenantId, ct);
 
+    public Task<ApprovalRequest?> GetByNodeExecutionIdAsync(Guid nodeExecutionId, CancellationToken ct = default)
+        => _db.ApprovalRequests.FirstOrDefaultAsync(a => a.NodeExecutionId == nodeExecutionId, ct);
+
     public async Task<ApprovalRequest> CreateAsync(ApprovalRequest approval, CancellationToken ct = default)
     { _db.ApprovalRequests.Add(approval); await _db.SaveChangesAsync(ct); return approval; }
 

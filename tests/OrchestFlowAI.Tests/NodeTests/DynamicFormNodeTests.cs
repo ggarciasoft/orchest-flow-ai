@@ -71,6 +71,7 @@ public sealed class DynamicFormNodeTests
         var ctx = new TestContextBuilder()
             .WithInputs(new Dictionary<string, object?>
             {
+                ["_formSubmitted"] = true,
                 ["amount"] = "150.00",
                 ["notes"] = "Travel expenses"
             })
@@ -93,7 +94,7 @@ public sealed class DynamicFormNodeTests
 
         // Only required "amount" provided, optional "notes" omitted
         var ctx = new TestContextBuilder()
-            .WithInputs(new Dictionary<string, object?> { ["amount"] = "99.99" })
+            .WithInputs(new Dictionary<string, object?> { ["_formSubmitted"] = true, ["amount"] = "99.99" })
             .Build();
 
         var result = await node.ExecuteAsync(ctx, CancellationToken.None);
