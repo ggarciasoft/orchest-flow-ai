@@ -6,7 +6,7 @@ import { formatDate } from '@/lib/utils';
 import { useExecutionStream } from '@/hooks/useExecutionStream';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { PageHeader, Badge, statusVariant } from '@/components/ui';
+import { PageHeader, Badge, statusVariant, statusLabel } from '@/components/ui';
 
 /**
  * ExecutionDetailPage - shows execution metadata, node timeline, and a live SignalR event log.
@@ -40,7 +40,7 @@ export default function ExecutionDetailPage() {
       <PageHeader
         title="Execution Timeline"
         subtitle={[exec.workflowName ?? exec.workflowId.slice(0, 12) + '\u2026', exec.versionNumber != null ? `v${exec.versionNumber}` : null].filter(Boolean).join(' \u00b7 ')}
-        action={<Badge variant={statusVariant(exec.status)}>{exec.status}</Badge>}
+        action={<Badge variant={statusVariant(exec.status)}>{statusLabel(exec.status)}</Badge>}
       />
 
       <div className="grid grid-cols-3 gap-4">
@@ -74,7 +74,7 @@ export default function ExecutionDetailPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-medium text-sm text-slate-900">{n.nodeId}</span>
-                  <Badge variant={statusVariant(n.status)}>{n.status}</Badge>
+                  <Badge variant={statusVariant(n.status)}>{statusLabel(n.status)}</Badge>
                 </div>
                 <p className="text-xs text-slate-400 font-mono mt-0.5">{n.nodeType}</p>
                 <div className="flex gap-4 mt-1 text-xs text-slate-400">
@@ -108,7 +108,7 @@ export default function ExecutionDetailPage() {
               <span className="text-slate-600 truncate">
                 {evt.nodeType && <span>{evt.nodeType}</span>}
                 {evt.error && <span className="text-red-500"> - {evt.error}</span>}
-                {evt.status && <span> - {evt.status}</span>}
+                {evt.status && <span> - {statusLabel(evt.status)}</span>}
               </span>
             </div>
           ))}

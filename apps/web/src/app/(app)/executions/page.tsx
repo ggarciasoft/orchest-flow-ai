@@ -4,7 +4,7 @@ import { api } from '@/lib/api';
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
 import { Play } from 'lucide-react';
-import { PageHeader, Badge, statusVariant, EmptyState } from '@/components/ui';
+import { PageHeader, Badge, statusVariant, statusLabel, EmptyState } from '@/components/ui';
 
 export default function ExecutionsPage() {
   const { data, isLoading } = useQuery({ queryKey: ['executions'], queryFn: () => api.executions.list() });
@@ -42,7 +42,7 @@ export default function ExecutionsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <Badge variant={statusVariant(e.status)}>{e.status}</Badge>
+                <Badge variant={statusVariant(e.status)}>{statusLabel(e.status)}</Badge>
                 <span className="text-xs text-slate-400">{formatDate(e.startedAt)}</span>
                 <Link href={`/executions/${e.id}`}>
                   <button className="text-xs text-indigo-600 hover:underline">View Timeline →</button>
