@@ -91,8 +91,10 @@ public sealed class ApprovalsController : ControllerBase
     public async Task<ActionResult<PagedResponse<ApprovalRequestResponse>>> List([FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
     {
         var items = await _approvals.ListPendingAsync(TenantId, page, pageSize, ct);
-        var result = await Task.WhenAll(items.Select(a => EnrichAsync(a, ct)));
-        return Ok(new PagedResponse<ApprovalRequestResponse>(result.ToList(), page, pageSize, result.Length));
+        var result = new List<ApprovalRequestResponse>(items.Count);
+        foreach (var a in items)
+            result.Add(await EnrichAsync(a, ct));
+        return Ok(new PagedResponse<ApprovalRequestResponse>(result, page, pageSize, result.Count));
     }
 
     /// <summary>Retrieves details of a specific approval request by its ID.</summary>
