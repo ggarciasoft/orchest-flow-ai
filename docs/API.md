@@ -147,24 +147,38 @@ Response:
 ```
 
 ### `POST /api/executions/{executionId}/cancel`
-Cancel a running or paused execution.
+Cancel a Queued, Running, or Paused execution.
+
+- Returns **204 NoContent** on success.
+- Returns **409 Conflict** if the execution is already in a terminal state (Completed, Failed, Cancelled).
+- Also cancels any pending `ApprovalRequest` for that execution so it is removed from the approval inbox.
+
+Requires `EditorOrAbove` role.
 
 ### `GET /api/executions`
-List executions with filters.
+List executions with filters and pagination.
 
-Query: `?workflowId=`, `?status=`, `?from=`, `?to=`, `?page=`, `?pageSize=`
+Query: `?status=`, `?search=` (matches CorrelationId), `?page=`, `?pageSize=`
+
+Response: `PagedResponse<WorkflowExecution>` — see §14 Pagination.
 
 ---
 
 ## 3. Approvals
 
 ### `GET /api/approvals`
-List pending approvals visible to the caller.
+List **Pending** approvals for the caller's tenant.
 
-Query: `?status=`, `?workflowId=`, `?page=`, `?pageSize=`
+Query: `?page=`, `?pageSize=`
+
+Response: `PagedResponse<ApprovalRequest>`
 
 ### `GET /api/approvals/{approvalId}`
-Get an approval request payload.
+Get an approval request by id (enriched with workflow name, version, and form version).
+
+### `GET /api/approvals/by-execution/{executionId}`
+Get the **Pending** approval for a specific workflow execution.
+Returns `404` when no pending approval exists (e.g. already decided or execution was cancelled).
 
 ### `POST /api/approvals/{approvalId}/approve`
 Body: `{ "comment": "string" }`
@@ -172,7 +186,7 @@ Body: `{ "comment": "string" }`
 ### `POST /api/approvals/{approvalId}/reject`
 Body: `{ "comment": "string" }`
 
-Both endpoints persist the decision, mark the node execution `Succeeded` with `{ decision, comment }`, and enqueue resume.
+Both endpoints persist the decision and enqueue resume so the workflow continues.
 
 ---
 
@@ -421,13 +435,20 @@ If the same key is replayed within 24h, the original response is returned withou
 
 ## 14. Pagination
 
-Standard envelope:
+All list endpoints (`/api/workflows`, `/api/executions`, `/api/forms`, `/api/approvals`) return a standard paged envelope:
 
 ```json
 { "items": [ "..." ], "page": 1, "pageSize": 20, "total": 137 }
 ```
 
-Default page size 20, max 100.
+Default page size: **20**. Pass `?page=2&pageSize=50` to paginate.
+
+| Endpoint | Filter params |
+|---|---|
+| `GET /api/workflows` | `?search=` (name) |
+| `GET /api/executions` | `?status=`, `?search=` (correlationId) |
+| `GET /api/forms` | `?search=` (name or description) |
+| `GET /api/approvals` | — |
 
 ---
 
@@ -497,11 +518,15 @@ Forms are user-defined schemas that become workflow nodes (`form.<slug>`). When 
 ### List forms
 
 ```
-GET /api/forms
+GET /api/forms?search=&page=1&pageSize=20
 Authorization: Bearer <token>
 ```
 
-Response `200`: `[{ id, name, slug, description, fields, createdAt, updatedAt }]`
+Response `200`: `PagedResponse<FormResponse>` — see §14 Pagination.
+
+Query params:
+- `search` — case-insensitive contains match on name or description (optional)
+- `page` / `pageSize` — default 1 / 20
 
 ### Get form
 

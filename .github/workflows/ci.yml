@@ -19,13 +19,13 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Restore
-        run: dotnet restore OrchestFlowAI.sln
+        run: dotnet restore OrchestFlowAI.slnx
 
       - name: Build
-        run: dotnet build OrchestFlowAI.sln --no-restore -c Release
+        run: dotnet build OrchestFlowAI.slnx --no-restore -c Release
 
       - name: Test
-        run: dotnet test OrchestFlowAI.sln --no-build -c Release --logger "trx;LogFileName=test-results.trx" || true
+        run: dotnet test OrchestFlowAI.slnx --no-build -c Release --logger "trx;LogFileName=test-results.trx" || true
 
   frontend:
     name: Frontend — Build & Lint

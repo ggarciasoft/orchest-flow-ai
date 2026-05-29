@@ -97,6 +97,8 @@ Total workflows, recent executions, pending approvals, failed executions.
 
 ### Workflows List
 - Name, active version tag, last updated, Run button, **Duplicate** button, Designer link.
+- **Search** — debounced name search (350 ms); resets to page 1 on change.
+- **Pagination** — prev/next controls; 20 per page; total count from API.
 - **Duplicate** calls `POST /api/workflows/{id}/clone` → opens the copy in the designer immediately.
 - Duplicate is disabled when the source has no active version.
 
@@ -118,6 +120,8 @@ Top bar:
 ### Execution Timeline
 - Per-node status, timestamps, input/output JSON, retry count.
 - Status badges use `statusLabel()` for human-readable text (e.g. `WaitingForApproval` → `"Waiting for Approval"`).
+- **Cancel Execution** button appears in the header when status is `Queued`, `Running`, or `Paused`. Opens `CancelExecutionModal` — an amber warning dialog showing workflow name/version and execution ID. Calls `POST /api/executions/{id}/cancel`.
+- **Waiting for Approval banner** — when the execution is `Paused`, the detail page fetches the pending approval via `GET /api/approvals/by-execution/{id}`. If one exists, an amber clickable banner links directly to `/approvals/{id}`. The `WaitingForApproval` node row in the timeline also shows an inline "Review" link.
 
 ### Approval Inbox / Detail
 
@@ -141,8 +145,17 @@ Cards linking to sub-sections:
 - **Integrations** (`/settings/integrations`) — external service credentials (Gmail OAuth2). Same dropdown pattern.
 - **Secrets** (`/settings/secrets`) — encrypted named vault; reference as `{{secret:name}}` in any node config.
 
+### Executions List (`/executions`)
+- **Status filter pills** — All / Running / Queued / Paused / Completed / Failed / Cancelled. Resets to page 1.
+- **Search** — debounced (350 ms) match against Correlation ID.
+- **Pagination** — 20 per page with accurate total.
+- **Cancel** icon on active rows (Queued/Running/Paused) — opens `CancelExecutionModal`.
+- Auto-refreshes every 10 s.
+
 ### Forms Builder
-- `/forms` — card grid; Copy node type (`form.<slug>`) to clipboard.
+- `/forms` — list layout (not card grid); **search** by name or description; **pagination** (20 per page).
+- Copy node type (`form.<slug>`) to clipboard inline.
+- `/forms/[id]` — builder with Name, Slug (auto-generated from name, manually overridable), Description, field list (reorder, add/edit/delete), Preview modal, **AI assistant panel** (generate/modify fields via LLM prompt).
 - `/forms/[id]` — builder with Name, Slug (auto-generated from name, manually overridable), Description, field list (reorder, add/edit/delete), Preview modal.
 - `slug` is **required** and determines the node type. Must be unique per tenant.
 - **Version History panel** (existing forms only) — collapsible panel in the left column showing all saved versions. Each entry shows version number, date, field count, and active badge.
