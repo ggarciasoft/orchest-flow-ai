@@ -206,6 +206,8 @@ export const api = {
     },
     /** Fetches a single approval request by id. */
     get: (id: string) => apiFetch<ApprovalRequest>(`/api/approvals/${id}`),
+    /** Fetches the pending approval for a specific execution (returns null if none). */
+    getByExecution: (executionId: string) => apiFetch<ApprovalRequest>(`/api/approvals/by-execution/${executionId}`),
     /** Approves a pending approval request with an optional comment. */
     approve: (id: string, comment?: string) =>
       apiFetch<ApprovalRequest>(`/api/approvals/${id}/approve`, { method: 'POST', body: JSON.stringify({ comment }) }),

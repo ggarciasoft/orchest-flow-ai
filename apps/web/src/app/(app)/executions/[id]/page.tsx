@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { useExecutionStream } from '@/hooks/useExecutionStream';
 import Link from 'next/link';
-import { ArrowLeft, XCircle } from 'lucide-react';
+import { ArrowLeft, XCircle, ClipboardCheck } from 'lucide-react';
 import { PageHeader, Badge, statusVariant, statusLabel } from '@/components/ui';
 import { useState } from 'react';
 import { CancelExecutionModal } from '@/components/CancelExecutionModal';
@@ -31,6 +31,14 @@ export default function ExecutionDetailPage() {
   });
 
   const { events } = useExecutionStream(id ?? '');
+
+  // If the execution is paused waiting for approval, fetch the pending approval for navigation
+  const { data: pendingApproval } = useQuery({
+    queryKey: ['execution-approval', id],
+    queryFn: () => api.approvals.getByExecution(id),
+    enabled: !!exec && exec.status === 'Paused',
+    retry: false,
+  });
 
   const isActive = exec && ['Queued', 'Running', 'Paused'].includes(exec.status);
 
@@ -98,6 +106,22 @@ export default function ExecutionDetailPage() {
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">{exec.errorMessage}</div>
       )}
 
+      {pendingApproval && (
+        <Link
+          href={`/approvals/${pendingApproval.id}`}
+          className="flex items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-xl p-4 hover:bg-amber-100 transition-colors group"
+        >
+          <div className="flex items-center gap-3">
+            <ClipboardCheck size={18} className="text-amber-600 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-amber-900">Waiting for Approval</p>
+              <p className="text-xs text-amber-700 mt-0.5">This execution is paused pending a human decision.</p>
+            </div>
+          </div>
+          <span className="text-xs font-medium text-amber-700 group-hover:underline shrink-0">Review Approval →</span>
+        </Link>
+      )}
+
       <div className="bg-white border border-slate-200 rounded-xl">
         <div className="p-5 border-b border-slate-100">
           <h3 className="text-sm font-semibold text-slate-900">Node Timeline</h3>
@@ -109,7 +133,17 @@ export default function ExecutionDetailPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-medium text-sm text-slate-900">{n.nodeId}</span>
-                  <Badge variant={statusVariant(n.status)}>{statusLabel(n.status)}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={statusVariant(n.status)}>{statusLabel(n.status)}</Badge>
+                    {n.status === 'WaitingForApproval' && pendingApproval && (
+                      <Link
+                        href={`/approvals/${pendingApproval.id}`}
+                        className="flex items-center gap-1 text-xs text-amber-700 hover:underline font-medium"
+                      >
+                        <ClipboardCheck size={12} /> Review
+                      </Link>
+                    )}
+                  </div>
                 </div>
                 <p className="text-xs text-slate-400 font-mono mt-0.5">{n.nodeType}</p>
                 <div className="flex gap-4 mt-1 text-xs text-slate-400">

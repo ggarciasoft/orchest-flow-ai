@@ -91,6 +91,15 @@ public sealed class ApprovalsController : ControllerBase
         return Ok(new PagedResponse<ApprovalRequestResponse>(result, page, pageSize, result.Count));
     }
 
+    /// <summary>Retrieves the pending approval request for a given workflow execution, if any.</summary>
+    [HttpGet("by-execution/{executionId}"), Authorize(Policy = "ViewerOrAbove")]
+    public async Task<ActionResult<ApprovalRequestResponse>> GetByExecution(Guid executionId, CancellationToken ct)
+    {
+        var a = await _approvals.GetByExecutionIdAsync(executionId, TenantId, ct);
+        if (a == null) return NotFound();
+        return Ok(await EnrichAsync(a, ct));
+    }
+
     /// <summary>Retrieves details of a specific approval request by its ID.</summary>
     [HttpGet("{id}"), Authorize(Policy = "ViewerOrAbove")]
     public async Task<ActionResult<ApprovalRequestResponse>> Get(Guid id, CancellationToken ct)
