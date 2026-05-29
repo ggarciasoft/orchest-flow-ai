@@ -107,4 +107,17 @@ public sealed class ApprovalRequestTests
         approvalRequest.Status.Should().Be(ApprovalStatus.Expired);
         approvalRequest.RespondedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(10));
     }
+
+    [Fact]
+    public void Cancel_ShouldSetStatusToCancelledAndStampRespondedAt()
+    {
+        var approvalRequest = ApprovalRequest.Create(
+            Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "{}", Guid.NewGuid());
+
+        approvalRequest.Cancel();
+
+        approvalRequest.Status.Should().Be(ApprovalStatus.Cancelled);
+        approvalRequest.RespondedAt.Should().NotBeNull();
+        approvalRequest.RespondedAt!.Value.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(10));
+    }
 }

@@ -73,12 +73,21 @@ public sealed class StubExecutionRepository : IExecutionRepository
     public Task<WorkflowExecution> CreateAsync(WorkflowExecution execution, CancellationToken ct = default) { _execs[execution.Id] = execution; return Task.FromResult(execution); }
     public Task UpdateAsync(WorkflowExecution execution, CancellationToken ct = default) { _execs[execution.Id] = execution; return Task.CompletedTask; }
 
-    public Task<IReadOnlyList<WorkflowExecution>> ListAsync(Guid tenantId, string? status, int page, int pageSize, CancellationToken ct = default)
+    public Task<IReadOnlyList<WorkflowExecution>> ListAsync(Guid tenantId, string? status, string? search, int page, int pageSize, CancellationToken ct = default)
     {
         var q = _execs.Values.Where(e => e.TenantId == tenantId);
         if (!string.IsNullOrEmpty(status)) q = q.Where(e => e.Status.ToString() == status);
-        IReadOnlyList<WorkflowExecution> list = q.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        if (!string.IsNullOrEmpty(search)) q = q.Where(e => e.CorrelationId.Contains(search, StringComparison.OrdinalIgnoreCase));
+        IReadOnlyList<WorkflowExecution> list = q.OrderByDescending(e => e.StartedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
         return Task.FromResult(list);
+    }
+
+    public Task<int> CountAsync(Guid tenantId, string? status, string? search, CancellationToken ct = default)
+    {
+        var q = _execs.Values.Where(e => e.TenantId == tenantId);
+        if (!string.IsNullOrEmpty(status)) q = q.Where(e => e.Status.ToString() == status);
+        if (!string.IsNullOrEmpty(search)) q = q.Where(e => e.CorrelationId.Contains(search, StringComparison.OrdinalIgnoreCase));
+        return Task.FromResult(q.Count());
     }
 
     public Task<IReadOnlyList<NodeExecution>> GetNodeExecutionsAsync(Guid executionId, CancellationToken ct = default)
@@ -283,6 +292,21 @@ public sealed class StubFormRepository : IFormRepository
 
     public Task<IReadOnlyList<Form>> ListAsync(Guid tenantId, CancellationToken ct = default)
         => Task.FromResult<IReadOnlyList<Form>>(_forms.Where(f => f.TenantId == tenantId && !f.IsDeleted).OrderBy(f => f.Name).ToList());
+
+    public Task<IReadOnlyList<Form>> ListAsync(Guid tenantId, string? search, int page, int pageSize, CancellationToken ct = default)
+    {
+        var q = _forms.Where(f => f.TenantId == tenantId && !f.IsDeleted);
+        if (!string.IsNullOrEmpty(search)) q = q.Where(f => f.Name.Contains(search, StringComparison.OrdinalIgnoreCase) || (f.Description != null && f.Description.Contains(search, StringComparison.OrdinalIgnoreCase)));
+        IReadOnlyList<Form> result = q.OrderBy(f => f.Name).Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        return Task.FromResult(result);
+    }
+
+    public Task<int> CountAsync(Guid tenantId, string? search, CancellationToken ct = default)
+    {
+        var q = _forms.Where(f => f.TenantId == tenantId && !f.IsDeleted);
+        if (!string.IsNullOrEmpty(search)) q = q.Where(f => f.Name.Contains(search, StringComparison.OrdinalIgnoreCase) || (f.Description != null && f.Description.Contains(search, StringComparison.OrdinalIgnoreCase)));
+        return Task.FromResult(q.Count());
+    }
 
     public Task<IReadOnlyList<Form>> ListAllAsync(CancellationToken ct = default)
         => Task.FromResult<IReadOnlyList<Form>>(_forms.Where(f => !f.IsDeleted).ToList());

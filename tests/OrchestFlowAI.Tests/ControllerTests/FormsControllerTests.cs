@@ -84,14 +84,15 @@ public sealed class FormsControllerTests
     // ────────────────────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task List_EmptyTenant_ReturnsEmptyList()
+    public async Task List_EmptyTenant_ReturnsEmptyPagedResult()
     {
         var repo = BuildStubRepo();
         var ctrl = BuildController(repo);
-        var result = await ctrl.List(CancellationToken.None);
+        var result = await ctrl.List(null, 1, 20, CancellationToken.None);
         var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-        var list = ok.Value.Should().BeAssignableTo<IReadOnlyList<object>>().Subject;
-        list.Should().BeEmpty();
+        var paged = ok.Value.Should().BeAssignableTo<OrchestFlowAI.Contracts.Responses.PagedResponse<OrchestFlowAI.Contracts.Responses.FormResponse>>().Subject;
+        paged.Items.Should().BeEmpty();
+        paged.Total.Should().Be(0);
     }
 
     [Fact]
@@ -104,10 +105,48 @@ public sealed class FormsControllerTests
         await repo.CreateAsync(form2);
 
         var ctrl = BuildController(repo);
-        var result = await ctrl.List(CancellationToken.None);
+        var result = await ctrl.List(null, 1, 20, CancellationToken.None);
         var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-        var list = (ok.Value as System.Collections.IEnumerable)!.Cast<object>().ToList();
-        list.Should().HaveCount(1);
+        var paged = ok.Value.Should().BeAssignableTo<OrchestFlowAI.Contracts.Responses.PagedResponse<OrchestFlowAI.Contracts.Responses.FormResponse>>().Subject;
+        paged.Items.Should().HaveCount(1);
+        paged.Total.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task List_WithSearch_FiltersResults()
+    {
+        var repo = BuildStubRepo();
+        await repo.CreateAsync(Form.Create(TenantId, "Invoice Form", "invoice", null, "[]"));
+        await repo.CreateAsync(Form.Create(TenantId, "Contact Form", "contact", null, "[]"));
+        await repo.CreateAsync(Form.Create(TenantId, "Invoice Extra", "invoice-extra", null, "[]"));
+
+        var ctrl = BuildController(repo);
+        var result = await ctrl.List("Invoice", 1, 20, CancellationToken.None);
+        var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
+        var paged = ok.Value.Should().BeAssignableTo<OrchestFlowAI.Contracts.Responses.PagedResponse<OrchestFlowAI.Contracts.Responses.FormResponse>>().Subject;
+        paged.Items.Should().HaveCount(2);
+        paged.Total.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task List_Pagination_ReturnsCorrectPage()
+    {
+        var repo = BuildStubRepo();
+        for (var i = 1; i <= 5; i++)
+            await repo.CreateAsync(Form.Create(TenantId, $"Form {i:D2}", $"form-{i}", null, "[]"));
+
+        var ctrl = BuildController(repo);
+        var page1 = await ctrl.List(null, 1, 3, CancellationToken.None);
+        var ok1 = page1.Result.Should().BeOfType<OkObjectResult>().Subject;
+        var p1 = ok1.Value.Should().BeAssignableTo<OrchestFlowAI.Contracts.Responses.PagedResponse<OrchestFlowAI.Contracts.Responses.FormResponse>>().Subject;
+        p1.Items.Should().HaveCount(3);
+        p1.Total.Should().Be(5);
+
+        var page2 = await ctrl.List(null, 2, 3, CancellationToken.None);
+        var ok2 = page2.Result.Should().BeOfType<OkObjectResult>().Subject;
+        var p2 = ok2.Value.Should().BeAssignableTo<OrchestFlowAI.Contracts.Responses.PagedResponse<OrchestFlowAI.Contracts.Responses.FormResponse>>().Subject;
+        p2.Items.Should().HaveCount(2);
+        p2.Total.Should().Be(5);
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -213,10 +252,10 @@ public sealed class FormsControllerTests
         result.Should().BeOfType<NoContentResult>();
 
         // Form is soft-deleted — should no longer appear in list
-        var listResult = await ctrl.List(CancellationToken.None);
+        var listResult = await ctrl.List(null, 1, 20, CancellationToken.None);
         var ok = listResult.Result.Should().BeOfType<OkObjectResult>().Subject;
-        var list = (ok.Value as System.Collections.IEnumerable)!.Cast<object>().ToList();
-        list.Should().BeEmpty();
+        var paged = ok.Value.Should().BeAssignableTo<OrchestFlowAI.Contracts.Responses.PagedResponse<OrchestFlowAI.Contracts.Responses.FormResponse>>().Subject;
+        paged.Items.Should().BeEmpty();
     }
 
     [Fact]
