@@ -21,17 +21,20 @@ public sealed class ApprovalsController : ControllerBase
     private readonly IExecutionQueue _queue;
     private readonly IExecutionRepository _executions;
     private readonly IWorkflowRepository _workflows;
+    private readonly IUserRepository _users;
 
     public ApprovalsController(
         IApprovalRepository approvals,
         IExecutionQueue queue,
         IExecutionRepository executions,
-        IWorkflowRepository workflows)
+        IWorkflowRepository workflows,
+        IUserRepository users)
     {
         _approvals = approvals;
         _queue = queue;
         _executions = executions;
         _workflows = workflows;
+        _users = users;
     }
 
     private Guid TenantId => Guid.Parse(User.FindFirst("tenant_id")?.Value ?? Guid.Empty.ToString());
@@ -121,5 +124,47 @@ public sealed class ApprovalsController : ControllerBase
         var resumeOutputs = new Dictionary<string, object?> { ["decision"] = "rejected", ["comment"] = req.Comment ?? "", ["decidedBy"] = UserId.ToString(), ["decidedAt"] = DateTime.UtcNow.ToString("O") };
         await _queue.EnqueueResumeAsync(new ExecutionResumeMessage(a.WorkflowExecutionId, a.Id, a.NodeExecutionId, resumeOutputs), ct);
         return Ok(await EnrichAsync(a, ct));
+    }
+
+    /// <summary>Lists all comments on an approval request, oldest first.</summary>
+    [HttpGet("{id}/comments"), Authorize(Policy = "ViewerOrAbove")]
+    public async Task<ActionResult> ListComments(Guid id, CancellationToken ct)
+    {
+        var a = await _approvals.GetAsync(id, TenantId, ct);
+        if (a == null) return NotFound();
+        var comments = await _approvals.ListCommentsAsync(id, ct);
+        return Ok(comments.Select(c => new
+        {
+            id = c.Id,
+            authorId = c.AuthorId,
+            authorName = c.AuthorName,
+            text = c.Text,
+            createdAt = c.CreatedAt,
+        }));
+    }
+
+    /// <summary>Posts a comment on an approval request.</summary>
+    [HttpPost("{id}/comments"), Authorize(Policy = "ViewerOrAbove")]
+    public async Task<ActionResult> AddComment(Guid id, [FromBody] AddApprovalCommentRequest req, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(req.Text)) return BadRequest("Comment text is required.");
+        var a = await _approvals.GetAsync(id, TenantId, ct);
+        if (a == null) return NotFound();
+
+        // Resolve display name — fall back to user id if not found
+        var user = await _users.GetAsync(UserId, TenantId, ct);
+        var authorName = user?.DisplayName ?? UserId.ToString();
+
+        var comment = ApprovalComment.Create(id, UserId, authorName, req.Text);
+        await _approvals.AddCommentAsync(comment, ct);
+
+        return StatusCode(201, new
+        {
+            id = comment.Id,
+            authorId = comment.AuthorId,
+            authorName = comment.AuthorName,
+            text = comment.Text,
+            createdAt = comment.CreatedAt,
+        });
     }
 }

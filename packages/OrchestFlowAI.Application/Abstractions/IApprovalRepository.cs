@@ -7,4 +7,8 @@ public interface IApprovalRepository
     Task<ApprovalRequest> CreateAsync(ApprovalRequest approval, CancellationToken ct = default);
     Task UpdateAsync(ApprovalRequest approval, CancellationToken ct = default);
     Task<IReadOnlyList<ApprovalRequest>> ListPendingAsync(Guid tenantId, int page, int pageSize, CancellationToken ct = default);
+
+    // ── Comment thread ────────────────────────────────────────────────────────────────
+    Task<IReadOnlyList<ApprovalComment>> ListCommentsAsync(Guid approvalRequestId, CancellationToken ct = default);
+    Task<ApprovalComment> AddCommentAsync(ApprovalComment comment, CancellationToken ct = default);
 }

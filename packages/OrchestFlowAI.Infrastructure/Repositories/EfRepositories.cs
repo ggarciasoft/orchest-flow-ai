@@ -134,6 +134,16 @@ public sealed class EfApprovalRepository : IApprovalRepository
             .Where(a => a.TenantId == tenantId && a.Status == ApprovalStatus.Pending)
             .OrderByDescending(a => a.RequestedAt)
             .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+
+    public async Task<IReadOnlyList<ApprovalComment>> ListCommentsAsync(Guid approvalRequestId, CancellationToken ct = default)
+        => await _db.ApprovalComments
+            .AsNoTracking()
+            .Where(c => c.ApprovalRequestId == approvalRequestId)
+            .OrderBy(c => c.CreatedAt)
+            .ToListAsync(ct);
+
+    public async Task<ApprovalComment> AddCommentAsync(ApprovalComment comment, CancellationToken ct = default)
+    { _db.ApprovalComments.Add(comment); await _db.SaveChangesAsync(ct); return comment; }
 }
 
 /// <summary>EF Core implementation of <see cref="IUserRepository"/>.</summary>

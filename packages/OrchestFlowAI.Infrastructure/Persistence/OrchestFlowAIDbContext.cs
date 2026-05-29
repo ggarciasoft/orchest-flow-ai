@@ -19,6 +19,7 @@ public sealed class OrchestFlowAIDbContext : DbContext
     public DbSet<WorkflowExecution> WorkflowExecutions => Set<WorkflowExecution>();
     public DbSet<NodeExecution> NodeExecutions => Set<NodeExecution>();
     public DbSet<ApprovalRequest> ApprovalRequests => Set<ApprovalRequest>();
+    public DbSet<ApprovalComment> ApprovalComments => Set<ApprovalComment>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<AIUsageLog> AIUsageLogs => Set<AIUsageLog>();
     public DbSet<NodePreset> NodePresets => Set<NodePreset>();
@@ -106,6 +107,14 @@ public sealed class OrchestFlowAIDbContext : DbContext
             e.Property(a => a.PayloadJson).IsRequired();
             e.HasIndex(a => a.TenantId);
             e.HasIndex(a => a.WorkflowExecutionId);
+        });
+
+        modelBuilder.Entity<ApprovalComment>(e =>
+        {
+            e.HasKey(c => c.Id);
+            e.Property(c => c.Text).IsRequired().HasMaxLength(4000);
+            e.Property(c => c.AuthorName).IsRequired().HasMaxLength(200);
+            e.HasIndex(c => c.ApprovalRequestId);
         });
 
         modelBuilder.Entity<Document>(e =>

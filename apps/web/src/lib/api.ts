@@ -204,6 +204,12 @@ export const api = {
     /** Rejects a pending approval request with an optional comment. */
     reject: (id: string, comment?: string) =>
       apiFetch<ApprovalRequest>(`/api/approvals/${id}/reject`, { method: 'POST', body: JSON.stringify({ comment }) }),
+    /** Lists all comments on an approval request. */
+    listComments: (id: string) =>
+      apiFetch<ApprovalComment[]>(`/api/approvals/${id}/comments`),
+    /** Posts a comment on an approval request. */
+    addComment: (id: string, text: string) =>
+      apiFetch<ApprovalComment>(`/api/approvals/${id}/comments`, { method: 'POST', body: JSON.stringify({ text }) }),
   },
   /** Document upload and retrieval endpoints. */
   documents: {
@@ -389,6 +395,14 @@ export interface NodeExecution { id: string; workflowExecutionId: string; nodeId
 export interface ExecutionTimeline { executionId: string; nodes: NodeExecution[]; }
 
 /** A pending or resolved human approval request. */
+export interface ApprovalComment {
+  id: string;
+  authorId: string;
+  authorName: string;
+  text: string;
+  createdAt: string;
+}
+
 export interface ApprovalRequest {
   id: string;
   workflowExecutionId: string;

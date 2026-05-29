@@ -109,6 +109,19 @@ public sealed class StubApprovalRepository : IApprovalRepository
             .Skip((page - 1) * pageSize).Take(pageSize).ToList();
         return Task.FromResult(list);
     }
+
+    private static readonly ConcurrentDictionary<Guid, ApprovalComment> _comments = new();
+
+    public Task<IReadOnlyList<ApprovalComment>> ListCommentsAsync(Guid approvalRequestId, CancellationToken ct = default)
+    {
+        IReadOnlyList<ApprovalComment> list = _comments.Values
+            .Where(c => c.ApprovalRequestId == approvalRequestId)
+            .OrderBy(c => c.CreatedAt).ToList();
+        return Task.FromResult(list);
+    }
+
+    public Task<ApprovalComment> AddCommentAsync(ApprovalComment comment, CancellationToken ct = default)
+    { _comments[comment.Id] = comment; return Task.FromResult(comment); }
 }
 
 /// <summary>In-memory stub implementation of <see cref="IDocumentRepository"/>.</summary>

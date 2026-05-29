@@ -8,6 +8,7 @@ import { formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import { PageHeader, Badge, statusVariant, statusLabel } from '@/components/ui';
 import FormRenderer from '@/app/(app)/forms/_components/FormRenderer';
+import ApprovalCommentThread from '../_components/ApprovalCommentThread';
 
 /**
  * ApprovalDetailPage — shows full context for a single approval request.
@@ -215,6 +216,12 @@ export default function ApprovalDetailPage() {
           )}
         </>
       )}
+
+      {/* Comment thread */}
+      <ApprovalCommentThread
+        approvalId={id}
+        canPost={approval.status?.toLowerCase() === 'pending'}
+      />
 
       {/* Execution timeline */}
       {timeline && timeline.nodes.length > 0 && (

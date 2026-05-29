@@ -9,6 +9,11 @@ jest.mock('next/navigation', () => ({
   useParams: () => ({ id: 'test-approval-id' }),
 }));
 
+jest.mock('@/app/(app)/approvals/_components/ApprovalCommentThread', () => ({
+  __esModule: true,
+  default: () => <div data-testid="comment-thread" />,
+}));
+
 jest.mock('next/link', () => ({
   __esModule: true,
   default: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a>,
