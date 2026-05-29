@@ -226,6 +226,7 @@ public sealed class StubTenantRepository : ITenantRepository
     private static readonly ConcurrentDictionary<Guid, Tenant> _store = new();
     public Task<Tenant?> GetAsync(Guid id, CancellationToken ct = default) => Task.FromResult(_store.GetValueOrDefault(id));
     public Task<Tenant> CreateAsync(Tenant tenant, CancellationToken ct = default) { _store[tenant.Id] = tenant; return Task.FromResult(tenant); }
+    public Task UpdateAsync(Tenant tenant, CancellationToken ct = default) { _store[tenant.Id] = tenant; return Task.CompletedTask; }
 }
 
 /// <summary>In-memory stub implementation of <see cref="ITenantInviteRepository"/>.</summary>

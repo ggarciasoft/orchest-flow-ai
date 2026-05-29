@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using OrchestFlowAI.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using OrchestFlowAI.Infrastructure.Persistence;
 namespace OrchestFlowAI.Infrastructure.Migrations
 {
     [DbContext(typeof(OrchestFlowAIDbContext))]
-    partial class OrchestFlowAIDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260529231330_AddTenantConfig")]
+    partial class AddTenantConfig
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -829,11 +832,6 @@ namespace OrchestFlowAI.Infrastructure.Migrations
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
-
-                    b.Property<int>("TimeoutSeconds")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
 
                     b.Property<Guid?>("TriggeredBy")
                         .HasColumnType("uuid");

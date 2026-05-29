@@ -43,6 +43,7 @@ public sealed class OrchestFlowAIDbContext : DbContext
         {
             e.HasKey(t => t.Id);
             e.Property(t => t.Name).IsRequired().HasMaxLength(200);
+            e.Property(t => t.ConfigJson).IsRequired().HasColumnType("text").HasDefaultValue("{}");
         });
 
         modelBuilder.Entity<User>(e =>
@@ -85,6 +86,7 @@ public sealed class OrchestFlowAIDbContext : DbContext
             e.HasKey(ex => ex.Id);
             e.Property(ex => ex.Status).HasConversion<string>().IsRequired();
             e.Property(ex => ex.InputJson).IsRequired();
+            e.Property(ex => ex.TimeoutSeconds).HasDefaultValue(0);
             e.HasIndex(ex => ex.TenantId);
             e.HasIndex(ex => ex.WorkflowId);
             e.HasIndex(ex => ex.CorrelationId);

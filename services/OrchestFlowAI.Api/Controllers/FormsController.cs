@@ -25,9 +25,11 @@ public sealed class FormsController : ControllerBase
     private readonly IExecutionRepository _executions;
     private readonly IApprovalRepository _approvals;
     private readonly FormGenerationService _formGen;
+    private readonly IFormRepository _formsForFill;
+    private readonly ITenantRepository _tenants;
 
-    public FormsController(IFormRepository forms, IExecutionQueue queue, FormNodeRegistrar registrar, IExecutionRepository executions, IApprovalRepository approvals, FormGenerationService formGen)
-    { _forms = forms; _queue = queue; _registrar = registrar; _executions = executions; _approvals = approvals; _formGen = formGen; }
+    public FormsController(IFormRepository forms, IExecutionQueue queue, FormNodeRegistrar registrar, IExecutionRepository executions, IApprovalRepository approvals, FormGenerationService formGen, ITenantRepository tenants)
+    { _forms = forms; _queue = queue; _registrar = registrar; _executions = executions; _approvals = approvals; _formGen = formGen; _formsForFill = forms; _tenants = tenants; }
 
     private Guid TenantId => Guid.Parse(User.FindFirst("tenant_id")?.Value ?? Guid.Empty.ToString());
     private Guid UserId => Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString());
@@ -189,6 +191,12 @@ public sealed class FormsController : ControllerBase
         var forms = await _forms.ListAllAsync(ct);
         var form = forms.FirstOrDefault(f => f.Id == id);
         if (form == null) return NotFound();
+
+        // If the tenant has AllowGuestFormFill = false, require authentication
+        var tenant = await _tenants.GetAsync(form.TenantId, ct);
+        var tenantConfig = tenant?.GetConfig() ?? new OrchestFlowAI.Domain.ValueObjects.TenantConfig();
+        if (!tenantConfig.AllowGuestFormFill && !User.Identity!.IsAuthenticated)
+            return Unauthorized();
 
         var fields = JsonSerializer.Deserialize<List<FormFieldDefinition>>(form.FieldsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
                      ?? new List<FormFieldDefinition>();

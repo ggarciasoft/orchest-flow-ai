@@ -158,4 +158,42 @@ public sealed class TenantsController : ControllerBase
 
         return Ok(new { message = "Account created. You may now log in." });
     }
+
+    /// <summary>
+    /// Gets the configuration for the caller's tenant.
+    /// </summary>
+    [HttpGet("{id}/config"), Authorize(Policy = "ViewerOrAbove")]
+    public async Task<ActionResult<TenantConfigResponse>> GetConfig(Guid id, CancellationToken ct)
+    {
+        if (id != TenantId) return Forbid();
+        var tenant = await _tenants.GetAsync(id, ct);
+        if (tenant == null) return NotFound();
+        return Ok(ToConfigResponse(tenant.GetConfig()));
+    }
+
+    /// <summary>
+    /// Updates the configuration for the caller's tenant. Null fields are left unchanged.
+    /// </summary>
+    [HttpPut("{id}/config"), Authorize(Policy = "AdminOnly")]
+    public async Task<ActionResult<TenantConfigResponse>> UpdateConfig(Guid id, [FromBody] UpdateTenantConfigRequest req, CancellationToken ct)
+    {
+        if (id != TenantId) return Forbid();
+        var tenant = await _tenants.GetAsync(id, ct);
+        if (tenant == null) return NotFound();
+
+        var config = tenant.GetConfig();
+        if (req.DisplayName != null)             config.DisplayName = req.DisplayName;
+        if (req.LogoUrl != null)                 config.LogoUrl = req.LogoUrl;
+        if (req.MaxConcurrentExecutions != null) config.MaxConcurrentExecutions = Math.Max(0, req.MaxConcurrentExecutions.Value);
+        if (req.ExecutionTimeoutSeconds != null) config.ExecutionTimeoutSeconds = Math.Max(0, req.ExecutionTimeoutSeconds.Value);
+        if (req.DefaultTimezone != null)         config.DefaultTimezone = req.DefaultTimezone;
+        if (req.AllowGuestFormFill != null)      config.AllowGuestFormFill = req.AllowGuestFormFill.Value;
+
+        tenant.UpdateConfig(config);
+        await _tenants.UpdateAsync(tenant, ct);
+        return Ok(ToConfigResponse(config));
+    }
+
+    private static TenantConfigResponse ToConfigResponse(OrchestFlowAI.Domain.ValueObjects.TenantConfig c)
+        => new(c.DisplayName, c.LogoUrl, c.MaxConcurrentExecutions, c.ExecutionTimeoutSeconds, c.DefaultTimezone, c.AllowGuestFormFill);
 }

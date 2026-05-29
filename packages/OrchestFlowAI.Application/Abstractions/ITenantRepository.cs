@@ -12,4 +12,7 @@ public interface ITenantRepository
 
     /// <summary>Creates a new tenant and persists it.</summary>
     Task<Tenant> CreateAsync(Tenant tenant, CancellationToken ct = default);
+
+    /// <summary>Persists changes to an existing tenant.</summary>
+    Task UpdateAsync(Tenant tenant, CancellationToken ct = default);
 }

@@ -77,6 +77,17 @@ export function decodeJwt(token: string): Record<string, unknown> | null {
 }
 
 /**
+ * Extracts the tenant id from the stored JWT token.
+ * Returns null when not authenticated or when the claim is absent.
+ */
+export function getTenantId(): string | null {
+  const token = getToken();
+  if (!token) return null;
+  const payload = decodeJwt(token);
+  return (payload?.['tenant_id'] as string) ?? null;
+}
+
+/**
  * Extracts the user role from the stored JWT token.
  * Returns null when not authenticated or when the role claim is absent.
  *

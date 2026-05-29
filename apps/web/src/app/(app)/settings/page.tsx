@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { PageHeader } from '@/components/ui';
-import { Cpu, KeyRound, Plug } from 'lucide-react';
+import { Cpu, KeyRound, Plug, Building2 } from 'lucide-react';
 
 export default function SettingsPage() {
   return (
@@ -9,7 +9,17 @@ export default function SettingsPage() {
       <PageHeader title="Settings" subtitle="Platform configuration" />
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        {/* AI Providers */}
+        {/* Tenant Configuration */}
+        <Link href="/settings/tenant"
+          className="bg-white border border-slate-200 rounded-xl p-5 flex items-center gap-4 hover:border-emerald-300 hover:shadow-sm transition-all group">
+          <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shrink-0">
+            <Building2 size={18} className="text-white" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-900 group-hover:text-emerald-700 transition-colors">Tenant Configuration</p>
+            <p className="text-xs text-slate-500 mt-0.5">Branding, execution limits, timezone, feature flags</p>
+          </div>
+        </Link>
         <Link href="/settings/providers"
           className="bg-white border border-slate-200 rounded-xl p-5 flex items-center gap-4 hover:border-indigo-300 hover:shadow-sm transition-all group">
           <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shrink-0">

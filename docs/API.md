@@ -285,6 +285,60 @@ SSO/OIDC arrives in Phase 14.
 
 ---
 
+## 7a. Tenant Management
+
+### `GET /api/tenants/{id}`
+Get tenant info. Must be the caller's own tenant.
+
+### `POST /api/tenants` _(AdminOnly)_
+Create a tenant workspace. Body: `{ "name": "string" }`
+
+### `POST /api/tenants/{id}/invite` _(AdminOnly)_
+Invite a user by email. Body: `{ "email": "string", "role": "Viewer|Editor|Admin|Approver" }`
+
+### `POST /api/tenants/{id}/invite/accept` _(public)_
+Accept an invite and create an account. Body: `{ "token": "string", "password": "string" }`
+
+### `GET /api/tenants/{id}/config` _(ViewerOrAbove)_
+Get tenant configuration.
+
+Response:
+```json
+{
+  "displayName": "Acme Corp",
+  "logoUrl": null,
+  "maxConcurrentExecutions": 10,
+  "executionTimeoutSeconds": 3600,
+  "defaultTimezone": "UTC",
+  "allowGuestFormFill": true
+}
+```
+
+### `PUT /api/tenants/{id}/config` _(AdminOnly)_
+Update tenant configuration. Send only the fields you want to change — null fields are ignored.
+
+Body:
+```json
+{
+  "displayName": "Acme Corp",
+  "maxConcurrentExecutions": 5,
+  "executionTimeoutSeconds": 1800,
+  "defaultTimezone": "America/New_York",
+  "allowGuestFormFill": false
+}
+```
+
+| Field | Default | Description |
+|---|---|---|
+| `displayName` | null | Branded name shown in UI |
+| `logoUrl` | null | HTTPS URL to a logo image |
+| `maxConcurrentExecutions` | 10 | Max queued+running executions; 0 = unlimited |
+| `executionTimeoutSeconds` | 3600 | Max seconds per execution; 0 = unlimited |
+| `defaultTimezone` | `"UTC"` | IANA timezone for cron/timestamp display |
+| `allowGuestFormFill` | true | When false, form fill page requires auth |
+
+---
+
 ## 8. Error Codes
 
 | Code                | HTTP | Meaning                                         |

@@ -69,6 +69,12 @@ public sealed class WorkflowExecution
     public string CorrelationId { get; private set; } = default!;
 
     /// <summary>
+    /// Maximum wall-clock seconds allowed for this execution. 0 = unlimited.
+    /// Set from tenant config at enqueue time.
+    /// </summary>
+    public int TimeoutSeconds { get; private set; }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="WorkflowExecution"/> class.
     /// </summary>
     private WorkflowExecution() { }
@@ -83,7 +89,7 @@ public sealed class WorkflowExecution
     /// <param name="inputJson">The input parameters for the workflow in serialized JSON format.</param>
     /// <param name="correlationId">A unique identifier correlating this execution with external systems.</param>
     /// <returns>A newly created instance of WorkflowExecution.</returns>
-    public static WorkflowExecution Create(Guid tenantId, Guid workflowId, Guid workflowVersionId, Guid? triggeredBy, string inputJson, string correlationId)
+    public static WorkflowExecution Create(Guid tenantId, Guid workflowId, Guid workflowVersionId, Guid? triggeredBy, string inputJson, string correlationId, int timeoutSeconds = 0)
         => new()
         {
             Id = Guid.NewGuid(),
@@ -94,7 +100,8 @@ public sealed class WorkflowExecution
             StartedAt = DateTime.UtcNow,
             TriggeredBy = triggeredBy,
             InputJson = inputJson,
-            CorrelationId = correlationId
+            CorrelationId = correlationId,
+            TimeoutSeconds = timeoutSeconds
         };
 
     /// <summary>

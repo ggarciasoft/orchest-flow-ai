@@ -22,10 +22,11 @@ public sealed class WorkflowsController : ControllerBase
     private readonly IExecutionQueue _queue;
     private readonly IWorkflowEngine _engine;
     private readonly INodeRegistry _registry;
+    private readonly ITenantRepository _tenants;
 
     /// <summary>Initializes the controller with required workflow, execution, and engine dependencies.</summary>
-    public WorkflowsController(IWorkflowRepository workflows, IExecutionRepository executions, IExecutionQueue queue, IWorkflowEngine engine, INodeRegistry registry)
-    { _workflows = workflows; _executions = executions; _queue = queue; _engine = engine; _registry = registry; }
+    public WorkflowsController(IWorkflowRepository workflows, IExecutionRepository executions, IExecutionQueue queue, IWorkflowEngine engine, INodeRegistry registry, ITenantRepository tenants)
+    { _workflows = workflows; _executions = executions; _queue = queue; _engine = engine; _registry = registry; _tenants = tenants; }
 
     /// <summary>Extracts the tenant id from the JWT tenant_id claim.</summary>
     private Guid TenantId => Guid.Parse(User.FindFirst("tenant_id")?.Value ?? Guid.Empty.ToString());
@@ -131,10 +132,21 @@ public sealed class WorkflowsController : ControllerBase
         if (workflow == null) return NotFound();
         var activeVersion = await _workflows.GetActiveVersionAsync(id, ct);
         if (activeVersion == null) return BadRequest("Workflow has no active version");
+
+        // Enforce tenant concurrency limit
+        var tenant = await _tenants.GetAsync(TenantId, ct);
+        var config = tenant?.GetConfig() ?? new OrchestFlowAI.Domain.ValueObjects.TenantConfig();
+        if (config.MaxConcurrentExecutions > 0)
+        {
+            var running = await _executions.CountAsync(TenantId, "Running", null, ct);
+            var queued  = await _executions.CountAsync(TenantId, "Queued",  null, ct);
+            if (running + queued >= config.MaxConcurrentExecutions)
+                return StatusCode(429, $"Tenant concurrency limit of {config.MaxConcurrentExecutions} reached.");
+        }
+
         var inputJson = req.Input != null ? JsonSerializer.Serialize(req.Input) : "{}";
-        // Correlation id links all logs and node executions for this run
         var correlationId = Guid.NewGuid().ToString();
-        var execution = WorkflowExecution.Create(TenantId, id, activeVersion.Id, UserId, inputJson, correlationId);
+        var execution = WorkflowExecution.Create(TenantId, id, activeVersion.Id, UserId, inputJson, correlationId, config.ExecutionTimeoutSeconds);
         await _executions.CreateAsync(execution, ct);
         await _queue.EnqueueAsync(new ExecutionQueueMessage(execution.Id, TenantId, correlationId), ct);
         return Accepted(new WorkflowExecutionResponse(execution.Id, id, activeVersion.Id, execution.Status.ToString(), execution.StartedAt, null, UserId, correlationId, null));

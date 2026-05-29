@@ -279,6 +279,11 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ token, password }),
       }),
+    /** Gets the configuration for a tenant. */
+    getConfig: (tenantId: string) => apiFetch<TenantConfig>(`/api/tenants/${tenantId}/config`),
+    /** Updates the configuration for a tenant. Null fields are left unchanged. */
+    updateConfig: (tenantId: string, patch: Partial<TenantConfig>) =>
+      apiFetch<TenantConfig>(`/api/tenants/${tenantId}/config`, { method: 'PUT', body: JSON.stringify(patch) }),
   },
   /** Node configuration presets — reusable named config sets. */
   presets: {
@@ -463,6 +468,14 @@ export interface ValidationResult { isValid: boolean; errors: { nodeId: string; 
 
 /** Tenant workspace metadata. */
 export interface TenantResponse { id: string; name: string; createdAt: string; }
+export interface TenantConfig {
+  displayName: string | null;
+  logoUrl: string | null;
+  maxConcurrentExecutions: number;
+  executionTimeoutSeconds: number;
+  defaultTimezone: string;
+  allowGuestFormFill: boolean;
+}
 
 /** Tenant invite response — includes the token for the MVP invite flow. */
 export interface TenantInviteResponse { id: string; tenantId: string; email: string; role: string; token: string; expiresAt: string; }

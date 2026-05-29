@@ -290,6 +290,9 @@ public sealed class EfTenantRepository : ITenantRepository
 
     public async Task<Tenant> CreateAsync(Tenant tenant, CancellationToken ct = default)
     { _db.Tenants.Add(tenant); await _db.SaveChangesAsync(ct); return tenant; }
+
+    public async Task UpdateAsync(Tenant tenant, CancellationToken ct = default)
+    { _db.Tenants.Update(tenant); await _db.SaveChangesAsync(ct); }
 }
 
 /// <summary>EF Core implementation of <see cref="ITenantInviteRepository"/>.</summary>
