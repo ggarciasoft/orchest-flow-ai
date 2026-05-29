@@ -19,10 +19,11 @@ public sealed class ExecutionsController : ControllerBase
 {
     private readonly IExecutionRepository _executions;
     private readonly IWorkflowRepository _workflows;
+    private readonly IWorkflowEngine _engine;
 
     /// <summary>Initializes the controller with execution and workflow repository dependencies.</summary>
-    public ExecutionsController(IExecutionRepository executions, IWorkflowRepository workflows)
-    { _executions = executions; _workflows = workflows; }
+    public ExecutionsController(IExecutionRepository executions, IWorkflowRepository workflows, IWorkflowEngine engine)
+    { _executions = executions; _workflows = workflows; _engine = engine; }
 
     /// <summary>Extracts the tenant id from the JWT tenant_id claim.</summary>
     private Guid TenantId => Guid.Parse(User.FindFirst("tenant_id")?.Value ?? Guid.Empty.ToString());
@@ -125,5 +126,30 @@ public sealed class ExecutionsController : ControllerBase
             return new NodeExecutionResponse(n.Id, n.WorkflowExecutionId, n.NodeId, n.NodeType, n.Status.ToString(), n.StartedAt, n.CompletedAt, n.InputJson, n.OutputJson, n.ErrorMessage, n.RetryCount, n.Step, corrToken, resumeUrl);
         }).ToList();
         return Ok(new ExecutionTimelineResponse(id, nodeResponses));
+    }
+
+    /// <summary>
+    /// Cancels a running, queued, or paused workflow execution.
+    /// </summary>
+    /// <param name="id">The ID of the workflow execution to cancel.</param>
+    /// <param name="ct">Cancellation token for the operation.</param>
+    /// <returns>204 NoContent on success; 404 if not found; 409 if already in terminal state.</returns>
+    /// <response code="204">Execution successfully cancelled.</response>
+    /// <response code="404">Execution not found or belongs to a different tenant.</response>
+    /// <response code="409">Execution is already in a terminal state (Completed, Failed, or Cancelled).</response>
+    [HttpPost("{id}/cancel"), Authorize(Policy = "EditorOrAbove")]
+    public async Task<IActionResult> Cancel(Guid id, CancellationToken ct)
+    {
+        var e = await _executions.GetAsync(id, ct);
+        if (e == null || e.TenantId != TenantId) return NotFound();
+        try
+        {
+            await _engine.CancelAsync(id, ct);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
     }
 }

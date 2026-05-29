@@ -194,6 +194,8 @@ export const api = {
     get: (id: string) => apiFetch<WorkflowExecution>(`/api/executions/${id}`),
     /** Fetches the ordered node execution timeline for an execution. */
     timeline: (id: string) => apiFetch<ExecutionTimeline>(`/api/executions/${id}/timeline`),
+    /** Cancels a running, queued, or paused execution. Returns undefined on success (204). */
+    cancel: (id: string) => apiFetch<undefined>(`/api/executions/${id}/cancel`, { method: 'POST' }),
   },
   /** Human approval inbox endpoints. */
   approvals: {

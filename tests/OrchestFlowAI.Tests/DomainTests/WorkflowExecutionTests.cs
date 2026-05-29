@@ -65,4 +65,29 @@ public class WorkflowExecutionTests
         execution.CompletedAt.Should().NotBeNull();
         execution.CompletedAt.Value.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(10));
     }
+
+    [Fact]
+    public void Cancel_ShouldSetStatusToCancelledAndRecordCompletedAt()
+    {
+        var execution = WorkflowExecution.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "{}", "corr-id");
+        execution.Start();
+
+        execution.Cancel();
+
+        execution.Status.Should().Be(ExecutionStatus.Cancelled);
+        execution.CompletedAt.Should().NotBeNull();
+        execution.CompletedAt!.Value.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(10));
+    }
+
+    [Fact]
+    public void Cancel_WhenPaused_ShouldSetStatusToCancelled()
+    {
+        var execution = WorkflowExecution.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "{}", "corr-id");
+        execution.Start();
+        execution.Pause();
+
+        execution.Cancel();
+
+        execution.Status.Should().Be(ExecutionStatus.Cancelled);
+    }
 }

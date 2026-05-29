@@ -1,13 +1,27 @@
 'use client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
-import { Play } from 'lucide-react';
+import { Play, XCircle } from 'lucide-react';
 import { PageHeader, Badge, statusVariant, statusLabel, EmptyState } from '@/components/ui';
+import { useState } from 'react';
 
 export default function ExecutionsPage() {
+  const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ['executions'], queryFn: () => api.executions.list(), refetchInterval: 10_000 });
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
+  async function handleCancel(id: string) {
+    if (!confirm('Cancel this execution?')) return;
+    setCancellingId(id);
+    try {
+      await api.executions.cancel(id);
+      await queryClient.invalidateQueries({ queryKey: ['executions'] });
+    } finally {
+      setCancellingId(null);
+    }
+  }
 
   return (
     <div>
@@ -44,6 +58,16 @@ export default function ExecutionsPage() {
               <div className="flex items-center gap-4">
                 <Badge variant={statusVariant(e.status)}>{statusLabel(e.status)}</Badge>
                 <span className="text-xs text-slate-400">{formatDate(e.startedAt)}</span>
+                {['Queued', 'Running', 'Paused'].includes(e.status) && (
+                  <button
+                    onClick={() => handleCancel(e.id)}
+                    disabled={cancellingId === e.id}
+                    title="Cancel execution"
+                    className="text-red-400 hover:text-red-600 disabled:opacity-50 transition-colors"
+                  >
+                    <XCircle size={16} />
+                  </button>
+                )}
                 <Link href={`/executions/${e.id}`}>
                   <button className="text-xs text-indigo-600 hover:underline">View Timeline →</button>
                 </Link>

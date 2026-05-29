@@ -455,6 +455,39 @@ public async Task ResumeAsync(Guid executionId, ResumeSignal signal, Cancellatio
         await execRepo.UpdateExecutionAsync(execution, ct);
     }
 
+    /// <summary>
+/// Cancels a workflow execution that is Queued, Running, or Paused.
+/// In-flight node executions are marked as Cancelled; the execution record is also set to Cancelled.
+/// </summary>
+public async Task CancelAsync(Guid executionId, CancellationToken ct = default)
+    {
+        using var scope = _services.CreateScope();
+        var execRepo = scope.ServiceProvider.GetRequiredService<IEngineExecutionRepository>();
+
+        var execution = await execRepo.GetExecutionAsync(executionId, ct)
+            ?? throw new InvalidOperationException($"Execution {executionId} not found");
+
+        if (execution.Status is Domain.Enums.ExecutionStatus.Completed
+            or Domain.Enums.ExecutionStatus.Failed
+            or Domain.Enums.ExecutionStatus.Cancelled)
+            throw new InvalidOperationException($"Execution is already in terminal state: {execution.Status}");
+
+        // Mark any in-progress node executions as Cancelled
+        var nodeExecs = await execRepo.GetNodeExecutionsAsync(executionId, ct);
+        foreach (var ne in nodeExecs.Where(n =>
+            n.Status is Domain.Enums.NodeExecutionStatus.Running
+            or Domain.Enums.NodeExecutionStatus.WaitingForApproval))
+        {
+            ne.Cancel();
+            await execRepo.UpdateNodeExecutionAsync(ne, ct);
+        }
+
+        execution.Cancel();
+        await execRepo.UpdateExecutionAsync(execution, ct);
+        await _notifier.NotifyExecutionCompleted(executionId, "Cancelled", ct);
+        _logger.LogInformation("Execution {ExecutionId} cancelled by user", executionId);
+    }
+
     private WorkflowExecutionContext BuildContext(Guid executionId, WorkflowExecution execution,
         Dictionary<string, object?> nodeInputs, Dictionary<string, object?> config,
         Dictionary<string, IReadOnlyDictionary<string, object?>> nodeOutputs,

@@ -1,18 +1,22 @@
 'use client';
-import { useParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useParams, useRouter } from 'next/navigation';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { useExecutionStream } from '@/hooks/useExecutionStream';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, XCircle } from 'lucide-react';
 import { PageHeader, Badge, statusVariant, statusLabel } from '@/components/ui';
+import { useState } from 'react';
 
 /**
  * ExecutionDetailPage - shows execution metadata, node timeline, and a live SignalR event log.
  */
 export default function ExecutionDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [cancelling, setCancelling] = useState(false);
   const { data: exec } = useQuery({
     queryKey: ['execution', id],
     queryFn: () => api.executions.get(id),
@@ -25,6 +29,20 @@ export default function ExecutionDetailPage() {
   });
 
   const { events } = useExecutionStream(id ?? '');
+
+  const isActive = exec && ['Queued', 'Running', 'Paused'].includes(exec.status);
+
+  async function handleCancel() {
+    if (!id || !confirm('Cancel this execution? This action cannot be undone.')) return;
+    setCancelling(true);
+    try {
+      await api.executions.cancel(id);
+      await queryClient.invalidateQueries({ queryKey: ['execution', id] });
+      await queryClient.invalidateQueries({ queryKey: ['executions'] });
+    } finally {
+      setCancelling(false);
+    }
+  }
 
   if (!exec) return (
     <div className="space-y-4">
@@ -40,7 +58,21 @@ export default function ExecutionDetailPage() {
       <PageHeader
         title="Execution Timeline"
         subtitle={[exec.workflowName ?? exec.workflowId.slice(0, 12) + '\u2026', exec.versionNumber != null ? `v${exec.versionNumber}` : null].filter(Boolean).join(' \u00b7 ')}
-        action={<Badge variant={statusVariant(exec.status)}>{statusLabel(exec.status)}</Badge>}
+        action={
+          <div className="flex items-center gap-3">
+            <Badge variant={statusVariant(exec.status)}>{statusLabel(exec.status)}</Badge>
+            {isActive && (
+              <button
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 border border-red-300 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
+              >
+                <XCircle size={14} />
+                {cancelling ? 'Cancelling…' : 'Cancel Execution'}
+              </button>
+            )}
+          </div>
+        }
       />
 
       <div className="grid grid-cols-3 gap-4">
