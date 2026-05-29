@@ -21,19 +21,45 @@ public sealed class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest req, CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(req.Email) || string.IsNullOrWhiteSpace(req.Password))
+            return BadRequest("Email and password are required.");
+
         var tenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
         var user = await _users.GetByEmailAsync(req.Email, tenantId, ct);
         if (user == null)
-        {
-            var bytes = System.Text.Encoding.UTF8.GetBytes(req.Password);
-            var hashBytes = System.Security.Cryptography.SHA256.HashData(bytes);
-            var hash = Convert.ToHexString(hashBytes);
-            user = OrchestFlowAI.Domain.Entities.User.Create(tenantId, req.Email, req.Email.Split('@')[0], UserRole.Admin, hash);
-            await _users.CreateAsync(user, ct);
-        }
+            return Unauthorized(new { error = "Invalid email or password." });
+
+        var hashBytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(req.Password));
+        var hash = Convert.ToHexString(hashBytes);
+        if (!string.Equals(user.PasswordHash, hash, StringComparison.OrdinalIgnoreCase))
+            return Unauthorized(new { error = "Invalid email or password." });
+
         var key = _config["Auth:JwtSigningKey"] ?? "dev-signing-key-change-in-production-32chars";
         var token = _jwt.GenerateToken(user, key, _config["Auth:JwtIssuer"] ?? "OrchestFlowAI", _config["Auth:JwtAudience"] ?? "OrchestFlowAI-web");
         return Ok(new AuthResponse(token, new UserDto(user.Id, user.Email, user.DisplayName, user.Role.ToString())));
+    }
+
+    [HttpPost("register")]
+    public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest req, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(req.DisplayName)) return BadRequest("Display name is required.");
+        if (string.IsNullOrWhiteSpace(req.Email))       return BadRequest("Email is required.");
+        if (string.IsNullOrWhiteSpace(req.Password))    return BadRequest("Password is required.");
+        if (req.Password.Length < 8)                    return BadRequest("Password must be at least 8 characters.");
+
+        var tenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var existing = await _users.GetByEmailAsync(req.Email, tenantId, ct);
+        if (existing != null)
+            return Conflict(new { error = "An account with that email already exists." });
+
+        var hashBytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(req.Password));
+        var hash = Convert.ToHexString(hashBytes);
+        var user = OrchestFlowAI.Domain.Entities.User.Create(tenantId, req.Email.Trim().ToLowerInvariant(), req.DisplayName.Trim(), UserRole.Admin, hash);
+        await _users.CreateAsync(user, ct);
+
+        var key = _config["Auth:JwtSigningKey"] ?? "dev-signing-key-change-in-production-32chars";
+        var token = _jwt.GenerateToken(user, key, _config["Auth:JwtIssuer"] ?? "OrchestFlowAI", _config["Auth:JwtAudience"] ?? "OrchestFlowAI-web");
+        return StatusCode(201, new AuthResponse(token, new UserDto(user.Id, user.Email, user.DisplayName, user.Role.ToString())));
     }
 
     [HttpGet("me"), Authorize]

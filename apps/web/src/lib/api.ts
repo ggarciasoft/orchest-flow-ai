@@ -130,11 +130,14 @@ export interface PresetResponse {
 }
 
 export const api = {
-  /** Authentication endpoints for login and current user info. */
+  /** Authentication endpoints for login, register, and current user info. */
   auth: {
     /** Authenticates a user and returns a JWT token on success. */
     login: (email: string, password: string) =>
       apiFetch<{ token: string; user: User }>('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+    /** Creates a new account and returns a JWT token. Returns 409 if email is already taken. */
+    register: (displayName: string, email: string, password: string) =>
+      apiFetch<{ token: string; user: User }>('/api/auth/register', { method: 'POST', body: JSON.stringify({ displayName, email, password }) }),
     /** Returns the currently authenticated user's profile. */
     me: () => apiFetch<User>('/api/auth/me'),
   },
