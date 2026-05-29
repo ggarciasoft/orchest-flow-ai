@@ -99,7 +99,7 @@ public sealed class StubApprovalRepository : IApprovalRepository
 
     public Task<ApprovalRequest?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default) => Task.FromResult(_store.GetValueOrDefault(id));
     public Task<ApprovalRequest?> GetByNodeExecutionIdAsync(Guid nodeExecutionId, CancellationToken ct = default) => Task.FromResult(_store.Values.FirstOrDefault(a => a.NodeExecutionId == nodeExecutionId));
-    public Task<ApprovalRequest?> GetByExecutionIdAsync(Guid executionId, Guid tenantId, CancellationToken ct = default) => Task.FromResult(_store.Values.Where(a => a.WorkflowExecutionId == executionId && a.TenantId == tenantId).OrderByDescending(a => a.RequestedAt).FirstOrDefault());
+    public Task<ApprovalRequest?> GetByExecutionIdAsync(Guid executionId, Guid tenantId, CancellationToken ct = default) => Task.FromResult(_store.Values.Where(a => a.WorkflowExecutionId == executionId && a.TenantId == tenantId && a.Status == ApprovalStatus.Pending).OrderByDescending(a => a.RequestedAt).FirstOrDefault());
     public Task<ApprovalRequest> CreateAsync(ApprovalRequest approval, CancellationToken ct = default) { _store[approval.Id] = approval; return Task.FromResult(approval); }
     public Task UpdateAsync(ApprovalRequest approval, CancellationToken ct = default) { _store[approval.Id] = approval; return Task.CompletedTask; }
 
@@ -184,6 +184,8 @@ public sealed class StubEngineExecutionRepository : OrchestFlowAI.Engine.IEngine
         return Task.FromResult(l);
     }
     public Task<ApprovalRequest> CreateApprovalAsync(ApprovalRequest approval, CancellationToken ct = default) { _approvals[approval.Id] = approval; return Task.FromResult(approval); }
+    public Task<ApprovalRequest?> GetPendingApprovalByExecutionIdAsync(Guid executionId, CancellationToken ct = default) => Task.FromResult(_approvals.Values.FirstOrDefault(a => a.WorkflowExecutionId == executionId && a.Status == ApprovalStatus.Pending));
+    public Task UpdateApprovalAsync(ApprovalRequest approval, CancellationToken ct = default) { _approvals[approval.Id] = approval; return Task.CompletedTask; }
     /// <summary>Gets the workflow entity â€” returns null in stub (retry policy defaults to None).</summary>
     public Task<Workflow?> GetWorkflowAsync(Guid workflowId, CancellationToken ct = default) => Task.FromResult((Workflow?)null);
 }

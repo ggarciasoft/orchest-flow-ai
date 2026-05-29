@@ -125,7 +125,7 @@ public sealed class EfApprovalRepository : IApprovalRepository
 
     public Task<ApprovalRequest?> GetByExecutionIdAsync(Guid executionId, Guid tenantId, CancellationToken ct = default)
         => _db.ApprovalRequests
-            .Where(a => a.WorkflowExecutionId == executionId && a.TenantId == tenantId)
+            .Where(a => a.WorkflowExecutionId == executionId && a.TenantId == tenantId && a.Status == ApprovalStatus.Pending)
             .OrderByDescending(a => a.RequestedAt)
             .FirstOrDefaultAsync(ct);
 
@@ -226,6 +226,13 @@ public sealed class EfEngineExecutionRepository : OrchestFlowAI.Engine.IEngineEx
 
     public async Task<ApprovalRequest> CreateApprovalAsync(ApprovalRequest approval, CancellationToken ct = default)
     { _db.ApprovalRequests.Add(approval); await _db.SaveChangesAsync(ct); return approval; }
+
+    public Task<ApprovalRequest?> GetPendingApprovalByExecutionIdAsync(Guid executionId, CancellationToken ct = default)
+        => _db.ApprovalRequests.FirstOrDefaultAsync(
+            a => a.WorkflowExecutionId == executionId && a.Status == ApprovalStatus.Pending, ct);
+
+    public async Task UpdateApprovalAsync(ApprovalRequest approval, CancellationToken ct = default)
+    { _db.ApprovalRequests.Update(approval); await _db.SaveChangesAsync(ct); }
 
     /// <summary>Gets the workflow entity by id â€” used by the engine to read the retry policy.</summary>
     public Task<Workflow?> GetWorkflowAsync(Guid workflowId, CancellationToken ct = default)

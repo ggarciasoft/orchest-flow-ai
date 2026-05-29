@@ -13,4 +13,6 @@ public interface IEngineExecutionRepository
     Task<NodeExecution?> GetNodeExecutionAsync(Guid id, CancellationToken ct = default);
     Task<IReadOnlyList<NodeExecution>> GetNodeExecutionsAsync(Guid executionId, CancellationToken ct = default);
     Task<ApprovalRequest> CreateApprovalAsync(ApprovalRequest approval, CancellationToken ct = default);
+    Task<ApprovalRequest?> GetPendingApprovalByExecutionIdAsync(Guid executionId, CancellationToken ct = default);
+    Task UpdateApprovalAsync(ApprovalRequest approval, CancellationToken ct = default);
 }

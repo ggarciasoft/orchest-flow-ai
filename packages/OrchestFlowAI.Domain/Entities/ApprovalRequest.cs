@@ -145,4 +145,13 @@ public sealed class ApprovalRequest
         Status = ApprovalStatus.Expired;
         RespondedAt = DateTime.UtcNow;
     }
+
+    /// <summary>
+    /// Marks the approval request as cancelled due to the parent execution being cancelled.
+    /// </summary>
+    public void Cancel()
+    {
+        Status = ApprovalStatus.Cancelled;
+        RespondedAt = DateTime.UtcNow;
+    }
 }

@@ -482,6 +482,14 @@ public async Task CancelAsync(Guid executionId, CancellationToken ct = default)
             await execRepo.UpdateNodeExecutionAsync(ne, ct);
         }
 
+        // Cancel any pending approval request so it no longer shows up in the inbox
+        var pendingApproval = await execRepo.GetPendingApprovalByExecutionIdAsync(executionId, ct);
+        if (pendingApproval != null)
+        {
+            pendingApproval.Cancel();
+            await execRepo.UpdateApprovalAsync(pendingApproval, ct);
+        }
+
         execution.Cancel();
         await execRepo.UpdateExecutionAsync(execution, ct);
         await _notifier.NotifyExecutionCompleted(executionId, "Cancelled", ct);
