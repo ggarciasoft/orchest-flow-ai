@@ -11,10 +11,10 @@ jest.mock("@/lib/api", () => ({
   api: {
     auth: {
       login: jest.fn(async (email: string, password: string) => {
-        if (email === "user@example.com" && password === "password") {
+        if (email === "user@example.com" && password === "password123") {
           return { token: "mock-token" };
         }
-        throw new Error("Invalid credentials");
+        throw new Error("Invalid email or password.");
       }),
     },
   },
@@ -33,7 +33,14 @@ describe("LoginPage", () => {
     render(<LoginPage />);
     expect(screen.getByLabelText("Email")).toBeInTheDocument();
     expect(screen.getByLabelText("Password")).toBeInTheDocument();
-    expect(screen.getByText("Sign In")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sign in/i })).toBeInTheDocument();
+  });
+
+  it("shows a link to the sign-up page", () => {
+    render(<LoginPage />);
+    const link = screen.getByRole("link", { name: /create one/i });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute("href", "/signup");
   });
 
   it("handles successful login", async () => {
@@ -43,11 +50,11 @@ describe("LoginPage", () => {
     render(<LoginPage />);
 
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "user@example.com" } });
-    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "password" } });
-    fireEvent.click(screen.getByText("Sign In"));
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "password123" } });
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     await waitFor(() => {
-      expect(api.auth.login).toHaveBeenCalledWith("user@example.com", "password");
+      expect(api.auth.login).toHaveBeenCalledWith("user@example.com", "password123");
       expect(setToken).toHaveBeenCalledWith("mock-token");
       expect(mockPush).toHaveBeenCalledWith("/dashboard");
     });
@@ -58,10 +65,10 @@ describe("LoginPage", () => {
 
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "invalid@example.com" } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "wrong-password" } });
-    fireEvent.click(screen.getByText("Sign In"));
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
     await waitFor(() => {
-      expect(screen.getByText("Invalid credentials")).toBeInTheDocument();
+      expect(screen.getByText("Invalid email or password.")).toBeInTheDocument();
     });
   });
 });

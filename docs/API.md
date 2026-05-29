@@ -273,11 +273,31 @@ Service build version.
 
 ## 7. Auth (MVP)
 
-MVP ships with email/password JWT auth. Endpoints:
+MVP ships with email/password JWT auth.
 
-- `POST /api/auth/login` → `{ token, user }`
-- `POST /api/auth/logout`
-- `GET /api/auth/me`
+### `POST /api/auth/register` _(public)_
+Create a new account. Returns `201` with a JWT token so the user is logged in immediately.
+
+Body:
+```json
+{ "displayName": "Jane Smith", "email": "jane@example.com", "password": "mypassword" }
+```
+
+- Password minimum: **8 characters**
+- Returns `400` for missing/invalid fields or short password
+- Returns `409 Conflict` if the email is already registered
+
+### `POST /api/auth/login` _(public)_
+Authenticate with email + password. Returns a JWT token.
+
+Body: `{ "email": "string", "password": "string" }`
+
+- Returns `401` for unknown email or wrong password (same message to prevent enumeration)
+
+### `GET /api/auth/me` _(Authorized)_
+Returns the currently authenticated user's profile.
+
+Response: `{ id, email, displayName, role }`
 
 Token expiry: when the client receives a `401` or detects the token is expired (checked via `isTokenExpired()` in auth.ts), `apiFetch` automatically redirects to `/login`.
 
