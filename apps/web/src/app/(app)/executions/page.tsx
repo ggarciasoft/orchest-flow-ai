@@ -1,26 +1,21 @@
 'use client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { api, WorkflowExecution } from '@/lib/api';
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
 import { Play, XCircle } from 'lucide-react';
 import { PageHeader, Badge, statusVariant, statusLabel, EmptyState } from '@/components/ui';
 import { useState } from 'react';
+import { CancelExecutionModal } from '@/components/CancelExecutionModal';
 
 export default function ExecutionsPage() {
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ['executions'], queryFn: () => api.executions.list(), refetchInterval: 10_000 });
-  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<WorkflowExecution | null>(null);
 
   async function handleCancel(id: string) {
-    if (!confirm('Cancel this execution?')) return;
-    setCancellingId(id);
-    try {
-      await api.executions.cancel(id);
-      await queryClient.invalidateQueries({ queryKey: ['executions'] });
-    } finally {
-      setCancellingId(null);
-    }
+    await api.executions.cancel(id);
+    await queryClient.invalidateQueries({ queryKey: ['executions'] });
   }
 
   return (
@@ -60,10 +55,9 @@ export default function ExecutionsPage() {
                 <span className="text-xs text-slate-400">{formatDate(e.startedAt)}</span>
                 {['Queued', 'Running', 'Paused'].includes(e.status) && (
                   <button
-                    onClick={() => handleCancel(e.id)}
-                    disabled={cancellingId === e.id}
+                    onClick={() => setCancelTarget(e)}
                     title="Cancel execution"
-                    className="text-red-400 hover:text-red-600 disabled:opacity-50 transition-colors"
+                    className="text-red-400 hover:text-red-600 transition-colors"
                   >
                     <XCircle size={16} />
                   </button>
@@ -75,6 +69,16 @@ export default function ExecutionsPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {cancelTarget && (
+        <CancelExecutionModal
+          executionId={cancelTarget.id}
+          workflowName={cancelTarget.workflowName}
+          versionNumber={cancelTarget.versionNumber}
+          onConfirm={() => handleCancel(cancelTarget.id)}
+          onClose={() => setCancelTarget(null)}
+        />
       )}
     </div>
   );

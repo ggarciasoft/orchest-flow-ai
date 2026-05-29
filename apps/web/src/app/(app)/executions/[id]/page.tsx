@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { ArrowLeft, XCircle } from 'lucide-react';
 import { PageHeader, Badge, statusVariant, statusLabel } from '@/components/ui';
 import { useState } from 'react';
+import { CancelExecutionModal } from '@/components/CancelExecutionModal';
 
 /**
  * ExecutionDetailPage - shows execution metadata, node timeline, and a live SignalR event log.
@@ -17,6 +18,7 @@ export default function ExecutionDetailPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [cancelling, setCancelling] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const { data: exec } = useQuery({
     queryKey: ['execution', id],
     queryFn: () => api.executions.get(id),
@@ -33,7 +35,7 @@ export default function ExecutionDetailPage() {
   const isActive = exec && ['Queued', 'Running', 'Paused'].includes(exec.status);
 
   async function handleCancel() {
-    if (!id || !confirm('Cancel this execution? This action cannot be undone.')) return;
+    if (!id) return;
     setCancelling(true);
     try {
       await api.executions.cancel(id);
@@ -51,7 +53,8 @@ export default function ExecutionDetailPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6">
       <Link href="/executions" className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 mb-4">
         <ArrowLeft size={16} /> Back to Executions
       </Link>
@@ -63,7 +66,7 @@ export default function ExecutionDetailPage() {
             <Badge variant={statusVariant(exec.status)}>{statusLabel(exec.status)}</Badge>
             {isActive && (
               <button
-                onClick={handleCancel}
+                onClick={() => setShowCancelModal(true)}
                 disabled={cancelling}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 border border-red-300 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
               >
@@ -146,6 +149,17 @@ export default function ExecutionDetailPage() {
           ))}
         </div>
       </div>
-    </div>
+      </div>
+
+      {showCancelModal && exec && (
+        <CancelExecutionModal
+          executionId={exec.id}
+          workflowName={exec.workflowName}
+          versionNumber={exec.versionNumber}
+          onConfirm={handleCancel}
+          onClose={() => setShowCancelModal(false)}
+        />
+      )}
+    </>
   );
 }
