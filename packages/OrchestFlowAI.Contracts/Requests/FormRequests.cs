@@ -18,3 +18,5 @@ public sealed record SubmitFormRequest(
     Guid WorkflowExecutionId,
     string NodeExecutionId,
     JsonElement Values);
+
+public sealed record FormAiAssistRequest(string Prompt, string? CurrentFieldsJson, string? FormName, string? FormDescription);

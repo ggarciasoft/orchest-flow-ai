@@ -6,6 +6,7 @@ using OrchestFlowAI.Contracts.Requests;
 using OrchestFlowAI.Contracts.Responses;
 using OrchestFlowAI.Domain.Entities;
 using OrchestFlowAI.Api.Services;
+using OrchestFlowAI.Contracts.Requests;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -23,9 +24,10 @@ public sealed class FormsController : ControllerBase
     private readonly FormNodeRegistrar _registrar;
     private readonly IExecutionRepository _executions;
     private readonly IApprovalRepository _approvals;
+    private readonly FormGenerationService _formGen;
 
-    public FormsController(IFormRepository forms, IExecutionQueue queue, FormNodeRegistrar registrar, IExecutionRepository executions, IApprovalRepository approvals)
-    { _forms = forms; _queue = queue; _registrar = registrar; _executions = executions; _approvals = approvals; }
+    public FormsController(IFormRepository forms, IExecutionQueue queue, FormNodeRegistrar registrar, IExecutionRepository executions, IApprovalRepository approvals, FormGenerationService formGen)
+    { _forms = forms; _queue = queue; _registrar = registrar; _executions = executions; _approvals = approvals; _formGen = formGen; }
 
     private Guid TenantId => Guid.Parse(User.FindFirst("tenant_id")?.Value ?? Guid.Empty.ToString());
     private Guid UserId => Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString());
@@ -342,6 +344,25 @@ public sealed class FormsController : ControllerBase
 
         return NoContent();
     }
+
+    // ──────────────────────────────────────────
+    // POST /api/forms/ai-assist
+    // ──────────────────────────────────────────
+
+    /// <summary>
+    /// Uses the configured LLM to generate or modify form field definitions.
+    /// Returns a suggested fields array with explanation and change summary.
+    /// </summary>
+    [HttpPost("ai-assist"), Authorize(Policy = "EditorOrAbove")]
+    public async Task<ActionResult> AiAssist([FromBody] FormAiAssistRequest req, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(req.Prompt)) return BadRequest("Prompt is required.");
+        var result = await _formGen.GenerateAsync(
+            new FormGenerationRequest(req.Prompt, req.CurrentFieldsJson, req.FormName, req.FormDescription),
+            TenantId, ct);
+        return Ok(new { explanation = result.Explanation, changes = result.Changes, fieldsJson = result.FieldsJson });
+    }
+
 
     private static FormResponse ToResponse(Form f)
     {

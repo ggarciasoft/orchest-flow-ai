@@ -14,6 +14,7 @@ using OrchestFlowAI.Engine.Registry;
 using OrchestFlowAI.Infrastructure.Persistence;
 using OrchestFlowAI.Infrastructure.Repositories;
 using OrchestFlowAI.SDK.Interfaces;
+using OrchestFlowAI.Api.Services;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -38,7 +39,10 @@ public sealed class FormsControllerTests
         registrar ??= BuildRegistrar(repo);
         executions ??= Mock.Of<IExecutionRepository>();
         var approvals = Mock.Of<IApprovalRepository>();
-        var ctrl = new FormsController(repo, queue, registrar, executions, approvals);
+        var router = new OrchestFlowAI.AI.Routing.LLMProviderRouter(
+            Array.Empty<OrchestFlowAI.AI.Abstractions.ILLMProvider>(), "fake", "fake");
+        var formGen = new FormGenerationService(router, NullLogger<FormGenerationService>.Instance);
+        var ctrl = new FormsController(repo, queue, registrar, executions, approvals, formGen);
         ctrl.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext

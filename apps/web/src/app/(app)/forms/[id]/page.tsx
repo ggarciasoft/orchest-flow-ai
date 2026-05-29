@@ -3,10 +3,11 @@ import { useState, useEffect, use } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { api, FormFieldDefinition, FormVersionSummary, WorkflowForm } from '@/lib/api';
-import { ArrowLeft, Plus, ArrowUp, ArrowDown, Pencil, Trash2, Eye, Save, FlaskConical } from 'lucide-react';
+import { ArrowLeft, Plus, ArrowUp, ArrowDown, Pencil, Trash2, Eye, Save, FlaskConical, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import FormRenderer from '../_components/FormRenderer';
 import FormVersionHistory from '../_components/FormVersionHistory';
+import FormAiAssistPanel from '../_components/FormAiAssistPanel';
 
 /** Auto-generates a slug from a display name (kebab-case, alphanumeric + dash). */
 function slugify(name: string): string {
@@ -50,6 +51,7 @@ export default function FormBuilderPage({ params }: { params: Promise<{ id: stri
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingField, setEditingField] = useState<FormFieldDefinition>(emptyField());
   const [showPreview, setShowPreview] = useState(false);
+  const [showAiPanel, setShowAiPanel] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [regexTestValue, setRegexTestValue] = useState('');
   const [showRegexTest, setShowRegexTest] = useState(false);
@@ -149,6 +151,12 @@ export default function FormBuilderPage({ params }: { params: Promise<{ id: stri
         </button>
         <div className="flex gap-3">
           <button
+            onClick={() => setShowAiPanel(v => !v)}
+            className={`flex items-center gap-2 border text-sm font-medium px-4 py-2 rounded-lg transition-colors ${showAiPanel ? 'bg-purple-50 border-purple-300 text-purple-700' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+          >
+            <Sparkles size={15} /> AI
+          </button>
+          <button
             onClick={() => setShowPreview(true)}
             className="flex items-center gap-2 border border-slate-200 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 rounded-lg"
           >
@@ -168,7 +176,8 @@ export default function FormBuilderPage({ params }: { params: Promise<{ id: stri
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">{saveError}</div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="flex gap-6">
+        <div className={`flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 ${showAiPanel ? 'min-w-0' : ''}`}>
         {/* Left panel — metadata */}
         <div className="lg:col-span-1 space-y-4">
           <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
@@ -279,6 +288,17 @@ export default function FormBuilderPage({ params }: { params: Promise<{ id: stri
             </div>
           </div>
         </div>
+        </div>
+        {showAiPanel && (
+          <FormAiAssistPanel
+            formName={name}
+            formDescription={description}
+            getCurrentFieldsJson={() => JSON.stringify(fields)}
+            onPreview={(suggested) => setFields(suggested)}
+            onAccept={(suggested) => { setFields(suggested); setShowAiPanel(false); }}
+            onClose={() => setShowAiPanel(false)}
+          />
+        )}
       </div>
 
       {/* Field editor modal */}

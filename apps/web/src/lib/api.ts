@@ -93,6 +93,12 @@ export interface FormFieldDefinition {
 }
 
 /** A custom form definition for collecting user input during workflow execution. */
+export interface FormAiAssistResult {
+  explanation: string;
+  changes: string[];
+  fieldsJson: string;
+}
+
 export interface FormVersionSummary {
   id: string;
   versionNumber: number;
@@ -359,6 +365,14 @@ export const api = {
     /** Activates a specific form version. */
     activateVersion: (formId: string, versionId: string) =>
       apiFetch<void>(`/api/forms/${formId}/versions/${versionId}/activate`, { method: 'POST' }),
+    /** AI-assisted form field generation. */
+    aiAssist: (data: { prompt: string; currentFieldsJson?: string; formName?: string; formDescription?: string }) =>
+      apiFetch<FormAiAssistResult>('/api/forms/ai-assist', { method: 'POST', body: JSON.stringify({
+        prompt: data.prompt,
+        currentFieldsJson: data.currentFieldsJson,
+        formName: data.formName,
+        formDescription: data.formDescription,
+      }) }),
   },
   /** Secret vault endpoints — encrypted named values for use in node config as {{secret:name}}. */
   secrets: {
