@@ -89,13 +89,24 @@ public sealed class EfExecutionRepository : IExecutionRepository
     public async Task UpdateAsync(WorkflowExecution execution, CancellationToken ct = default)
     { _db.WorkflowExecutions.Update(execution); await _db.SaveChangesAsync(ct); }
 
-    public async Task<IReadOnlyList<WorkflowExecution>> ListAsync(Guid tenantId, string? status, int page, int pageSize, CancellationToken ct = default)
+    public async Task<IReadOnlyList<WorkflowExecution>> ListAsync(Guid tenantId, string? status, string? search, int page, int pageSize, CancellationToken ct = default)
     {
         var q = _db.WorkflowExecutions.AsNoTracking().Where(e => e.TenantId == tenantId);
-        // Parse status string to enum for clean SQL translation â€” avoid .ToString() in EF LINQ expressions
         if (!string.IsNullOrEmpty(status) && Enum.TryParse<OrchestFlowAI.Domain.Enums.ExecutionStatus>(status, ignoreCase: true, out var statusEnum))
             q = q.Where(e => e.Status == statusEnum);
+        if (!string.IsNullOrEmpty(search))
+            q = q.Where(e => e.CorrelationId.Contains(search));
         return await q.OrderByDescending(e => e.StartedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+    }
+
+    public async Task<int> CountAsync(Guid tenantId, string? status, string? search, CancellationToken ct = default)
+    {
+        var q = _db.WorkflowExecutions.AsNoTracking().Where(e => e.TenantId == tenantId);
+        if (!string.IsNullOrEmpty(status) && Enum.TryParse<OrchestFlowAI.Domain.Enums.ExecutionStatus>(status, ignoreCase: true, out var statusEnum))
+            q = q.Where(e => e.Status == statusEnum);
+        if (!string.IsNullOrEmpty(search))
+            q = q.Where(e => e.CorrelationId.Contains(search));
+        return await q.CountAsync(ct);
     }
 
     public async Task<IReadOnlyList<NodeExecution>> GetNodeExecutionsAsync(Guid executionId, CancellationToken ct = default)
@@ -234,7 +245,7 @@ public sealed class EfEngineExecutionRepository : OrchestFlowAI.Engine.IEngineEx
     public async Task UpdateApprovalAsync(ApprovalRequest approval, CancellationToken ct = default)
     { _db.ApprovalRequests.Update(approval); await _db.SaveChangesAsync(ct); }
 
-    /// <summary>Gets the workflow entity by id â€” used by the engine to read the retry policy.</summary>
+    /// <summary>Gets the workflow entity by id â€" used by the engine to read the retry policy.</summary>
     public Task<Workflow?> GetWorkflowAsync(Guid workflowId, CancellationToken ct = default)
         => _db.Workflows.FindAsync(new object[] { workflowId }, ct).AsTask();
 }
@@ -361,6 +372,20 @@ public sealed class EfFormRepository : IFormRepository
 
     public async Task<IReadOnlyList<Form>> ListAsync(Guid tenantId, CancellationToken ct = default)
         => await _db.Forms.AsNoTracking().Where(f => f.TenantId == tenantId && !f.IsDeleted).OrderBy(f => f.Name).ToListAsync(ct);
+
+    public async Task<IReadOnlyList<Form>> ListAsync(Guid tenantId, string? search, int page, int pageSize, CancellationToken ct = default)
+    {
+        var q = _db.Forms.AsNoTracking().Where(f => f.TenantId == tenantId && !f.IsDeleted);
+        if (!string.IsNullOrEmpty(search)) q = q.Where(f => f.Name.Contains(search) || (f.Description != null && f.Description.Contains(search)));
+        return await q.OrderBy(f => f.Name).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+    }
+
+    public async Task<int> CountAsync(Guid tenantId, string? search, CancellationToken ct = default)
+    {
+        var q = _db.Forms.AsNoTracking().Where(f => f.TenantId == tenantId && !f.IsDeleted);
+        if (!string.IsNullOrEmpty(search)) q = q.Where(f => f.Name.Contains(search) || (f.Description != null && f.Description.Contains(search)));
+        return await q.CountAsync(ct);
+    }
 
     public async Task<IReadOnlyList<Form>> ListAllAsync(CancellationToken ct = default)
         => await _db.Forms.AsNoTracking().Where(f => !f.IsDeleted).ToListAsync(ct);

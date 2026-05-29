@@ -182,12 +182,14 @@ export const api = {
   },
   /** Workflow execution history and node timeline endpoints. */
   executions: {
-    /** Lists executions with optional workflow, status, and page filters. */
-    list: (params?: { workflowId?: string; status?: string; page?: number }) => {
+    /** Lists executions with optional status, search, and page filters. */
+    list: (params?: { workflowId?: string; status?: string; search?: string; page?: number; pageSize?: number }) => {
       const q = new URLSearchParams();
       if (params?.workflowId) q.set('workflowId', params.workflowId);
       if (params?.status) q.set('status', params.status);
+      if (params?.search) q.set('search', params.search);
       if (params?.page) q.set('page', String(params.page));
+      if (params?.pageSize) q.set('pageSize', String(params.pageSize));
       return apiFetch<PagedResponse<WorkflowExecution>>(`/api/executions?${q}`);
     },
     /** Fetches a single execution by id. */
@@ -345,8 +347,14 @@ export const api = {
   },
   /** Custom forms — build and fill data-collection forms that pause workflow execution. */
   forms: {
-    /** Lists all custom forms for the tenant. */
-    list: () => apiFetch<WorkflowForm[]>('/api/forms'),
+    /** Lists forms for the tenant with optional search and pagination. */
+    list: (params?: { search?: string; page?: number; pageSize?: number }) => {
+      const q = new URLSearchParams();
+      if (params?.search) q.set('search', params.search);
+      if (params?.page) q.set('page', String(params.page));
+      if (params?.pageSize) q.set('pageSize', String(params.pageSize));
+      return apiFetch<PagedResponse<WorkflowForm>>(`/api/forms?${q}`);
+    },
     /** Fetches a single form by id. */
     get: (id: string) => apiFetch<WorkflowForm>(`/api/forms/${id}`),
     /** Creates a new form. */

@@ -36,12 +36,13 @@ public sealed class FormsController : ControllerBase
     // GET /api/forms
     // ──────────────────────────────────────────
 
-    /// <summary>Returns all non-deleted forms for the current tenant.</summary>
+    /// <summary>Returns a paged, filterable list of non-deleted forms for the current tenant.</summary>
     [HttpGet, Authorize(Policy = "ViewerOrAbove")]
-    public async Task<ActionResult<IReadOnlyList<FormResponse>>> List(CancellationToken ct)
+    public async Task<ActionResult<PagedResponse<FormResponse>>> List([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
     {
-        var forms = await _forms.ListAsync(TenantId, ct);
-        return Ok(forms.Select(ToResponse).ToList());
+        var forms = await _forms.ListAsync(TenantId, search, page, pageSize, ct);
+        var total = await _forms.CountAsync(TenantId, search, ct);
+        return Ok(new PagedResponse<FormResponse>(forms.Select(ToResponse).ToList(), page, pageSize, total));
     }
 
     // ──────────────────────────────────────────

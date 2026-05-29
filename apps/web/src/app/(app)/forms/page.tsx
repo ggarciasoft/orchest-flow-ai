@@ -5,22 +5,34 @@ import { useRouter } from 'next/navigation';
 import { api, WorkflowForm } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { ClipboardList, Plus, Pencil, Trash2, Copy } from 'lucide-react';
-import { PageHeader, EmptyState, Badge } from '@/components/ui';
+import { PageHeader, EmptyState, Badge, Pagination, SearchInput } from '@/components/ui';
+import { useDebounce } from '@/hooks/useDebounce';
+
+const PAGE_SIZE = 20;
 
 /**
- * FormsPage — lists all custom forms for the tenant.
- * Allows creating, editing, deleting, and copying the form's node type.
+ * FormsPage — lists custom forms with search and pagination.
  */
 export default function FormsPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [searchRaw, setSearchRaw] = useState('');
+  const search = useDebounce(searchRaw, 350);
+  const [page, setPage] = useState(1);
 
-  const { data: forms, isLoading } = useQuery<WorkflowForm[]>({
-    queryKey: ['forms'],
-    queryFn: () => api.forms.list(),
+  const { data, isLoading } = useQuery({
+    queryKey: ['forms', search, page],
+    queryFn: () => api.forms.list({ search: search || undefined, page, pageSize: PAGE_SIZE }),
   });
+
+  const forms = data?.items ?? [];
+
+  function handleSearch(v: string) {
+    setSearchRaw(v);
+    setPage(1);
+  }
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.forms.delete(id),
@@ -37,7 +49,7 @@ export default function FormsPage() {
   };
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <PageHeader title="Forms" subtitle="Custom data-collection forms for workflow pauses" />
         <button
@@ -49,64 +61,65 @@ export default function FormsPage() {
         </button>
       </div>
 
+      <SearchInput
+        value={searchRaw}
+        onChange={handleSearch}
+        placeholder="Search forms…"
+        className="max-w-xs"
+      />
+
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-40 bg-gray-200 rounded-xl animate-pulse" />
-          ))}
+        <div className="space-y-2">
+          {[1,2,3].map(i => <div key={i} className="h-20 bg-slate-100 rounded-xl animate-pulse" />)}
         </div>
-      ) : forms?.length === 0 ? (
+      ) : forms.length === 0 ? (
         <EmptyState
           icon={ClipboardList}
-          title="No forms yet"
-          subtitle="Create a form to collect user input during workflow execution"
+          title="No forms found"
+          subtitle={search ? 'Try a different search term' : 'Create a form to collect user input during workflow execution'}
         />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {forms?.map(form => (
-            <div
-              key={form.id}
-              className="bg-white border border-slate-200 rounded-xl p-5 space-y-3 hover:shadow-sm transition-shadow"
-            >
-              <div className="flex items-start justify-between">
-                <h3 className="font-semibold text-slate-900">{form.name}</h3>
-                <Badge variant="default">{(form.fields ?? []).length} field{(form.fields ?? []).length !== 1 ? 's' : ''}</Badge>
+        <>
+          <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
+            {forms.map(form => (
+              <div key={form.id} className="px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-slate-900">{form.name}</span>
+                    <Badge variant="default">{(form.fields ?? []).length} field{(form.fields ?? []).length !== 1 ? 's' : ''}</Badge>
+                  </div>
+                  {form.description && (
+                    <p className="text-xs text-slate-500 mt-0.5 truncate max-w-md">{form.description}</p>
+                  )}
+                  <button
+                    onClick={() => handleCopy(form.slug)}
+                    className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-mono bg-indigo-50 px-2 py-0.5 rounded mt-1 transition-colors"
+                    title="Copy node type"
+                  >
+                    <Copy size={10} />
+                    {copied === form.slug ? 'Copied!' : `form.${form.slug}`}
+                  </button>
+                </div>
+                <div className="flex items-center gap-3 shrink-0 ml-4">
+                  <span className="text-xs text-slate-400">{formatDate(form.createdAt)}</span>
+                  <button
+                    onClick={() => router.push(`/forms/${form.id}`)}
+                    className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors"
+                  >
+                    <Pencil size={13} /> Edit
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(form.id)}
+                    className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                  >
+                    <Trash2 size={13} /> Delete
+                  </button>
+                </div>
               </div>
-
-              {form.description && (
-                <p className="text-sm text-slate-500 line-clamp-2">{form.description}</p>
-              )}
-
-              <button
-                onClick={() => handleCopy(form.slug)}
-                className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-mono bg-indigo-50 px-2 py-1 rounded transition-colors"
-                title="Copy node type to clipboard"
-              >
-                <Copy size={11} />
-                {copied === form.slug ? 'Copied!' : `form.${form.slug}`}
-              </button>
-
-              <div className="text-xs text-slate-400">
-                Created {formatDate(form.createdAt)}
-              </div>
-
-              <div className="flex gap-2 pt-1">
-                <button
-                  onClick={() => router.push(`/forms/${form.id}`)}
-                  className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors"
-                >
-                  <Pencil size={13} /> Edit
-                </button>
-                <button
-                  onClick={() => setConfirmDelete(form.id)}
-                  className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
-                >
-                  <Trash2 size={13} /> Delete
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          <Pagination page={page} pageSize={PAGE_SIZE} total={data?.total ?? 0} onPage={setPage} />
+        </>
       )}
 
       {/* Delete confirmation modal */}

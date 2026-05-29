@@ -39,9 +39,10 @@ public sealed class ExecutionsController : ControllerBase
     /// <returns>A paginated response containing the list of workflow executions.</returns>
     /// <response code="200">Paged list of executions.</response>
     [HttpGet, Authorize(Policy = "ViewerOrAbove")]
-    public async Task<ActionResult<PagedResponse<WorkflowExecutionResponse>>> List([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+    public async Task<ActionResult<PagedResponse<WorkflowExecutionResponse>>> List([FromQuery] string? status, [FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
     {
-        var items = await _executions.ListAsync(TenantId, status, page, pageSize, ct);
+        var items = await _executions.ListAsync(TenantId, status, search, page, pageSize, ct);
+        var total = await _executions.CountAsync(TenantId, status, search, ct);
 
         // Batch-fetch distinct workflow metadata to enrich each execution row
         var workflowIds = items.Select(e => e.WorkflowId).Distinct().ToList();
@@ -68,7 +69,7 @@ public sealed class ExecutionsController : ControllerBase
             versionMap.TryGetValue(e.WorkflowVersionId, out var vn) ? vn : null
         )).ToList();
 
-        return Ok(new PagedResponse<WorkflowExecutionResponse>(result, page, pageSize, result.Count));
+        return Ok(new PagedResponse<WorkflowExecutionResponse>(result, page, pageSize, total));
     }
 
     /// <summary>

@@ -5,6 +5,8 @@ namespace OrchestFlowAI.Application.Abstractions;
 public interface IFormRepository
 {
     Task<IReadOnlyList<Form>> ListAsync(Guid tenantId, CancellationToken ct = default);
+    Task<IReadOnlyList<Form>> ListAsync(Guid tenantId, string? search, int page, int pageSize, CancellationToken ct = default);
+    Task<int> CountAsync(Guid tenantId, string? search, CancellationToken ct = default);
     Task<IReadOnlyList<Form>> ListAllAsync(CancellationToken ct = default);
     Task<Form?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default);
     Task<Form?> GetBySlugAsync(string slug, Guid tenantId, CancellationToken ct = default);
