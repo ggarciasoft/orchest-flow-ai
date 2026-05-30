@@ -163,8 +163,8 @@ public sealed class HttpRequestNodeDescriptor : IWorkflowNodeDescriptor
     {
         new NodeConfigDefinition("url", "URL", "The URL to call.", DataType.String, Required: true),
         new NodeConfigDefinition("method", "Method", "HTTP method.", DataType.Enum, Required: false, DefaultValue: "GET", AllowedValues: new[] { "GET", "POST", "PUT", "DELETE", "PATCH" }),
-        new NodeConfigDefinition("headers", "Headers", "JSON object of request headers.", DataType.String, Required: false),
-        new NodeConfigDefinition("body", "Body", "Request body for POST/PUT.", DataType.String, Required: false),
+        new NodeConfigDefinition("headers", "Headers", "JSON object of request headers.", DataType.String, Required: false, IsMultiline: true),
+        new NodeConfigDefinition("body", "Body", "Request body for POST/PUT.", DataType.String, Required: false, IsMultiline: true),
         new NodeConfigDefinition("timeoutSeconds", "Timeout (s)", "Request timeout in seconds.", DataType.Number, Required: false, DefaultValue: 30),
         new NodeConfigDefinition("authType", "Auth Type", "Authentication type.", DataType.Enum, Required: false, DefaultValue: "none", AllowedValues: new[] { "none", "bearer", "basic", "api-key", "oauth2-client-credentials" }),
         new NodeConfigDefinition("authToken", "Auth Token", "Bearer token.", DataType.String, Required: false, IsSensitive: true),

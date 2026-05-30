@@ -59,7 +59,7 @@ public sealed class HumanApprovalNodeDescriptor : IWorkflowNodeDescriptor
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
         new NodeConfigDefinition("title", "Title", "Title shown to the approver.", DataType.String, Required: false, DefaultValue: "Approval Required"),
-        new NodeConfigDefinition("assignees", "Assignees", "JSON array of user/role references.", DataType.Json, Required: false),
+        new NodeConfigDefinition("assignees", "Assignees", "JSON array of user/role references.", DataType.Json, Required: false, IsMultiline: true),
         new NodeConfigDefinition("slaMinutes", "SLA (minutes)", "Minutes before auto-expiry.", DataType.Number, Required: false)
     };
 }

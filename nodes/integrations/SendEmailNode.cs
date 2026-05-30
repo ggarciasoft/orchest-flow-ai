@@ -79,7 +79,7 @@ public sealed class SendEmailNodeDescriptor : IWorkflowNodeDescriptor
     {
         new NodeConfigDefinition("to", "To", "Recipient email address.", DataType.String, Required: true),
         new NodeConfigDefinition("subject", "Subject", "Email subject (supports {{placeholders}}).", DataType.String, Required: true),
-        new NodeConfigDefinition("body", "Body", "Email body (supports {{placeholders}}).", DataType.String, Required: true),
+        new NodeConfigDefinition("body", "Body", "Email body (supports {{placeholders}}).", DataType.String, Required: true, IsMultiline: true),
         new NodeConfigDefinition("smtpHost", "SMTP Host", "SMTP server hostname.", DataType.String, Required: false, DefaultValue: "localhost"),
         new NodeConfigDefinition("smtpPort", "SMTP Port", "SMTP port number.", DataType.Number, Required: false, DefaultValue: 25)
     };

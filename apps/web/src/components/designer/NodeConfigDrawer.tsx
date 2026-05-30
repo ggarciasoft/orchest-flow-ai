@@ -23,134 +23,130 @@ export function NodeConfigDrawer({ node, catalog, onClose, onDelete, onConfigCha
   const config = data.config ?? {};
 
   const [presets, setPresets] = useState<PresetResponse[]>([]);
-const [selectedPreset, setSelectedPreset] = useState<string>('');
-const [presetName, setPresetName] = useState<string>('');
-const [showSavePresetForm, setShowSavePresetForm] = useState<boolean>(false);
-// Dynamic options: keyed by optionsSource string → array of { value, label }
-const [dynamicOptions, setDynamicOptions] = useState<Record<string, { value: string; label: string }[]>>({});
+  const [selectedPreset, setSelectedPreset] = useState<string>('');
+  const [presetName, setPresetName] = useState<string>('');
+  const [showSavePresetForm, setShowSavePresetForm] = useState<boolean>(false);
+  // Dynamic options: keyed by optionsSource string → array of { value, label }
+  const [dynamicOptions, setDynamicOptions] = useState<Record<string, { value: string; label: string }[]>>({});
 
-useEffect(() => {
-  if (descriptor) {
-    api.presets.list(descriptor.type)
-      .then(setPresets)
-      .catch(err => console.error('Failed to fetch presets:', err));
+  useEffect(() => {
+    if (descriptor) {
+      api.presets.list(descriptor.type)
+        .then(setPresets)
+        .catch(err => console.error('Failed to fetch presets:', err));
 
-    // Load dynamic option sources referenced by any config field
-    const sources = [...new Set(
-      descriptor.configuration
-        .map(c => (c as { optionsSource?: string }).optionsSource)
-        .filter((s): s is string => !!s)
-    )];
-    for (const src of sources) {
-      if (src === 'gmail-credentials') {
-        api.gmail.list()
-          .then(creds => setDynamicOptions(prev => ({
-            ...prev,
-            'gmail-credentials': creds.map((c: GmailCredentialSummary) => ({
-              value: c.name,
-              label: c.email ? `${c.name} (${c.email})` : c.name,
-            }))
-          })))
-          .catch(() => {});
-      }
-      if (src === 'llm-models') {
-        api.nodes.models()
-          .then(res => setDynamicOptions(prev => ({
-            ...prev,
-            'llm-models': res.models,
-          })))
-          .catch(() => {});
+      // Load dynamic option sources referenced by any config field
+      const sources = [...new Set(
+        descriptor.configuration
+          .map(c => (c as { optionsSource?: string }).optionsSource)
+          .filter((s): s is string => !!s)
+      )];
+      for (const src of sources) {
+        if (src === 'gmail-credentials') {
+          api.gmail.list()
+            .then(creds => setDynamicOptions(prev => ({
+              ...prev,
+              'gmail-credentials': creds.map((c: GmailCredentialSummary) => ({
+                value: c.name,
+                label: c.email ? `${c.name} (${c.email})` : c.name,
+              }))
+            })))
+            .catch(() => {});
+        }
+        if (src === 'llm-models') {
+          api.nodes.models()
+            .then(res => setDynamicOptions(prev => ({
+              ...prev,
+              'llm-models': res.models,
+            })))
+            .catch(() => {});
+        }
       }
     }
-  }
-}, [descriptor]);
+  }, [descriptor]);
 
-if (!descriptor) return null; // Return early if no descriptor is found
+  if (!descriptor) return null;
 
   return (
     <div className="w-80 border-l bg-white flex flex-col shrink-0 overflow-hidden">
-      {/* Drawer header with title and close button */}
+      {/* Drawer header */}
       <div className="flex items-center justify-between p-4 border-b">
         <div>
           <h3 className="font-semibold text-sm">{descriptor.displayName}</h3>
           <p className="text-xs text-gray-400 font-mono mt-0.5">{descriptor.type}</p>
         </div>
-        <button
-          onClick={onClose}
-          className="p-1 hover:bg-gray-100 rounded"
-          title="Close"
-        >
+        <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded" title="Close">
           <X size={16} />
         </button>
       </div>
 
-      {/* Main content describing the configuration and its parameters */}
+      {/* Main content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
         <div>
           <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Description</p>
           <p className="text-sm text-gray-600">{descriptor.description}</p>
         </div>
 
-        {/* Render configuration section only if configuration exists */}
         {descriptor.configuration.length > 0 && (
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase mb-3">Configuration</p>
             <div className="space-y-3">
-              {/* Preset selector at the top */}
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Use Preset</label>
-          <div className="flex gap-2 items-center">
-            <select
-              className="flex-1 border rounded-lg px-3 py-1.5 text-sm"
-              value={selectedPreset}
-              onChange={e => {
-                const preset = presets.find(p => p.id === e.target.value);
-                if (preset) {
-                  const presetConfig = JSON.parse(preset.configJson);
-                  onConfigChange({ ...presetConfig, ...config });
-                }
-                setSelectedPreset(e.target.value);
-              }}
-            >
-              <option value="">Select a preset</option>
-              {presets.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-            <button
-              onClick={() => setShowSavePresetForm(!showSavePresetForm)}
-              className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
-            >
-              <Plus size={14} /> Save as Preset
-            </button>
-          </div>
-          {showSavePresetForm && (
-            <div className="mt-2 flex gap-2">
-              <input
-                type="text"
-                value={presetName}
-                onChange={(e) => setPresetName(e.target.value)}
-                placeholder="Preset name"
-                className="flex-1 border rounded-lg px-3 py-1.5 text-sm"
-              />
-              <button
-                onClick={() => {
-                  api.presets.create({ name: presetName, nodeType: descriptor.type, configJson: JSON.stringify(config) })
-                    .then(newPreset => setPresets([...presets, newPreset]))
-                    .catch(err => console.error('Failed to save preset:', err));
-                  setPresetName('');
-                  setShowSavePresetForm(false);
-                }}
-                className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700"
-              >
-                Save
-              </button>
-            </div>
-          )}
-        </div>
 
-        {descriptor.configuration.map(cfg => {
-                // Conditional visibility for auth sub-fields — only show when the relevant authType is selected
+              {/* Preset selector */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Use Preset</label>
+                <div className="flex gap-2 items-center">
+                  <select
+                    className="flex-1 border rounded-lg px-3 py-1.5 text-sm"
+                    value={selectedPreset}
+                    onChange={e => {
+                      const preset = presets.find(p => p.id === e.target.value);
+                      if (preset) {
+                        const presetConfig = JSON.parse(preset.configJson);
+                        onConfigChange({ ...presetConfig, ...config });
+                      }
+                      setSelectedPreset(e.target.value);
+                    }}
+                  >
+                    <option value="">Select a preset</option>
+                    {presets.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => setShowSavePresetForm(!showSavePresetForm)}
+                    className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                  >
+                    <Plus size={14} /> Save as Preset
+                  </button>
+                </div>
+                {showSavePresetForm && (
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      type="text"
+                      value={presetName}
+                      onChange={e => setPresetName(e.target.value)}
+                      placeholder="Preset name"
+                      className="flex-1 border rounded-lg px-3 py-1.5 text-sm"
+                    />
+                    <button
+                      onClick={() => {
+                        api.presets.create({ name: presetName, nodeType: descriptor.type, configJson: JSON.stringify(config) })
+                          .then(newPreset => setPresets([...presets, newPreset]))
+                          .catch(err => console.error('Failed to save preset:', err));
+                        setPresetName('');
+                        setShowSavePresetForm(false);
+                      }}
+                      className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-blue-700"
+                    >
+                      Save
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {descriptor.configuration.map(cfg => {
+                // Conditional visibility for auth sub-fields
                 const authType = config.authType as string | undefined;
                 const hiddenWhen: Record<string, string[]> = {
                   authToken:          ['bearer'],
@@ -167,113 +163,117 @@ if (!descriptor) return null; // Return early if no descriptor is found
                 const visibleFor = hiddenWhen[cfg.key];
                 if (visibleFor && !visibleFor.includes(authType ?? '')) return null;
 
-                // Dynamic options source (e.g. gmail-credentials fetched from API)
-                const cfgWithSource = cfg as { optionsSource?: string } & typeof cfg;
+                const cfgWithSource = cfg as { optionsSource?: string; isMultiline?: boolean } & typeof cfg;
                 const optsSrc = cfgWithSource.optionsSource;
                 const dynOpts = optsSrc ? (dynamicOptions[optsSrc] ?? []) : null;
 
                 return (
-                <div key={cfg.key}>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    {cfg.displayName}
-                    {cfg.required && <span className="text-red-500 ml-1">*</span>}
-                  </label>
+                  <div key={cfg.key}>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      {cfg.displayName}
+                      {cfg.required && <span className="text-red-500 ml-1">*</span>}
+                    </label>
 
-                  {/* Dynamic options source — renders a select + optional connect button */}
-                  {dynOpts !== null ? (
-                    <div className="space-y-1">
+                    {dynOpts !== null ? (
+                      <div className="space-y-1">
+                        <select
+                          className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          value={String(config[cfg.key] ?? '')}
+                          onChange={e => onConfigChange({ ...config, [cfg.key]: e.target.value })}
+                        >
+                          <option value="">— select —</option>
+                          {dynOpts.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                        {optsSrc === 'gmail-credentials' && (
+                          <div className="space-y-1">
+                            <p className="text-xs text-amber-600">
+                              Make sure Gmail credentials are configured in{' '}
+                              <a href="/settings" className="underline">Settings</a> first.
+                            </p>
+                            <a
+                              href="#"
+                              className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline mt-0.5"
+                              onClick={e => {
+                                e.preventDefault();
+                                const name = window.prompt('Credential name (e.g. my-gmail):');
+                                if (!name) return;
+                                window.open(api.gmail.authStartUrl({ name }), '_blank');
+                              }}
+                            >
+                              <ExternalLink size={11} /> Connect Gmail account
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    ) : cfg.allowedValues ? (
+                      <div>
+                        <select
+                          className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          value={String(config[cfg.key] ?? cfg.defaultValue ?? '')}
+                          onChange={e => onConfigChange({ ...config, [cfg.key]: e.target.value })}
+                        >
+                          {cfg.allowedValues.map(v => (
+                            <option key={v} value={v}>{v}</option>
+                          ))}
+                        </select>
+                        {cfg.optionDescriptions && config[cfg.key] != null &&
+                          cfg.optionDescriptions[String(config[cfg.key])] && (
+                          <pre className="mt-1.5 text-xs text-slate-500 bg-slate-50 border rounded p-2 whitespace-pre-wrap font-mono leading-relaxed">
+                            {cfg.optionDescriptions[String(config[cfg.key])]}
+                          </pre>
+                        )}
+                      </div>
+                    ) : cfg.type === 'Boolean' ? (
                       <select
                         className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={String(config[cfg.key] ?? '')}
-                        onChange={e => onConfigChange({ ...config, [cfg.key]: e.target.value })}
+                        value={String(config[cfg.key] ?? cfg.defaultValue ?? 'false')}
+                        onChange={e => onConfigChange({ ...config, [cfg.key]: e.target.value === 'true' })}
                       >
-                        <option value="">— select —</option>
-                        {dynOpts.map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
+                        <option value="false">false</option>
+                        <option value="true">true</option>
                       </select>
-                      {optsSrc === 'gmail-credentials' && (
-                        <div className="space-y-1">
-                          <p className="text-xs text-amber-600">
-                            Make sure Gmail credentials are configured in{' '}
-                            <a href="/settings" className="underline">Settings</a> first.
+                    ) : (
+                      /* Plain text, multiline textarea, or sensitive input */
+                      <div className="space-y-1">
+                        {cfgWithSource.isMultiline ? (
+                          <textarea
+                            className="w-full border rounded-lg px-3 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[80px]"
+                            placeholder={String(cfg.defaultValue ?? '')}
+                            value={String(config[cfg.key] ?? '')}
+                            onChange={e => onConfigChange({ ...config, [cfg.key]: e.target.value })}
+                            rows={4}
+                          />
+                        ) : (
+                          <input
+                            className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder={cfg.isSensitive ? '••••••••  or  {{secret:name}}' : String(cfg.defaultValue ?? '')}
+                            type={cfg.isSensitive ? 'password' : 'text'}
+                            value={String(config[cfg.key] ?? '')}
+                            onChange={e => onConfigChange({ ...config, [cfg.key]: e.target.value })}
+                          />
+                        )}
+                        {cfg.isSensitive && (
+                          <p className="text-xs text-amber-600 flex items-center gap-1.5 flex-wrap">
+                            <span>🔒</span>
+                            <span>Sensitive field — store as</span>
+                            <code className="bg-amber-50 border border-amber-200 rounded px-1 font-mono">{'{{secret:name}}'}</code>
+                            <span>to avoid exposing raw values.</span>
+                            <a href="/settings/secrets" target="_blank" className="underline font-medium">Manage secrets →</a>
                           </p>
-                          <a
-                            href="#"
-                            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline mt-0.5"
-                            onClick={e => {
-                              e.preventDefault();
-                              const name = window.prompt('Credential name (e.g. my-gmail):');
-                              if (!name) return;
-                              window.open(api.gmail.authStartUrl({ name }), '_blank');
-                            }}
-                          >
-                            <ExternalLink size={11} /> Connect Gmail account
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  ) : cfg.allowedValues ? (
-                    /* Static allowedValues dropdown with optional per-option descriptions */
-                    <div>
-                      <select
-                        className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={String(config[cfg.key] ?? cfg.defaultValue ?? '')}
-                        onChange={e => onConfigChange({ ...config, [cfg.key]: e.target.value })}
-                      >
-                        {cfg.allowedValues.map(v => (
-                          <option key={v} value={v}>{v}</option>
-                        ))}
-                      </select>
-                      {/* Show description for the currently selected option */}
-                      {cfg.optionDescriptions && config[cfg.key] != null &&
-                        cfg.optionDescriptions[String(config[cfg.key])] && (
-                        <pre className="mt-1.5 text-xs text-slate-500 bg-slate-50 border rounded p-2 whitespace-pre-wrap font-mono leading-relaxed">
-                          {cfg.optionDescriptions[String(config[cfg.key])]}
-                        </pre>
-                      )}
-                    </div>
-                  ) : cfg.type === 'Boolean' ? (
-                    /* Boolean toggle — saves true/false, not strings */
-                    <select
-                      className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={String(config[cfg.key] ?? cfg.defaultValue ?? 'false')}
-                      onChange={e => onConfigChange({ ...config, [cfg.key]: e.target.value === 'true' })}
-                    >
-                      <option value="false">false</option>
-                      <option value="true">true</option>
-                    </select>
-                  ) : (
-                    /* Plain text or sensitive input */
-                    <div className="space-y-1">
-                      <input
-                        className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder={cfg.isSensitive ? '••••••••  or  {{secret:name}}' : String(cfg.defaultValue ?? '')}
-                        type={cfg.isSensitive ? 'password' : 'text'}
-                        value={String(config[cfg.key] ?? '')}
-                        onChange={e => onConfigChange({ ...config, [cfg.key]: e.target.value })}
-                      />
-                      {cfg.isSensitive && (
-                        <p className="text-xs text-amber-600 flex items-center gap-1.5 flex-wrap">
-                          <span>🔒</span>
-                          <span>Sensitive field — store as</span>
-                          <code className="bg-amber-50 border border-amber-200 rounded px-1 font-mono">{'{{secret:name}}'}</code>
-                          <span>to avoid exposing raw values.</span>
-                          <a href="/settings/secrets" target="_blank" className="underline font-medium">Manage secrets →</a>
-                        </p>
-                      )}
-                    </div>
-                  )}
-                  <p className="text-xs text-gray-400 mt-0.5">{cfg.description}</p>
-                </div>
-              )})
-            }
+                        )}
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-400 mt-0.5">{cfg.description}</p>
+                  </div>
+                );
+              })}
 
             </div>
           </div>
         )}
 
-        {/* Render inputs section */}
         {descriptor.inputs.length > 0 && (
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Inputs</p>
@@ -287,7 +287,6 @@ if (!descriptor) return null; // Return early if no descriptor is found
           </div>
         )}
 
-        {/* Render outputs section */}
         {descriptor.outputs.length > 0 && (
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Outputs</p>
@@ -301,7 +300,7 @@ if (!descriptor) return null; // Return early if no descriptor is found
         )}
       </div>
 
-      {/* Delete button at bottom of drawer */}
+      {/* Delete button */}
       <div className="p-4 border-t shrink-0">
         <button
           onClick={onDelete}

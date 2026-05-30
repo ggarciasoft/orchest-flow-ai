@@ -96,7 +96,7 @@ public sealed class SlackNotifyNodeDescriptor : IWorkflowNodeDescriptor
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
         new NodeConfigDefinition("webhookUrl", "Webhook URL", "Slack incoming webhook URL.", DataType.String, Required: true),
-        new NodeConfigDefinition("message", "Message", "The message text (supports placeholders).", DataType.String, Required: true),
+        new NodeConfigDefinition("message", "Message", "The message text (supports placeholders).", DataType.String, Required: true, IsMultiline: true),
         new NodeConfigDefinition("channel", "Channel", "Optional channel override.", DataType.String, Required: false)
     };
 }

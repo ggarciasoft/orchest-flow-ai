@@ -189,7 +189,7 @@ public sealed class DataExtractorNodeDescriptor : IWorkflowNodeDescriptor
                 ["invoice"] = "Amount: numeric only (e.g. 1200.00)\nDate: YYYY-MM-DD\nInvoiceNumber: alphanumeric string\nVendor: company name only",
                 ["contact"] = "Name: full name, title-case\nEmail: lowercase email address\nPhone: E.164 format (e.g. +1234567890)\nCompany: company name only",
             }),
-        new NodeConfigDefinition("formatInstructions", "Format Instructions", "Custom per-field format rules appended to the prompt. Overrides preset rules for the same field. E.g. 'Amount: numeric only. Date: YYYY-MM-DD.'.", DataType.String, Required: false),
+        new NodeConfigDefinition("formatInstructions", "Format Instructions", "Custom per-field format rules appended to the prompt. Overrides preset rules for the same field. E.g. 'Amount: numeric only. Date: YYYY-MM-DD.'.", DataType.String, Required: false, IsMultiline: true),
         new NodeConfigDefinition("textInput", "Text Input", "Which upstream output to use as the text source.", DataType.Enum, Required: false, DefaultValue: "text", AllowedValues: new[] { "text", "item", "body" }),
         new NodeConfigDefinition("model", "Model", "LLM model to use.", DataType.String, Required: false, DefaultValue: "default", OptionsSource: "llm-models")
     };

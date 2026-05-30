@@ -53,5 +53,5 @@ public sealed class ConditionNodeDescriptor : IWorkflowNodeDescriptor
     /// <inheritdoc />
     public IReadOnlyCollection<NodeOutputDefinition> Outputs => new[] { new NodeOutputDefinition("result", "Result", "Boolean result of the condition.", DataType.Boolean) };
     /// <inheritdoc />
-    public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[] { new NodeConfigDefinition("expression", "Expression", "Boolean expression to evaluate.", DataType.String, Required: true) };
+    public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[] { new NodeConfigDefinition("expression", "Expression", "Boolean expression to evaluate.", DataType.String, Required: true, IsMultiline: true) };
 }

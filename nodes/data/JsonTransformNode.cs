@@ -89,6 +89,6 @@ public sealed class JsonTransformNodeDescriptor : IWorkflowNodeDescriptor
     /// <inheritdoc />
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
-        new NodeConfigDefinition("mapping", "Mapping", "JSON object mapping output fields to input paths.", DataType.String, true)
+        new NodeConfigDefinition("mapping", "Mapping", "JSON object mapping output fields to input paths.", DataType.String, true, IsMultiline: true)
     };
 }

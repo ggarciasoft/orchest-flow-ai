@@ -117,6 +117,6 @@ public sealed class TextClassifierNodeDescriptor : IWorkflowNodeDescriptor
         new NodeConfigDefinition("categories", "Categories", "Comma-separated category names e.g. 'urgent,normal,low'.", DataType.String, Required: true),
         new NodeConfigDefinition("textInput", "Text Input", "Which upstream output to use as the text source.", DataType.Enum, Required: false, DefaultValue: "text", AllowedValues: new[] { "text", "item", "body" }),
         new NodeConfigDefinition("model", "Model", "LLM model to use.", DataType.String, Required: false, DefaultValue: "default", OptionsSource: "llm-models"),
-        new NodeConfigDefinition("instructions", "Instructions", "Extra classification guidance.", DataType.String, Required: false)
+        new NodeConfigDefinition("instructions", "Instructions", "Extra classification guidance.", DataType.String, Required: false, IsMultiline: true)
     };
 }

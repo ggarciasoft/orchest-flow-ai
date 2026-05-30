@@ -168,8 +168,8 @@ public sealed class DatabaseQueryNodeDescriptor : IWorkflowNodeDescriptor
     {
         new NodeConfigDefinition("provider", "Provider", "Database provider.", DataType.Enum, Required: true, DefaultValue: "postgresql", AllowedValues: new[] { "postgresql", "sqlserver", "mysql" }),
         new NodeConfigDefinition("connectionString", "Connection String", "Database connection string. Can also be passed as a runtime input.", DataType.String, Required: false, IsSensitive: true),
-        new NodeConfigDefinition("query", "SQL Query", "Parameterized SELECT query. Use @paramName placeholders.", DataType.String, Required: true),
-        new NodeConfigDefinition("parameters", "Parameters", "JSON object of query parameters, e.g. {\"userId\": \"abc\"}.", DataType.String, Required: false),
+        new NodeConfigDefinition("query", "SQL Query", "Parameterized SELECT query. Use @paramName placeholders.", DataType.String, Required: true, IsMultiline: true),
+        new NodeConfigDefinition("parameters", "Parameters", "JSON object of query parameters, e.g. {\"userId\": \"abc\"}.", DataType.String, Required: false, IsMultiline: true),
         new NodeConfigDefinition("timeoutSeconds", "Timeout (s)", "Query timeout in seconds.", DataType.Number, Required: false, DefaultValue: 30),
     };
 }
