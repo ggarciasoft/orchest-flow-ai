@@ -93,6 +93,21 @@ const nav: NavItem[] = [
 
 ## 4. Screens
 
+### Home Page (`/`)
+Public marketing landing page. Not authenticated.
+
+- **Nav** — logo, Docs link, Sign in, Get started (→ /onboarding)
+- **Hero** — headline, subtitle, CTA buttons (Start for free → /onboarding, Sign in → /login)
+- **Feature grid** (6 cards, 3-column on large screens):
+  - Visual Workflow Designer — canvas with 20+ node types, icons, AI assistant
+  - Multi-Provider AI — OpenAI / Anthropic / Azure / Ollama, switchable without restart
+  - Custom Forms & Approvals — AI-assisted form builder, pause-for-human-input
+  - External Data Intake — `system.data-checkpoint` node, field validation, retry on failure
+  - Enterprise Security — JWT, RBAC, tenant isolation, encrypted secrets
+  - Real-Time Monitoring — execution timeline, AI chat history, token usage
+- **CTA section** — "Create your workspace" → /onboarding
+- **Footer** — `PublicFooter` component
+
 ### Dashboard
 Total workflows, recent executions, pending approvals, failed executions.
 
@@ -122,6 +137,22 @@ Top bar:
 - **ActiveProviderBadge** ? shown below panel subtitle; reads `/api/settings/ai-status` on mount and displays provider + model badges
 - **Per-message usage footer** ? each assistant response shows provider, model, and token count
 - **Disabled state** ? if `isDefaultConfigured: false`, shows amber warning banner with link to Settings ? AI Providers; input + send button disabled
+
+**Custom Node Renderer:**
+Nodes on the canvas use a `CustomNode` React Flow component:
+- Category-colored background (same `CATEGORY_COLORS` map as before)
+- Lucide icon mapped from `descriptor.iconKey` via `NODE_ICON_MAP`
+- First-letter fallback when no icon matches
+- Connection handles on top (target) and bottom (source)
+- Node type: `'custom'` (registered via `nodeTypes` prop)
+
+**Node Palette Icons:**
+Each palette item shows:
+- Small colored icon badge (category color + icon)
+- First-letter fallback when iconKey has no match
+
+**Edge ID Generation:**
+> **Edge IDs** ? edges without an `id` field (e.g. from the playground seed) automatically get `edge-{source}-{target}` assigned on load so React Flow renders them correctly.
 
 ### Execution Timeline
 - Per-node status, timestamps, input/output JSON, retry count.

@@ -1,12 +1,38 @@
 import Link from 'next/link';
-import { ArrowRight, GitBranch, Zap, Shield, BarChart3, CheckCircle } from 'lucide-react';
+import { ArrowRight, GitBranch, Zap, Shield, BarChart3, CheckCircle, ClipboardList, Database } from 'lucide-react';
 import { PublicFooter } from '@/components/PublicFooter';
 
 const features = [
-  { icon: GitBranch, title: 'Visual Workflow Designer', desc: 'Drag-and-drop canvas to build complex AI pipelines without code.' },
-  { icon: Zap, title: 'Multi-LLM Orchestration', desc: 'Route tasks across GPT-4, Claude, Gemini, and custom models.' },
-  { icon: Shield, title: 'Enterprise Security', desc: 'JWT auth, RBAC roles, HMAC audit chains, and on-premise deployment.' },
-  { icon: BarChart3, title: 'Real-Time Monitoring', desc: 'Live execution logs, metrics dashboards, and OpenTelemetry traces.' },
+  {
+    icon: GitBranch,
+    title: 'Visual Workflow Designer',
+    desc: 'Drag-and-drop canvas with 20+ node types, icons, AI assistant, version history, and undo/redo.',
+  },
+  {
+    icon: Zap,
+    title: 'Multi-Provider AI',
+    desc: 'Route tasks across OpenAI, Anthropic, Azure, and Ollama. Switch default provider without restart.',
+  },
+  {
+    icon: ClipboardList,
+    title: 'Custom Forms & Approvals',
+    desc: 'Build dynamic forms with AI assistance. Pause workflows for human input or external data.',
+  },
+  {
+    icon: Database,
+    title: 'External Data Intake',
+    desc: 'Pause workflows and wait for external systems to POST data. Validate fields and coerce types.',
+  },
+  {
+    icon: Shield,
+    title: 'Enterprise Security',
+    desc: 'JWT auth, RBAC roles, tenant isolation, encrypted secrets, and HMAC audit chains.',
+  },
+  {
+    icon: BarChart3,
+    title: 'Real-Time Monitoring',
+    desc: 'Live execution timeline, node-level logs, AI chat history, and token usage tracking.',
+  },
 ];
 
 export default function HomePage() {
@@ -34,7 +60,7 @@ export default function HomePage() {
       {/* Hero */}
       <section className="flex-1 flex flex-col items-center justify-center px-6 py-24 text-center bg-[#f8fafc]">
         <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-medium px-3 py-1 rounded-full mb-6">
-          <CheckCircle size={12} /> Now with real-time execution streaming
+          <CheckCircle size={12} /> Visual designer · AI builder · External data intake
         </div>
         <h1 className="text-5xl font-bold text-slate-900 leading-tight max-w-3xl">
           Orchestrate AI workflows <span className="text-indigo-600">at enterprise scale</span>
@@ -55,7 +81,7 @@ export default function HomePage() {
       {/* Features */}
       <section className="max-w-6xl mx-auto px-6 py-20 w-full">
         <h2 className="text-2xl font-semibold text-slate-900 text-center mb-12">Everything you need to ship AI faster</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map(({ icon: Icon, title, desc }) => (
             <div key={title} className="bg-white border border-slate-200 rounded-xl p-6">
               <div className="w-9 h-9 bg-indigo-50 rounded-lg flex items-center justify-center mb-4">
