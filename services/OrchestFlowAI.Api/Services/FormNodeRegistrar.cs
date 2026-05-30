@@ -64,12 +64,21 @@ public sealed class FormNodeRegistrar : IHostedService
 
         // Determine which form types should exist for this tenant
         var tenantForms = forms.Where(f => f.TenantId == tenantId).ToList();
-        var expectedTypes = tenantForms.Select(f => $"form.{f.Slug}").ToHashSet();
+        var expectedTypes = tenantForms.Select(f => $"form.{f.Slug}").ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        // Unregister stale form types for this tenant
+        // All slugs currently owned by OTHER tenants — never touch these.
+        var otherTenantTypes = forms
+            .Where(f => f.TenantId != tenantId)
+            .Select(f => $"form.{f.Slug}")
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // Unregister stale form types for this tenant only:
+        // a form.* node is stale for this tenant if it is NOT in expectedTypes AND
+        // is not owned by another tenant (i.e. it was registered by this tenant but is now deleted/renamed).
         var stale = _registry.GetAllDescriptors()
             .Where(d => d.Type.StartsWith("form.", StringComparison.OrdinalIgnoreCase)
-                     && !expectedTypes.Contains(d.Type))
+                     && !expectedTypes.Contains(d.Type)
+                     && !otherTenantTypes.Contains(d.Type))
             .ToList();
 
         foreach (var d in stale)
