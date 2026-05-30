@@ -226,3 +226,15 @@ All server state flows through TanStack Query keyed on `[entity, params]`. The A
 - **Unit / integration:** React Testing Library (`npx jest --watchAll=false`).
 - Mocked API calls; `QueryClientProvider` wraps all component tests that use TanStack Query hooks.
 - Designer tests mock `@xyflow/react`, `lucide-react`, and `@/lib/api`.
+
+---
+
+### Workflow Playground (/playground)
+Demo/testing page for the full form-node execution flow.
+
+- **Start** button calls POST /api/playground/seed (idempotent) to set up the sample workflow, then triggers execution via POST /api/workflows/{id}/execute.
+- **Step indicator** — three pills (Personal Info / Employment / Preferences) highlight current and completed steps.
+- **Polling** — GET /api/executions/{id} every 2 s detects status transitions; GET /api/approvals/by-execution/{id} fetches the pending form when the execution is Paused.
+- **Inline FormRenderer** — renders the paused form step; submits via POST /api/forms/{id}/submit and resumes polling for the next step.
+- **Completion screen** — shows all collected data from every step in a summary view once the workflow reaches system.end.
+- **Run Again** resets all state and allows restarting from scratch.

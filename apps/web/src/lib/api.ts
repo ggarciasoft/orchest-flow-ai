@@ -255,6 +255,11 @@ export const api = {
     /** Fetches document metadata by id. */
     get: (id: string) => apiFetch<DocumentMeta>(`/api/documents/${id}`),
   },
+  /** Playground — seed + run the sample User Onboarding workflow. */
+  playground: {
+    /** Seeds (or upserts) the playground workflow and forms. Returns workflowId. */
+    seed: () => apiFetch<{ workflowId: string; message: string }>('/api/playground/seed', { method: 'POST' }),
+  },
   /** Node catalog endpoint — returns all registered node descriptors. */
   nodes: {
     /** Returns the full catalog of available node types from the registry. */

@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { isAuthenticated, clearToken, decodeJwt, getToken } from '@/lib/auth';
 import {
   LayoutDashboard, GitBranch, Play, CheckSquare,
-  FileText, Settings, LogOut, KeyRound, ClipboardList, Cpu, Plug, Building2
+  FileText, Settings, LogOut, KeyRound, ClipboardList, Cpu, Plug, Building2, FlaskConical
 } from 'lucide-react';
 
 type NavItem = {
@@ -23,6 +23,7 @@ const nav: NavItem[] = [
   { href: '/executions', label: 'Executions',  icon: Play },
   { href: '/approvals',  label: 'Approvals',   icon: CheckSquare },
   { href: '/documents',  label: 'Documents',   icon: FileText },
+  { href: '/playground', label: 'Playground',  icon: FlaskConical },
   {
     href: '/settings',
     label: 'Settings',
