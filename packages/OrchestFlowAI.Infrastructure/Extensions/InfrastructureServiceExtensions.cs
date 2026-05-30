@@ -68,6 +68,7 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<IDocumentRepository, EfDocumentRepository>();
             services.AddScoped<IAIUsageRepository, EfAIUsageRepository>();
             services.AddScoped<IAiChatRepository, EfAiChatRepository>();
+            services.AddScoped<IWorkflowConfigRepository, EfWorkflowConfigRepository>();
             services.AddScoped<INodePresetRepository, EfNodePresetRepository>();
             services.AddScoped<ITenantRepository, EfTenantRepository>();
             services.AddScoped<ITenantInviteRepository, EfTenantInviteRepository>();

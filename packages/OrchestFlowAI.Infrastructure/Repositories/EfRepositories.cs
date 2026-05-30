@@ -517,3 +517,28 @@ public sealed class EfAiChatRepository : IAiChatRepository
     public async Task<IReadOnlyList<AiChatMessage>> GetMessagesAsync(Guid sessionId, CancellationToken ct = default)
         => await _db.AiChatMessages.Where(m => m.SessionId == sessionId).OrderBy(m => m.CreatedAt).ToListAsync(ct);
 }
+
+/// <summary>EF Core implementation of <see cref="IWorkflowConfigRepository"/>.</summary>
+public sealed class EfWorkflowConfigRepository : IWorkflowConfigRepository
+{
+    private readonly OrchestFlowAIDbContext _db;
+    public EfWorkflowConfigRepository(OrchestFlowAIDbContext db) => _db = db;
+
+    public async Task<IReadOnlyList<WorkflowConfig>> ListAsync(Guid tenantId, CancellationToken ct = default)
+        => await _db.WorkflowConfigs.Where(c => c.TenantId == tenantId).OrderBy(c => c.Key).ToListAsync(ct);
+
+    public Task<WorkflowConfig?> GetAsync(Guid tenantId, string key, CancellationToken ct = default)
+        => _db.WorkflowConfigs.FirstOrDefaultAsync(c => c.TenantId == tenantId && c.Key == key, ct);
+
+    public async Task<WorkflowConfig> CreateAsync(WorkflowConfig config, CancellationToken ct = default)
+    { _db.WorkflowConfigs.Add(config); await _db.SaveChangesAsync(ct); return config; }
+
+    public async Task UpdateAsync(WorkflowConfig config, CancellationToken ct = default)
+    { _db.WorkflowConfigs.Update(config); await _db.SaveChangesAsync(ct); }
+
+    public async Task DeleteAsync(Guid tenantId, string key, CancellationToken ct = default)
+    {
+        var config = await GetAsync(tenantId, key, ct);
+        if (config != null) { _db.WorkflowConfigs.Remove(config); await _db.SaveChangesAsync(ct); }
+    }
+}

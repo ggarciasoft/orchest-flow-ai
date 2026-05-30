@@ -35,6 +35,7 @@ public sealed class OrchestFlowAIDbContext : DbContext
     public DbSet<CorrelationToken> CorrelationTokens => Set<CorrelationToken>();
     public DbSet<AiChatSession> AiChatSessions => Set<AiChatSession>();
     public DbSet<AiChatMessage> AiChatMessages => Set<AiChatMessage>();
+    public DbSet<WorkflowConfig> WorkflowConfigs => Set<WorkflowConfig>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -257,6 +258,17 @@ public sealed class OrchestFlowAIDbContext : DbContext
             // Primary access pattern: workers poll for Pending items ordered by CreatedAt
             e.HasIndex(q => new { q.Status, q.CreatedAt });
             e.HasIndex(q => q.TenantId);
+        });
+
+        modelBuilder.Entity<WorkflowConfig>(e =>
+        {
+            e.HasKey(c => c.Id);
+            e.Property(c => c.Key).IsRequired().HasMaxLength(200);
+            e.Property(c => c.Value).IsRequired().HasColumnType("text");
+            e.Property(c => c.ValueType).IsRequired().HasMaxLength(20).HasDefaultValue("string");
+            e.Property(c => c.Description).HasMaxLength(500);
+            e.HasIndex(c => new { c.TenantId, c.Key }).IsUnique();
+            e.HasIndex(c => c.TenantId);
         });
     }
 }

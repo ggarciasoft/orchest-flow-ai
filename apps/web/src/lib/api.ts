@@ -458,6 +458,17 @@ export const api = {
     /** Deletes a secret. */
     delete: (id: string) => apiFetch<void>(`/api/secrets/${id}`, { method: 'DELETE' }),
   },
+  /** Workflow configuration — persistent key-value store for workflow state. */
+  config: {
+    list: () => apiFetch<WorkflowConfigEntry[]>('/api/config'),
+    get: (key: string) => apiFetch<WorkflowConfigEntry>(`/api/config/${encodeURIComponent(key)}`),
+    create: (data: { key: string; value: string; valueType?: string; description?: string }) =>
+      apiFetch<WorkflowConfigEntry>('/api/config', { method: 'POST', body: JSON.stringify(data) }),
+    update: (key: string, data: { value?: string; description?: string }) =>
+      apiFetch<WorkflowConfigEntry>(`/api/config/${encodeURIComponent(key)}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (key: string) =>
+      apiFetch<void>(`/api/config/${encodeURIComponent(key)}`, { method: 'DELETE' }),
+  },
   /** AI chat history endpoints — view AI assistant session history and token usage. */
   aiHistory: {
     listSessions: (params?: { surface?: string; page?: number; pageSize?: number }) => {
@@ -551,6 +562,15 @@ export interface TenantInviteResponse { id: string; tenantId: string; email: str
 /** Summary of a saved Gmail credential (no secrets). */
 /** Summary of a saved secret (name only, never the value). */
 export interface SecretSummary { id: string; name: string; createdAt: string; updatedAt: string; }
+
+/** Workflow configuration entry — persistent key-value pair for workflow state. */
+export interface WorkflowConfigEntry {
+  key: string;
+  value: string;
+  valueType: 'string' | 'number' | 'boolean' | 'json' | 'datetime';
+  description?: string;
+  updatedAt: string;
+}
 
 export interface GmailCredentialSummary { id: string; name: string; email: string | null; createdAt: string; updatedAt: string; }
 
