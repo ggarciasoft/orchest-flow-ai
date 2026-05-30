@@ -275,6 +275,42 @@ Indexes: `(tenant_id, created_at desc)`, `(workflow_execution_id)`.
 
 ---
 
+### `ai_chat_sessions`
+
+Stores interactive AI chat sessions (workflow designer, form generator).
+
+| Column     | Type      | Description |
+|------------|-----------|-------------|
+| id         | uuid PK   | Session id |
+| tenant_id  | uuid      | Tenant |
+| user_id    | uuid      | User who started the session |
+| surface    | varchar   | `workflow-assist`, `form-generator`, `node-assist` |
+| context_id | uuid?     | Optional: workflow id, form id, etc. |
+| created_at | timestamp | |
+| updated_at | timestamp | Updated on each message added |
+
+### `ai_chat_messages`
+
+Individual turns within an AiChatSession.
+
+| Column           | Type      | Description |
+|------------------|-----------|-------------|
+| id               | uuid PK   | Message id |
+| session_id       | uuid FK   | → ai_chat_sessions |
+| role             | varchar   | `user`, `assistant`, `tool` |
+| content_text     | text      | Message content |
+| tool_name        | varchar?  | Tool name when Role=tool |
+| tool_input_json  | text?     | Tool call arguments |
+| tool_output_json | text?     | Tool result |
+| prompt_tokens    | int       | Input tokens (assistant messages only) |
+| completion_tokens| int       | Output tokens (assistant messages only) |
+| total_tokens     | int       | Sum |
+| model            | varchar?  | Model used |
+| provider         | varchar?  | Provider id |
+| created_at       | timestamp | |
+
+---
+
 ## 3. Optional Tables (post-MVP)
 
 - `tenant_settings` â€” per-tenant config (default model, providers, retention).

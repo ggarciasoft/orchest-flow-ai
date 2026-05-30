@@ -79,6 +79,7 @@ const nav: NavItem[] = [
       { href: '/settings/providers',    label: 'AI Providers',  icon: Cpu },
       { href: '/settings/integrations', label: 'Integrations',  icon: Plug },
       { href: '/settings/secrets',      label: 'Secrets',       icon: KeyRound },
+      { href: '/settings/ai-history',   label: 'AI History',    icon: MessageSquare },
     ],
   },
 ];
@@ -117,6 +118,11 @@ Top bar:
 - **History** — Version History panel. Load (preview) or Activate any saved version.
 - **Run** — input dialog → `POST /api/workflows/{id}/execute`.
 
+**AI Assistant:**
+- **ActiveProviderBadge** ? shown below panel subtitle; reads `/api/settings/ai-status` on mount and displays provider + model badges
+- **Per-message usage footer** ? each assistant response shows provider, model, and token count
+- **Disabled state** ? if `isDefaultConfigured: false`, shows amber warning banner with link to Settings ? AI Providers; input + send button disabled
+
 ### Execution Timeline
 - Per-node status, timestamps, input/output JSON, retry count.
 - Status badges use `statusLabel()` for human-readable text (e.g. `WaitingForApproval` → `"Waiting for Approval"`).
@@ -141,9 +147,27 @@ All badges use `statusLabel()` — `WaitingForApproval` displays as amber "Waiti
 
 ### Settings Hub (`/settings`)
 Cards linking to sub-sections:
+
+**AI Providers** (`/settings/providers`):
+- Dropdown selector + config panel per provider (OpenAI, Anthropic, Azure OpenAI, Ollama)
+- **Active provider banner** ? shown at top, reads `llm.defaultProvider` + `llm.defaultModel` from settings
+- **"Default" badge** ? shown in provider dropdown next to the active provider
+- **"Set as default provider" button** ? in each provider panel; calls `PUT /api/settings` with `llm.defaultProvider`; takes effect immediately (no restart)
+- Adding a new provider = one entry in the `PROVIDERS` array + one panel component
+
+Original list:
 - **AI Providers** (`/settings/providers`) — dropdown selector + config panel per provider (OpenAI, Anthropic, Azure OpenAI, Ollama). Adding a new provider = one entry in the `PROVIDERS` array + one panel component.
 - **Integrations** (`/settings/integrations`) — external service credentials (Gmail OAuth2). Same dropdown pattern.
 - **Secrets** (`/settings/secrets`) — encrypted named vault; reference as `{{secret:name}}` in any node config.
+
+### AI History (`/settings/ai-history`)
+Read-only view of all AI chat sessions for the tenant.
+
+- **Usage summary cards** ? total sessions, total tokens, breakdown by surface (Workflow Designer / Form Generator)
+- **Filter** ? dropdown to filter by surface
+- **Session list** ? table with Surface, Date, session count columns; expand any session to view its message thread
+- **Message thread** ? chat bubbles: user (right/slate), assistant (left/indigo, with model+token footer), tool (left/amber, with collapsible input/output JSON)
+- Calls `GET /api/ai/sessions`, `GET /api/ai/sessions/{id}/messages`, `GET /api/ai/usage-summary`
 
 ### Executions List (`/executions`)
 - **Status filter pills** — All / Running / Queued / Paused / Completed / Failed / Cancelled. Resets to page 1.
@@ -234,10 +258,10 @@ Demo/testing page for the full form-node execution flow.
 
 - **Start** button calls POST /api/playground/seed (idempotent) to set up the sample workflow, then triggers execution via POST /api/workflows/{id}/execute.
 - **Forms created** ? three form nodes are seeded: `pg-personal-info` (Full Name, Email, Date of Birth), `pg-employment` (Company, Job Title, Start Date), `pg-preferences` (Newsletter, Timezone, Notes). Forms are idempotent ? re-seeding reuses existing forms if their slug already exists.
-- **Step indicator** � three pills (Personal Info / Employment / Preferences) highlight current and completed steps.
-- **Polling** � GET /api/executions/{id} every 2 s detects status transitions; GET /api/approvals/by-execution/{id} fetches the pending form when the execution is Paused.
-- **Inline FormRenderer** � renders the paused form step; submits via POST /api/forms/{id}/submit and resumes polling for the next step.
-- **Completion screen** � shows all collected data from every step in a summary view once the workflow reaches system.end.
+- **Step indicator** � three pills (Personal Info / Employment / Preferences) highlight current and completed steps.
+- **Polling** � GET /api/executions/{id} every 2 s detects status transitions; GET /api/approvals/by-execution/{id} fetches the pending form when the execution is Paused.
+- **Inline FormRenderer** � renders the paused form step; submits via POST /api/forms/{id}/submit and resumes polling for the next step.
+- **Completion screen** � shows all collected data from every step in a summary view once the workflow reaches system.end.
 - **Run Again** resets all state and allows restarting from scratch.
 ### External Data Playground (/playground/external)
 Demo/testing page for the `system.data-checkpoint` node - purely API-driven, no form rendering.
