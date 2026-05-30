@@ -11,6 +11,7 @@ import {
 
 const POLL_MS = 2000;
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:5080';
+const DB_CONFIG_STORAGE_KEY = 'orchestflowai:external-playground:dbConfig';
 
 const CHECKPOINT_LABELS = ['Customer', 'Order'] as const;
 
@@ -91,13 +92,14 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
 interface SetupFormProps {
   onSave: (config: DbConfig) => void;
   onSkip: () => void;
+  initialConfig?: DbConfig;
 }
 
-function SetupForm({ onSave, onSkip }: SetupFormProps) {
-  const [customerConnStr, setCustomerConnStr]         = useState('');
-  const [customerStatement, setCustomerStatement]     = useState('INSERT INTO customers (name, email) VALUES (@name, @email)');
-  const [orderConnStr, setOrderConnStr]               = useState('');
-  const [orderStatement, setOrderStatement]           = useState('INSERT INTO orders (items, amount) VALUES (@items, @amount)');
+function SetupForm({ onSave, onSkip, initialConfig }: SetupFormProps) {
+  const [customerConnStr, setCustomerConnStr]         = useState(initialConfig?.customer.connectionString ?? '');
+  const [customerStatement, setCustomerStatement]     = useState(initialConfig?.customer.statement ?? 'INSERT INTO customers (name, email) VALUES (@name, @email)');
+  const [orderConnStr, setOrderConnStr]               = useState(initialConfig?.order.connectionString ?? '');
+  const [orderStatement, setOrderStatement]           = useState(initialConfig?.order.statement ?? 'INSERT INTO orders (items, amount) VALUES (@items, @amount)');
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const customerTouchedRef = useRef(false);
@@ -250,6 +252,18 @@ export default function ExternalPlaygroundPage() {
   const [jsonError, setJsonError]       = useState<string | null>(null);
   const [dbConfig, setDbConfig]         = useState<DbConfig | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
+
+  // restore dbConfig from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(DB_CONFIG_STORAGE_KEY);
+      if (stored) {
+        setDbConfig(JSON.parse(stored) as DbConfig);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // auto-scroll log
   useEffect(() => { logEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [log]);
@@ -460,12 +474,24 @@ export default function ExternalPlaygroundPage() {
           </div>
 
           <SetupForm
+            initialConfig={dbConfig ?? undefined}
             onSave={(config) => {
               setDbConfig(config);
+              try { localStorage.setItem(DB_CONFIG_STORAGE_KEY, JSON.stringify(config)); } catch { /* ignore */ }
               setPhase('idle');
             }}
             onSkip={() => {
-              setDbConfig(null);
+              // Reuse last saved config so re-runs don't wipe the workflow's DB nodes
+              try {
+                const stored = localStorage.getItem(DB_CONFIG_STORAGE_KEY);
+                if (stored) {
+                  setDbConfig(JSON.parse(stored) as DbConfig);
+                } else {
+                  setDbConfig(null);
+                }
+              } catch {
+                setDbConfig(null);
+              }
               setPhase('idle');
             }}
           />
@@ -479,7 +505,7 @@ export default function ExternalPlaygroundPage() {
           <h2 className="text-lg font-semibold text-slate-800">Ready to Start</h2>
           <p className="text-sm text-slate-500 max-w-sm mx-auto">
             {dbConfig
-              ? 'Database configuration saved. Click below to start the workflow.'
+              ? 'Database configuration ready. Click below to start the workflow.'
               : 'Database setup skipped. The workflow will run without DB writes.'}
           </p>
           <button
@@ -488,6 +514,17 @@ export default function ExternalPlaygroundPage() {
           >
             <Play size={14} /> Start Playground
           </button>
+          {dbConfig && (
+            <button
+              onClick={() => {
+                try { localStorage.removeItem(DB_CONFIG_STORAGE_KEY); } catch { /* ignore */ }
+                setDbConfig(null);
+              }}
+              className="text-xs text-slate-400 hover:text-slate-600 underline"
+            >
+              Clear saved DB config
+            </button>
+          )}
         </div>
       )}
 
