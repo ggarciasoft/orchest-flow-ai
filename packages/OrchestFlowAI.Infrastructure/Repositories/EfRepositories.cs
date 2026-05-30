@@ -172,6 +172,9 @@ public sealed class EfUserRepository : IUserRepository
     public Task<User?> GetByEmailAsync(string email, Guid tenantId, CancellationToken ct = default)
         => _db.Users.FirstOrDefaultAsync(u => u.Email == email && u.TenantId == tenantId, ct);
 
+    public Task<User?> GetByEmailGlobalAsync(string email, CancellationToken ct = default)
+        => _db.Users.FirstOrDefaultAsync(u => u.Email == email, ct);
+
     public Task<User?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default)
         => _db.Users.FirstOrDefaultAsync(u => u.Id == id && u.TenantId == tenantId, ct);
 

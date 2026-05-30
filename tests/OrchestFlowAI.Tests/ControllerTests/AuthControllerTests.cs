@@ -16,7 +16,7 @@ public sealed class AuthControllerTests
 {
     private static readonly Guid DefaultTenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
-    private static AuthController BuildController(Mock<IUserRepository> users)
+    private static AuthController BuildController(Mock<IUserRepository> users, Mock<ITenantRepository>? tenants = null)
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -26,7 +26,10 @@ public sealed class AuthControllerTests
                 ["Auth:JwtAudience"]   = "test",
             })
             .Build();
-        return new AuthController(users.Object, new JwtTokenService(), config);
+        var tenantRepo = tenants ?? new Mock<ITenantRepository>();
+        tenantRepo.Setup(r => r.CreateAsync(It.IsAny<Tenant>(), default))
+            .ReturnsAsync((Tenant t, CancellationToken _) => t);
+        return new AuthController(users.Object, tenantRepo.Object, new JwtTokenService(), config);
     }
 
     private static string HashPassword(string password)
@@ -42,7 +45,7 @@ public sealed class AuthControllerTests
     {
         var user = User.Create(DefaultTenantId, "alice@test.com", "Alice", UserRole.Admin, HashPassword("password123"));
         var users = new Mock<IUserRepository>();
-        users.Setup(r => r.GetByEmailAsync("alice@test.com", DefaultTenantId, default))
+        users.Setup(r => r.GetByEmailGlobalAsync("alice@test.com", default))
              .ReturnsAsync(user);
 
         var ctrl = BuildController(users);
@@ -58,7 +61,7 @@ public sealed class AuthControllerTests
     public async Task Login_UnknownEmail_Returns401()
     {
         var users = new Mock<IUserRepository>();
-        users.Setup(r => r.GetByEmailAsync(It.IsAny<string>(), DefaultTenantId, default))
+        users.Setup(r => r.GetByEmailGlobalAsync(It.IsAny<string>(), default))
              .ReturnsAsync((User?)null);
 
         var ctrl = BuildController(users);
@@ -72,7 +75,7 @@ public sealed class AuthControllerTests
     {
         var user = User.Create(DefaultTenantId, "alice@test.com", "Alice", UserRole.Admin, HashPassword("correct"));
         var users = new Mock<IUserRepository>();
-        users.Setup(r => r.GetByEmailAsync("alice@test.com", DefaultTenantId, default))
+        users.Setup(r => r.GetByEmailGlobalAsync("alice@test.com", default))
              .ReturnsAsync(user);
 
         var ctrl = BuildController(users);
@@ -95,12 +98,16 @@ public sealed class AuthControllerTests
     public async Task Register_NewUser_Returns201WithToken()
     {
         var users = new Mock<IUserRepository>();
-        users.Setup(r => r.GetByEmailAsync("newuser@test.com", DefaultTenantId, default))
+        users.Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<Guid>(), default))
              .ReturnsAsync((User?)null);
         users.Setup(r => r.CreateAsync(It.IsAny<User>(), default))
              .ReturnsAsync((User u, CancellationToken _) => u);
 
-        var ctrl = BuildController(users);
+        var tenants = new Mock<ITenantRepository>();
+        tenants.Setup(r => r.CreateAsync(It.IsAny<Tenant>(), default))
+               .ReturnsAsync((Tenant t, CancellationToken _) => t);
+
+        var ctrl = BuildController(users, tenants);
         var result = await ctrl.Register(new RegisterRequest("New User", "newuser@test.com", "password123"), default);
 
         var status = result.Result.Should().BeOfType<ObjectResult>().Subject;
@@ -109,6 +116,26 @@ public sealed class AuthControllerTests
         resp.Token.Should().NotBeNullOrEmpty();
         resp.User.Email.Should().Be("newuser@test.com");
         resp.User.DisplayName.Should().Be("New User");
+    }
+
+    [Fact]
+    public async Task Register_CreatesNewTenantForEachUser()
+    {
+        var users = new Mock<IUserRepository>();
+        users.Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<Guid>(), default))
+             .ReturnsAsync((User?)null);
+        users.Setup(r => r.CreateAsync(It.IsAny<User>(), default))
+             .ReturnsAsync((User u, CancellationToken _) => u);
+
+        var tenants = new Mock<ITenantRepository>();
+        tenants.Setup(r => r.CreateAsync(It.IsAny<Tenant>(), default))
+               .ReturnsAsync((Tenant t, CancellationToken _) => t);
+
+        var ctrl = BuildController(users, tenants);
+        await ctrl.Register(new RegisterRequest("Alice", "alice@test.com", "password123"), default);
+
+        // A tenant should have been created
+        tenants.Verify(r => r.CreateAsync(It.IsAny<Tenant>(), default), Times.Once);
     }
 
     [Fact]

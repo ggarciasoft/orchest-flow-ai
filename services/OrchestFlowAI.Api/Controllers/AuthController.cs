@@ -12,11 +12,12 @@ namespace OrchestFlowAI.Api.Controllers;
 public sealed class AuthController : ControllerBase
 {
     private readonly IUserRepository _users;
+    private readonly ITenantRepository _tenants;
     private readonly JwtTokenService _jwt;
     private readonly IConfiguration _config;
 
-    public AuthController(IUserRepository users, JwtTokenService jwt, IConfiguration config)
-    { _users = users; _jwt = jwt; _config = config; }
+    public AuthController(IUserRepository users, ITenantRepository tenants, JwtTokenService jwt, IConfiguration config)
+    { _users = users; _tenants = tenants; _jwt = jwt; _config = config; }
 
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest req, CancellationToken ct)
@@ -24,8 +25,8 @@ public sealed class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(req.Email) || string.IsNullOrWhiteSpace(req.Password))
             return BadRequest("Email and password are required.");
 
-        var tenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
-        var user = await _users.GetByEmailAsync(req.Email, tenantId, ct);
+        // Look up by email across all tenants (each user now lives in their own tenant)
+        var user = await _users.GetByEmailGlobalAsync(req.Email.Trim().ToLowerInvariant(), ct);
         if (user == null)
             return Unauthorized(new { error = "Invalid email or password." });
 
@@ -47,14 +48,18 @@ public sealed class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(req.Password))    return BadRequest("Password is required.");
         if (req.Password.Length < 8)                    return BadRequest("Password must be at least 8 characters.");
 
-        var tenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
-        var existing = await _users.GetByEmailAsync(req.Email, tenantId, ct);
+        // Create a new isolated tenant for this registration
+        var tenant = Tenant.Create(req.DisplayName.Trim());
+        await _tenants.CreateAsync(tenant, ct);
+
+        // Check uniqueness within the new tenant (fresh tenant = always unique, but guard anyway)
+        var existing = await _users.GetByEmailAsync(req.Email, tenant.Id, ct);
         if (existing != null)
             return Conflict(new { error = "An account with that email already exists." });
 
         var hashBytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(req.Password));
         var hash = Convert.ToHexString(hashBytes);
-        var user = OrchestFlowAI.Domain.Entities.User.Create(tenantId, req.Email.Trim().ToLowerInvariant(), req.DisplayName.Trim(), UserRole.Admin, hash);
+        var user = OrchestFlowAI.Domain.Entities.User.Create(tenant.Id, req.Email.Trim().ToLowerInvariant(), req.DisplayName.Trim(), UserRole.Admin, hash);
         await _users.CreateAsync(user, ct);
 
         var key = _config["Auth:JwtSigningKey"] ?? "dev-signing-key-change-in-production-32chars";

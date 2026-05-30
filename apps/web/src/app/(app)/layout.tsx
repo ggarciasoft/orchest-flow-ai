@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { isAuthenticated, clearToken } from '@/lib/auth';
+import { isAuthenticated, clearToken, decodeJwt, getToken } from '@/lib/auth';
 import {
   LayoutDashboard, GitBranch, Play, CheckSquare,
   FileText, Settings, LogOut, KeyRound, ClipboardList, Cpu, Plug
@@ -43,6 +43,13 @@ const nav: NavItem[] = [
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+
+  // Decode current user from JWT for display in sidebar
+  const jwtPayload = typeof window !== 'undefined' ? decodeJwt(getToken() ?? '') : null;
+  const currentUser = jwtPayload ? {
+    displayName: (jwtPayload['display_name'] as string) ?? (jwtPayload['email'] as string) ?? 'User',
+    email: (jwtPayload['email'] as string) ?? '',
+  } : null;
 
   // Auth guard: redirect to login if no token is stored
   useEffect(() => {
@@ -113,7 +120,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Footer */}
-        <div className="px-3 py-4 border-t border-slate-200">
+        <div className="px-3 py-4 border-t border-slate-200 space-y-2">
+          {/* Logged-in user */}
+          {currentUser && (
+            <div className="px-3 py-2 rounded-lg bg-slate-50 border border-slate-200">
+              <p className="text-xs font-medium text-slate-800 truncate">{currentUser.displayName}</p>
+              <p className="text-xs text-slate-400 truncate">{currentUser.email}</p>
+            </div>
+          )}
           <button
             onClick={() => { clearToken(); window.location.href = '/login'; }}
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-700 w-full transition-colors"

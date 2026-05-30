@@ -168,6 +168,8 @@ public sealed class StubUserRepository : IUserRepository
 
     public Task<User?> GetByEmailAsync(string email, Guid tenantId, CancellationToken ct = default)
         => Task.FromResult(_store.Values.FirstOrDefault(u => u.Email == email && u.TenantId == tenantId));
+    public Task<User?> GetByEmailGlobalAsync(string email, CancellationToken ct = default)
+        => Task.FromResult(_store.Values.FirstOrDefault(u => u.Email == email));
     public Task<User?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default)
         => Task.FromResult(_store.Values.FirstOrDefault(u => u.Id == id && u.TenantId == tenantId));
     public Task<User> CreateAsync(User user, CancellationToken ct = default) { _store[user.Id] = user; return Task.FromResult(user); }
