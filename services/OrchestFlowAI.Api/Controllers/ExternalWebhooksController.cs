@@ -42,8 +42,9 @@ public sealed class ExternalWebhooksController : ControllerBase
         if (correlationToken.Used || (correlationToken.ExpiresAt.HasValue && correlationToken.ExpiresAt.Value < DateTime.UtcNow))
             return StatusCode(410, new { error = "Token has already been used or has expired." });
 
-        if (!string.Equals(correlationToken.Kind, "wait", StringComparison.OrdinalIgnoreCase))
-            return BadRequest(new { error = "Token kind mismatch. Expected 'wait'." });
+        if (!string.Equals(correlationToken.Kind, "wait", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(correlationToken.Kind, "data-checkpoint", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { error = "Token kind mismatch. Expected 'wait' or 'data-checkpoint'." });
 
         // Read raw body as a JSON document
         using var doc = await JsonDocument.ParseAsync(Request.Body, cancellationToken: ct);
