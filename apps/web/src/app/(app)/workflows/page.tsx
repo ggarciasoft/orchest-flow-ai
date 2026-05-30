@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import type { Workflow } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
-import { Plus, GitBranch, Play, Copy, Loader2 } from 'lucide-react';
+import { Plus, GitBranch, Play, Copy, Loader2, History } from 'lucide-react';
 import { PageHeader, Button, EmptyState, Pagination, SearchInput } from '@/components/ui';
 import { RunWorkflowModal } from '@/components/RunWorkflowModal';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -106,6 +106,9 @@ export default function WorkflowsPage() {
                     {cloningId === w.id ? <Loader2 size={12} className="animate-spin" /> : <Copy size={12} />}
                     Duplicate
                   </button>
+                  <Link href={`/workflows/${w.id}/executions`}>
+                    <Button variant="ghost" size="sm"><History size={13} />History</Button>
+                  </Link>
                   <Link href={`/workflows/${w.id}/designer`}>
                     <Button variant="ghost" size="sm">Designer</Button>
                   </Link>
