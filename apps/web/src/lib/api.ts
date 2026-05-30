@@ -1,5 +1,13 @@
 import { isTokenExpired } from './auth';
 
+/** Custom error class that includes validation errors array */
+export class ValidationError extends Error {
+  constructor(message: string, public readonly validationErrors: string[]) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
 /** Base URL for all API requests. Configurable via NEXT_PUBLIC_API_BASE_URL env var. */
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:5080';
 
@@ -55,6 +63,11 @@ async function apiFetch<T>(path: string, options?: RequestInit & { skipAuthRedir
     const errText = await res.text();
     let errJson: Record<string, unknown> = {};
     try { errJson = JSON.parse(errText); } catch { /* plain-text response */ }
+    // Webhook validation errors: { error: "msg", errors: ["err1", "err2"] }
+    if (errJson.errors && Array.isArray(errJson.errors) && errJson.errors.every(e => typeof e === 'string')) {
+      const msg = (errJson.error as string | undefined) ?? 'Validation failed';
+      throw new ValidationError(msg, errJson.errors as string[]);
+    }
     // ASP.NET validation errors: { errors: { Field: ["msg"] } }
     const validationErrors = errJson.errors as Record<string, string[]> | undefined;
     if (validationErrors && typeof validationErrors === 'object') {

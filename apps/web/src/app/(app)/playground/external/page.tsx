@@ -1,10 +1,10 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { api, WorkflowExecution } from '@/lib/api';
+import { api, WorkflowExecution, ValidationError } from '@/lib/api';
 import { PageHeader, Badge, statusVariant, statusLabel } from '@/components/ui';
 import {
   Play, RotateCcw, Copy, Check, Loader2, ChevronRight,
-  Terminal, Send, Database, CheckCircle2,
+  Terminal, Send, Database, CheckCircle2, AlertCircle,
 } from 'lucide-react';
 
 // ── constants ────────────────────────────────────────────────────────────────
@@ -251,6 +251,7 @@ export default function ExternalPlaygroundPage() {
   const [jsonPayload, setJsonPayload]   = useState('');
   const [jsonError, setJsonError]       = useState<string | null>(null);
   const [dbConfig, setDbConfig]         = useState<DbConfig | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const logEndRef = useRef<HTMLDivElement>(null);
 
   // restore dbConfig from localStorage on mount
@@ -313,6 +314,7 @@ export default function ExternalPlaygroundPage() {
           setCurrentCp(cpIndex);
           setJsonPayload(defaultPayload(label));
           setJsonError(null);
+          setValidationErrors([]);
           addLog('info', `Paused at ${label} checkpoint — waiting for external data POST`);
           setPhase('waiting');
           return;
@@ -376,24 +378,31 @@ export default function ExternalPlaygroundPage() {
     }
 
     setPhase('sending');
+    setValidationErrors([]);
     addLog('info', `POSTing to ${cp.resumeUrl}…`);
 
     try {
       await api.webhooks.resume(cp.token, data);
-      // Store what we sent
       setCheckpoints(prev => {
         const next = [...prev];
         next[currentCp] = { ...next[currentCp], receivedData: data };
         return next;
       });
       addLog('success', `Data received at ${cp.label} checkpoint — resuming workflow…`);
+      setValidationErrors([]);
       setPhase('polling');
       setTimeout(() => poll(execution.id, currentCp + 1), POLL_MS);
     } catch (e) {
-      const msg = (e as Error).message;
-      addLog('error', msg);
-      setError(msg);
-      setPhase('error');
+      if (e instanceof ValidationError) {
+        addLog('error', `Validation failed: ${e.validationErrors.join('; ')}`);
+        setValidationErrors(e.validationErrors);
+        setPhase('waiting');
+      } else {
+        const msg = (e as Error).message;
+        addLog('error', msg);
+        setError(msg);
+        setPhase('error');
+      }
     }
   };
 
@@ -572,12 +581,29 @@ export default function ExternalPlaygroundPage() {
                 Edit the JSON body below and click Send — or copy the curl command to test from a real terminal.
               </p>
 
+              {validationErrors.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 space-y-1.5">
+                  <div className="flex items-center gap-2 text-red-700 font-medium text-sm">
+                    <AlertCircle size={14} />
+                    <span>Validation Failed</span>
+                  </div>
+                  <ul className="text-xs text-red-600 space-y-0.5 ml-5 list-disc">
+                    {validationErrors.map((err, idx) => (
+                      <li key={idx}>{err}</li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-red-600 mt-2">
+                    Fix the errors above and try again. The token has not been consumed.
+                  </p>
+                </div>
+              )}
+
               <textarea
                 className={`w-full h-32 font-mono text-xs bg-slate-50 border rounded-lg p-3 resize-y focus:outline-none focus:ring-2 focus:ring-indigo-300 ${
                   jsonError ? 'border-red-300' : 'border-slate-200'
                 }`}
                 value={jsonPayload}
-                onChange={e => { setJsonPayload(e.target.value); setJsonError(null); }}
+                onChange={e => { setJsonPayload(e.target.value); setJsonError(null); setValidationErrors([]); }}
                 spellCheck={false}
               />
               {jsonError && <p className="text-xs text-red-600">{jsonError}</p>}
