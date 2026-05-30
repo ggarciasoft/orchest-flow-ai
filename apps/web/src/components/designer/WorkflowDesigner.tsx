@@ -1,11 +1,12 @@
 'use client';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo, memo } from 'react';
 import {
   ReactFlow, Background, Controls, MiniMap,
   addEdge, useNodesState, useEdgesState,
   type Connection, type Node, type Edge,
   type NodeMouseHandler,
   type EdgeMouseHandler,
+  Handle, Position, type NodeProps,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { Workflow, NodeDescriptor } from '@/lib/api';
@@ -16,7 +17,14 @@ import { AiAssistPanel } from './AiAssistPanel';
 import { TriggerSettingsPanel } from './TriggerSettingsPanel';
 import { RunWorkflowModal } from '../RunWorkflowModal';
 import { api } from '@/lib/api';
-import { Save, Play, Undo2, Redo2, History, Sparkles, Pencil, Check, X, Zap } from 'lucide-react';
+import {
+  Save, Play, Undo2, Redo2, History, Sparkles, Pencil, Check, X, Zap,
+  // Node icons
+  PlayCircle, StopCircle, GitBranch, Timer, GitMerge, Shuffle,
+  UserCheck, Brain, FileText, Globe, Mail, Send, Webhook, Clock,
+  Repeat, Database, Code2, RefreshCw, FileSearch, Download,
+  CheckSquare, Cpu, Layers, type LucideIcon,
+} from 'lucide-react';
 import { useHistory } from '@/hooks/useHistory';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -37,8 +45,74 @@ const CATEGORY_COLORS: Record<string, string> = {
   system: '#94a3b8', integrations: '#60a5fa', data: '#a78bfa',
 };
 
+const NODE_ICON_MAP: Record<string, LucideIcon> = {
+  'play':           PlayCircle,
+  'stop':           StopCircle,
+  'start':          PlayCircle,
+  'end':            StopCircle,
+  'condition':      GitBranch,
+  'delay':          Timer,
+  'merge':          GitMerge,
+  'switch':         Shuffle,
+  'approval':       UserCheck,
+  'human-approval': UserCheck,
+  'brain':          Brain,
+  'ai':             Brain,
+  'document':       FileText,
+  'file-text':      FileText,
+  'globe':          Globe,
+  'http':           Globe,
+  'mail':           Mail,
+  'email':          Mail,
+  'send':           Send,
+  'webhook':        Webhook,
+  'clock':          Clock,
+  'repeat':         Repeat,
+  'foreach':        Repeat,
+  'database':       Database,
+  'db':             Database,
+  'code':           Code2,
+  'transform':      Code2,
+  'json':           Code2,
+  'refresh':        RefreshCw,
+  'extract':        FileSearch,
+  'download':       Download,
+  'clipboard-list': CheckSquare,
+  'cpu':            Cpu,
+  'layers':         Layers,
+  'data-checkpoint': Download,
+  'set-variable':   Code2,
+};
+
+function getNodeIcon(iconKey?: string): LucideIcon | null {
+  if (!iconKey) return null;
+  return NODE_ICON_MAP[iconKey.toLowerCase()] ?? null;
+}
+
 interface ContextMenu { x: number; y: number; nodeId: string; }
 interface EdgeContextMenu { x: number; y: number; edgeId: string; }
+
+const CustomNode = memo(({ data }: NodeProps) => {
+  const descriptor = data.descriptor as NodeDescriptor | undefined;
+  const iconKey = descriptor?.iconKey;
+  const Icon = getNodeIcon(iconKey);
+  const label = (data.label as string) ?? descriptor?.displayName ?? 'Node';
+  const category = descriptor?.category ?? 'system';
+  const bg = CATEGORY_COLORS[category] ?? '#94a3b8';
+
+  return (
+    <div
+      style={{ background: bg, borderRadius: 8, padding: '8px 14px', minWidth: 120 }}
+      className="flex items-center gap-2 text-white text-sm font-medium shadow-sm"
+    >
+      <Handle type="target" position={Position.Top} style={{ background: 'rgba(255,255,255,0.5)' }} />
+      {Icon && <Icon size={14} className="shrink-0 opacity-90" />}
+      <span className="truncate">{label}</span>
+      <Handle type="source" position={Position.Bottom} style={{ background: 'rgba(255,255,255,0.5)' }} />
+    </div>
+  );
+});
+CustomNode.displayName = 'CustomNode';
 
 /**
  * WorkflowDesigner — full-screen canvas for building workflow graphs.
@@ -82,6 +156,8 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
   const [showTrigger, setShowTrigger] = useState(false);
   const [canvasVersionNumber, setCanvasVersionNumber] = useState<number | undefined>(activeVersionNumber);
 
+  const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
+
   // Hydrate canvas from saved definition when the page loads
   useEffect(() => {
     if (!initialDefinitionJson) return;
@@ -93,26 +169,19 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
 
       let restoredNodes: Node[] = [];
       if (def.nodes?.length) {
-        // Restore node styles from category colors
-        // Always use type 'default' for React Flow rendering — actual node type lives in data.descriptor
+        // Restore nodes with custom renderer
         restoredNodes = def.nodes.map(n => {
           const descriptor = nodeCatalog.find(d => d.type === ((n.data?.descriptor as NodeDescriptor | undefined)?.type ?? n.type));
-          const category = descriptor?.category ?? 'system';
           // Config may be at top-level n.config (definition format) or nested in n.data.config (React Flow format)
           const config = (n as unknown as { config?: Record<string, unknown> }).config ?? (n.data?.config as Record<string, unknown> | undefined) ?? {};
           return {
             ...n,
-            type: 'default',   // React Flow type — always 'default'; actual type is in data.descriptor
+            type: 'custom',
             data: {
               ...n.data,
               label: descriptor?.displayName ?? (n.data?.label as string) ?? n.type,
               descriptor: descriptor ?? n.data?.descriptor,
               config,
-            },
-            style: {
-              background: CATEGORY_COLORS[category] ?? '#94a3b8',
-              color: 'white', border: 'none', borderRadius: 8,
-              padding: '8px 16px', fontSize: 13, fontWeight: 500,
             },
           };
         });
@@ -234,14 +303,9 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
   const addNode = (descriptor: NodeDescriptor) => {
     const newNode: Node = {
       id: `${descriptor.type}-${Date.now()}`,
-      type: 'default',
+      type: 'custom',
       position: { x: 200 + Math.random() * 300, y: 100 + Math.random() * 300 },
       data: { label: descriptor.displayName, descriptor, config: {} },
-      style: {
-        background: CATEGORY_COLORS[descriptor.category] ?? '#94a3b8',
-        color: 'white', border: 'none', borderRadius: 8, padding: '8px 16px',
-        fontSize: 13, fontWeight: 500,
-      },
     };
     setNodes(nds => {
       const next = [...nds, newNode];
@@ -297,13 +361,11 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
     if (def.nodes?.length) {
       const restoredNodes = def.nodes.map(n => {
         const descriptor = nodeCatalog.find(d => d.type === ((n.data?.descriptor as { type?: string } | undefined)?.type ?? n.type));
-        const category = (descriptor?.category ?? 'system') as string;
         // Config may be at top-level n.config (definition format) or nested in n.data.config (React Flow format)
         const config = (n as unknown as { config?: Record<string, unknown> }).config ?? (n.data?.config as Record<string, unknown> | undefined) ?? {};
         return {
-          ...n, type: 'default' as const,
+          ...n, type: 'custom' as const,
           data: { ...n.data, label: descriptor?.displayName ?? (n.data?.label as string) ?? n.type, descriptor: descriptor ?? n.data?.descriptor, config },
-          style: { background: (CATEGORY_COLORS as Record<string, string>)[category] ?? '#94a3b8', color: 'white', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500 },
         };
       });
       setNodes(restoredNodes);
@@ -444,6 +506,7 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
               animated: e.id === selectedEdgeId,
               label: e.id === selectedEdgeId ? '✕ Del' : undefined,
             }))}
+            nodeTypes={nodeTypes}
             onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onNodeClick={onNodeClick}

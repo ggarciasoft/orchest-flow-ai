@@ -1,6 +1,12 @@
 'use client';
 import { useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import {
+  ChevronDown, ChevronRight,
+  PlayCircle, StopCircle, GitBranch, Timer, GitMerge, Shuffle,
+  UserCheck, Brain, FileText, Globe, Mail, Send, Webhook, Clock,
+  Repeat, Database, Code2, RefreshCw, FileSearch, Download,
+  CheckSquare, Cpu, Layers, type LucideIcon,
+} from 'lucide-react';
 import type { NodeDescriptor } from '@/lib/api';
 
 interface Props {
@@ -12,6 +18,56 @@ interface Props {
 
 /** Display order for node categories in the palette. */
 const CATEGORY_ORDER = ['system', 'logic', 'human', 'ai', 'documents', 'integrations', 'data'];
+
+/** Maps node categories to their canvas background colors. */
+const CATEGORY_COLORS: Record<string, string> = {
+  ai: '#818cf8', documents: '#34d399', logic: '#fbbf24', human: '#f87171',
+  system: '#94a3b8', integrations: '#60a5fa', data: '#a78bfa',
+};
+
+const NODE_ICON_MAP: Record<string, LucideIcon> = {
+  'play':           PlayCircle,
+  'stop':           StopCircle,
+  'start':          PlayCircle,
+  'end':            StopCircle,
+  'condition':      GitBranch,
+  'delay':          Timer,
+  'merge':          GitMerge,
+  'switch':         Shuffle,
+  'approval':       UserCheck,
+  'human-approval': UserCheck,
+  'brain':          Brain,
+  'ai':             Brain,
+  'document':       FileText,
+  'file-text':      FileText,
+  'globe':          Globe,
+  'http':           Globe,
+  'mail':           Mail,
+  'email':          Mail,
+  'send':           Send,
+  'webhook':        Webhook,
+  'clock':          Clock,
+  'repeat':         Repeat,
+  'foreach':        Repeat,
+  'database':       Database,
+  'db':             Database,
+  'code':           Code2,
+  'transform':      Code2,
+  'json':           Code2,
+  'refresh':        RefreshCw,
+  'extract':        FileSearch,
+  'download':       Download,
+  'clipboard-list': CheckSquare,
+  'cpu':            Cpu,
+  'layers':         Layers,
+  'data-checkpoint': Download,
+  'set-variable':   Code2,
+};
+
+function getNodeIcon(iconKey?: string): LucideIcon | null {
+  if (!iconKey) return null;
+  return NODE_ICON_MAP[iconKey.toLowerCase()] ?? null;
+}
 
 /**
  * NodePalette — categorized sidebar listing all available workflow node types.
@@ -50,16 +106,24 @@ export function NodePalette({ catalog, onAddNode }: Props) {
               {cat}
               {open[cat] ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
             </button>
-            {open[cat] && nodes.map(n => (
-              <button
-                key={n.type}
-                onClick={() => onAddNode(n)}
-                className="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 border-b border-gray-50 transition-colors"
-              >
-                <div className="font-medium text-gray-800">{n.displayName}</div>
-                <div className="text-xs text-gray-400 mt-0.5 overflow-hidden text-ellipsis whitespace-nowrap">{n.description}</div>
-              </button>
-            ))}
+            {open[cat] && nodes.map(n => {
+              const Icon = getNodeIcon(n.iconKey);
+              return (
+                <button
+                  key={n.type}
+                  onClick={() => onAddNode(n)}
+                  className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 rounded-lg transition-colors flex items-center gap-2 group"
+                >
+                  <span
+                    className="w-6 h-6 rounded flex items-center justify-center shrink-0 text-white"
+                    style={{ background: CATEGORY_COLORS[n.category] ?? '#94a3b8' }}
+                  >
+                    {Icon ? <Icon size={12} /> : <span className="text-[10px] font-bold">{n.displayName[0]}</span>}
+                  </span>
+                  <span className="flex-1 truncate text-slate-700 group-hover:text-slate-900">{n.displayName}</span>
+                </button>
+              );
+            })}
           </div>
         );
       })}
