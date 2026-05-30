@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OrchestFlowAI.Application.Abstractions;
 using OrchestFlowAI.Engine;
+using OrchestFlowAI.Worker.Services;
 
 namespace OrchestFlowAI.Worker.Workers;
 
@@ -12,10 +13,11 @@ public sealed class ExecutionWorker : BackgroundService
     private readonly IExecutionQueueConsumer _queue;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ExecutionWorker> _logger;
+    private readonly WorkerFormNodeRegistrar _formNodeRegistrar;
 
-    /// <summary>Initialises the worker with a queue consumer, scope factory, and logger.</summary>
-    public ExecutionWorker(IExecutionQueueConsumer queue, IServiceScopeFactory scopeFactory, ILogger<ExecutionWorker> logger)
-    { _queue = queue; _scopeFactory = scopeFactory; _logger = logger; }
+    /// <summary>Initialises the worker with a queue consumer, scope factory, logger, and form-node registrar.</summary>
+    public ExecutionWorker(IExecutionQueueConsumer queue, IServiceScopeFactory scopeFactory, ILogger<ExecutionWorker> logger, WorkerFormNodeRegistrar formNodeRegistrar)
+    { _queue = queue; _scopeFactory = scopeFactory; _logger = logger; _formNodeRegistrar = formNodeRegistrar; }
 
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -26,6 +28,13 @@ public sealed class ExecutionWorker : BackgroundService
             try
             {
                 _logger.LogInformation("Processing execution {ExecutionId}", msg.ExecutionId);
+
+                // Ensure form nodes are up-to-date before running.
+                // The Worker's registry is separate from the API's; refreshing here
+                // guarantees newly-created forms are available without waiting for the
+                // 30-second polling interval.
+                await _formNodeRegistrar.RefreshAsync(stoppingToken);
+
                 // Create a fresh scope per execution so each gets its own DbContext instance
                 using var scope = _scopeFactory.CreateScope();
                 var engine = scope.ServiceProvider.GetRequiredService<IWorkflowEngine>();

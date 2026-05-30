@@ -56,7 +56,7 @@ public sealed class WorkerFormNodeRegistrar : BackgroundService
         }
     }
 
-    private async Task RefreshAsync(CancellationToken ct)
+    public async Task RefreshAsync(CancellationToken ct)
     {
         try
         {
