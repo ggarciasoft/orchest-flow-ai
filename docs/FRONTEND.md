@@ -156,8 +156,9 @@ Cards linking to sub-sections:
 - `/forms` — list layout (not card grid); **search** by name or description; **pagination** (20 per page).
 - Copy node type (`form.<slug>`) to clipboard inline.
 - `/forms/[id]` — builder with Name, Slug (auto-generated from name, manually overridable), Description, field list (reorder, add/edit/delete), Preview modal, **AI assistant panel** (generate/modify fields via LLM prompt).
-- `/forms/[id]` — builder with Name, Slug (auto-generated from name, manually overridable), Description, field list (reorder, add/edit/delete), Preview modal.
 - `slug` is **required** and determines the node type. Must be unique per tenant.
+- **Field types**: `text`, `number`, `select`, `date`, `email`, `boolean`, **`file`**.
+  - `file` fields render a styled upload zone on the fill page. On file selection the file is uploaded via `POST /api/documents/upload`; the field value becomes `{ id, filename, mimeType }`. Optional **Accepted file types** config (e.g. `.pdf,.png`) restricts choosable files.
 - **Version History panel** (existing forms only) — collapsible panel in the left column showing all saved versions. Each entry shows version number, date, field count, and active badge.
   - **Activate** button on any past version rolls back the form's active definition. The builder immediately reflects the rolled-back fields. The engine picks up the change within 30 s (worker polling).
   - Saving the form always creates a new version — previous versions are never overwritten.

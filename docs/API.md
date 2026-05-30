@@ -628,7 +628,13 @@ Body:
 }
 ```
 
-Field types: `text` | `number` | `select` | `date` | `email` | `boolean`
+Field types: `text` | `number` | `select` | `date` | `email` | `boolean` | `file`
+
+**File field** — uploads to `POST /api/documents/upload` when the user selects a file. The submitted value is `{ "id": "uuid", "filename": "invoice.pdf", "mimeType": "application/pdf" }` instead of a plain string. Optional `accept` restricts choosable types:
+
+```json
+{ "key": "invoice", "label": "Invoice PDF", "type": "file", "required": true, "accept": ".pdf,application/pdf" }
+```
 
 > **`slug` is required** and must be unique per tenant. It determines the node type: `form.<slug>`. Use lowercase letters, numbers, and hyphens only.
 
