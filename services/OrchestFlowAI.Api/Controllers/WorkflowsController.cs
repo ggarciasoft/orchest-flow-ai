@@ -299,4 +299,35 @@ public sealed class WorkflowsController : ControllerBase
                 clone.WebhookSecret, clone.CronExpression,
                 clone.RetryPolicy.MaxAttempts, clone.RetryPolicy.BackoffMs, clone.RetryPolicy.BackoffMultiplier));
     }
+
+    /// <summary>
+    /// Updates the trigger configuration for a workflow (type, cron expression, webhook secret).
+    /// </summary>
+    /// <param name="id">The workflow id.</param>
+    /// <param name="req">New trigger settings.</param>
+    /// <response code="200">Trigger updated.</response>
+    /// <response code="400">Invalid cron expression or missing required field.</response>
+    /// <response code="404">Workflow not found.</response>
+    [HttpPut("{id}/trigger"), Authorize(Policy = "EditorOrAbove")]
+    public async Task<ActionResult<WorkflowResponse>> UpdateTrigger(Guid id, [FromBody] UpdateWorkflowTriggerRequest req, CancellationToken ct)
+    {
+        var w = await _workflows.GetAsync(id, TenantId, ct);
+        if (w == null) return NotFound();
+
+        // Validate cron expression when provided
+        if (req.TriggerType == OrchestFlowAI.Contracts.TriggerType.Cron)
+        {
+            if (string.IsNullOrWhiteSpace(req.CronExpression))
+                return BadRequest("CronExpression is required when TriggerType is Cron.");
+            try { Cronos.CronExpression.Parse(req.CronExpression, Cronos.CronFormat.Standard); }
+            catch { return BadRequest($"Invalid cron expression: '{req.CronExpression}'."); }
+        }
+
+        w.SetTrigger((OrchestFlowAI.Domain.Enums.TriggerType)(int)req.TriggerType, req.WebhookSecret, req.CronExpression);
+        await _workflows.UpdateAsync(w, ct);
+        var activeVersion = await _workflows.GetActiveVersionAsync(id, ct);
+        return Ok(new WorkflowResponse(w.Id, w.Name, w.Description, activeVersion?.VersionNumber, w.CreatedAt, w.UpdatedAt,
+            (OrchestFlowAI.Contracts.TriggerType)(int)w.TriggerType, w.WebhookSecret, w.CronExpression,
+            w.RetryPolicy.MaxAttempts, w.RetryPolicy.BackoffMs, w.RetryPolicy.BackoffMultiplier));
+    }
 }

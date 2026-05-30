@@ -182,6 +182,9 @@ export const api = {
     /** Clones a workflow: creates a new workflow named 'Copy of {name}' with the source's active version. */
     clone: (id: string) =>
       apiFetch<Workflow>(`/api/workflows/${id}/clone`, { method: 'POST' }),
+    /** Updates the trigger configuration (type, cron expression, webhook secret). */
+    updateTrigger: (id: string, data: { triggerType: 'Manual' | 'Webhook' | 'Cron'; cronExpression?: string | null; webhookSecret?: string | null }) =>
+      apiFetch<Workflow>(`/api/workflows/${id}/trigger`, { method: 'PUT', body: JSON.stringify(data) }),
   },
   /** Workflow execution history and node timeline endpoints. */
   executions: {
@@ -201,6 +204,8 @@ export const api = {
     timeline: (id: string) => apiFetch<ExecutionTimeline>(`/api/executions/${id}/timeline`),
     /** Cancels a running, queued, or paused execution. Returns undefined on success (204). */
     cancel: (id: string) => apiFetch<undefined>(`/api/executions/${id}/cancel`, { method: 'POST' }),
+    /** Re-runs an execution with the same inputs and workflow version. Returns the new execution. */
+    rerun: (id: string) => apiFetch<WorkflowExecution>(`/api/executions/${id}/rerun`, { method: 'POST' }),
   },
   /** Human approval inbox endpoints. */
   approvals: {
@@ -415,7 +420,7 @@ export const api = {
 export interface User { id: string; email: string; displayName: string; role: string; }
 
 /** Workflow definition metadata. */
-export interface Workflow { id: string; name: string; description: string; activeVersion?: number; createdAt: string; updatedAt: string; }
+export interface Workflow { id: string; name: string; description: string; activeVersion?: number; createdAt: string; updatedAt: string; triggerType: 'Manual' | 'Webhook' | 'Cron'; cronExpression?: string | null; webhookSecret?: string | null; }
 export interface WorkflowVersionSummary { id: string; versionNumber: number; isActive: boolean; createdBy: string | null; createdAt: string; }
 export interface WorkflowVersionDetail extends WorkflowVersionSummary { definitionJson: string; }
 

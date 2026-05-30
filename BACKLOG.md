@@ -180,3 +180,44 @@ Similar to `human.approval` but driven by an API call instead of a UI click.
 
 _Update this file as items are resolved._
 
+
+---
+
+## Additional Workflow Trigger Methods
+
+The following trigger mechanisms have been identified and added to the backlog for future implementation. Cron scheduling and Re-run are already shipped.
+
+### API Key Trigger
+- POST /api/workflows/{id}/run?apiKey=*** — no JWT required, for external systems
+- Requires: WorkflowApiKey entity (tenantId, workflowId, keyHash, createdAt, lastUsedAt, label)
+- API: GET/POST/DELETE /api/workflows/{id}/api-keys
+- Engine: same flow as manual execute, triggeredBy = null
+
+### Call Workflow Node
+- A new node system.call-workflow that starts a child workflow inline
+- Optional: wait for child completion and map child outputs to parent inputs
+- Prevents circular references at validation time
+
+### Re-run with Modified Inputs
+- Fork an existing execution: POST /api/executions/{id}/rerun with optional { input: {...} } body override
+- Frontend: "Re-run with changes" button opens RunWorkflowModal pre-filled with original inputs
+
+### Email Trigger
+- Monitored mailbox (IMAP polling or webhook from SendGrid/Mailgun) starts a workflow
+- Email metadata (from, subject, body, attachments) available as node inputs
+- Requires: email integration credential + trigger type Email
+
+### File Drop Trigger
+- Watched folder or S3/GCS/Azure Blob prefix — new file starts a workflow
+- File content / metadata available as node inputs
+- Requires: storage integration + trigger type FileDrop
+
+### Slack Command Trigger
+- Slash command or @mention in Slack starts a workflow
+- Payload (user, channel, text) available as inputs
+- Requires: Slack app integration
+
+### Bulk / CSV Run
+- Upload a CSV from the UI — one execution per row, each row's columns as inputs
+- Frontend: "Run from CSV" button on the workflow page
+- Backend: POST /api/workflows/{id}/bulk-run with multipart CSV upload

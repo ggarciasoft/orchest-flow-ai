@@ -13,9 +13,10 @@ import { NodePalette } from './NodePalette';
 import { NodeConfigDrawer } from './NodeConfigDrawer';
 import { VersionHistoryPanel } from './VersionHistoryPanel';
 import { AiAssistPanel } from './AiAssistPanel';
+import { TriggerSettingsPanel } from './TriggerSettingsPanel';
 import { RunWorkflowModal } from '../RunWorkflowModal';
 import { api } from '@/lib/api';
-import { Save, Play, Undo2, Redo2, History, Sparkles, Pencil, Check, X } from 'lucide-react';
+import { Save, Play, Undo2, Redo2, History, Sparkles, Pencil, Check, X, Zap } from 'lucide-react';
 import { useHistory } from '@/hooks/useHistory';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -78,6 +79,7 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
   const { pushSnapshot, undo: historyUndo, redo: historyRedo, canUndo, canRedo } = useHistory({ nodes: [], edges: [] });
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showAiAssist, setShowAiAssist] = useState(false);
+  const [showTrigger, setShowTrigger] = useState(false);
   const [canvasVersionNumber, setCanvasVersionNumber] = useState<number | undefined>(activeVersionNumber);
 
   // Hydrate canvas from saved definition when the page loads
@@ -392,10 +394,19 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
               className={`border text-sm px-2 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
                 showAiAssist ? 'bg-purple-100 text-purple-800 border-purple-300' : 'hover:bg-gray-50 text-gray-600'
               }`}
-              onClick={() => { setShowAiAssist(v => !v); setShowVersionHistory(false); }}
+              onClick={() => { setShowAiAssist(v => !v); setShowVersionHistory(false); setShowTrigger(false); }}
               title="AI Workflow Assistant"
             >
               <Sparkles size={14} /> AI
+            </button>
+            <button
+              className={`border text-sm px-2 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
+                showTrigger ? 'bg-amber-100 text-amber-800 border-amber-300' : 'hover:bg-gray-50 text-gray-600'
+              }`}
+              onClick={() => { setShowTrigger(v => !v); setShowVersionHistory(false); setShowAiAssist(false); }}
+              title="Trigger settings"
+            >
+              <Zap size={14} /> Trigger
             </button>
             <button
               className={`border text-sm px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
@@ -444,7 +455,7 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
       </div>
 
       {/* Config drawer with delete button */}
-      {selected && !showVersionHistory && !showAiAssist && (
+      {selected && !showVersionHistory && !showAiAssist && !showTrigger && (
         <NodeConfigDrawer
           node={selected}
           catalog={nodeCatalog}
@@ -484,7 +495,6 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
         />
       )}
 
-      {/* AI Assist panel */}
       {showAiAssist && (
         <AiAssistPanel
           workflowId={workflow.id}
@@ -512,6 +522,11 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
             edges: edges.map(e => ({ id: e.id, source: e.source, target: e.target })),
           })}
         />
+      )}
+
+      {/* Trigger settings panel */}
+      {showTrigger && (
+        <TriggerSettingsPanel workflow={workflow} />
       )}
 
       {showRunModal && (

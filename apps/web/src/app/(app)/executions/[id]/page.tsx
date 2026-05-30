@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { useExecutionStream } from '@/hooks/useExecutionStream';
 import Link from 'next/link';
-import { ArrowLeft, XCircle, ClipboardCheck } from 'lucide-react';
+import { ArrowLeft, XCircle, ClipboardCheck, RotateCcw } from 'lucide-react';
 import { PageHeader, Badge, statusVariant, statusLabel } from '@/components/ui';
 import { useState } from 'react';
 import { CancelExecutionModal } from '@/components/CancelExecutionModal';
@@ -19,6 +19,7 @@ export default function ExecutionDetailPage() {
   const queryClient = useQueryClient();
   const [cancelling, setCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [rerunning, setRerunning] = useState(false);
   const { data: exec } = useQuery({
     queryKey: ['execution', id],
     queryFn: () => api.executions.get(id),
@@ -40,7 +41,20 @@ export default function ExecutionDetailPage() {
     retry: false,
   });
 
+  const isTerminal = exec && ['Completed', 'Failed', 'Cancelled'].includes(exec.status);
   const isActive = exec && ['Queued', 'Running', 'Paused'].includes(exec.status);
+
+  async function handleRerun() {
+    if (!id) return;
+    setRerunning(true);
+    try {
+      const newExec = await api.executions.rerun(id);
+      await queryClient.invalidateQueries({ queryKey: ['executions'] });
+      router.push(`/executions/${newExec.id}`);
+    } finally {
+      setRerunning(false);
+    }
+  }
 
   async function handleCancel() {
     if (!id) return;
@@ -80,6 +94,16 @@ export default function ExecutionDetailPage() {
               >
                 <XCircle size={14} />
                 {cancelling ? 'Cancelling…' : 'Cancel Execution'}
+              </button>
+            )}
+            {isTerminal && (
+              <button
+                onClick={handleRerun}
+                disabled={rerunning}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-700 border border-emerald-300 rounded-lg hover:bg-emerald-50 disabled:opacity-50 transition-colors"
+              >
+                <RotateCcw size={14} />
+                {rerunning ? 'Starting…' : 'Re-run'}
               </button>
             )}
           </div>

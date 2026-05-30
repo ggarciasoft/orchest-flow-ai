@@ -20,10 +20,11 @@ public sealed class ExecutionsController : ControllerBase
     private readonly IExecutionRepository _executions;
     private readonly IWorkflowRepository _workflows;
     private readonly IWorkflowEngine _engine;
+    private readonly IExecutionQueue _queue;
 
     /// <summary>Initializes the controller with execution and workflow repository dependencies.</summary>
-    public ExecutionsController(IExecutionRepository executions, IWorkflowRepository workflows, IWorkflowEngine engine)
-    { _executions = executions; _workflows = workflows; _engine = engine; }
+    public ExecutionsController(IExecutionRepository executions, IWorkflowRepository workflows, IWorkflowEngine engine, IExecutionQueue queue)
+    { _executions = executions; _workflows = workflows; _engine = engine; _queue = queue; }
 
     /// <summary>Extracts the tenant id from the JWT tenant_id claim.</summary>
     private Guid TenantId => Guid.Parse(User.FindFirst("tenant_id")?.Value ?? Guid.Empty.ToString());
@@ -127,6 +128,36 @@ public sealed class ExecutionsController : ControllerBase
             return new NodeExecutionResponse(n.Id, n.WorkflowExecutionId, n.NodeId, n.NodeType, n.Status.ToString(), n.StartedAt, n.CompletedAt, n.InputJson, n.OutputJson, n.ErrorMessage, n.RetryCount, n.Step, corrToken, resumeUrl);
         }).ToList();
         return Ok(new ExecutionTimelineResponse(id, nodeResponses));
+    }
+
+    /// <summary>
+    /// Re-runs an execution using the same workflow version and inputs.
+    /// Creates a fresh execution — does not modify the original.
+    /// </summary>
+    /// <param name="id">The ID of the execution to re-run.</param>
+    /// <response code="202">New execution enqueued.</response>
+    /// <response code="404">Original execution not found.</response>
+    [HttpPost("{id}/rerun"), Authorize(Policy = "EditorOrAbove")]
+    public async Task<ActionResult<WorkflowExecutionResponse>> Rerun(Guid id, CancellationToken ct)
+    {
+        var original = await _executions.GetAsync(id, ct);
+        if (original == null || original.TenantId != TenantId) return NotFound();
+
+        var correlationId = Guid.NewGuid().ToString();
+        var execution = WorkflowExecution.Create(
+            original.TenantId, original.WorkflowId, original.WorkflowVersionId,
+            original.TriggeredBy, original.InputJson, correlationId);
+
+        await _executions.CreateAsync(execution, ct);
+        await _queue.EnqueueAsync(new OrchestFlowAI.Contracts.Events.ExecutionQueueMessage(execution.Id, original.TenantId, correlationId), ct);
+
+        var wf = await _workflows.GetAsync(original.WorkflowId, TenantId, ct);
+        var version = await _workflows.GetVersionAsync(original.WorkflowVersionId, ct);
+        return Accepted(new WorkflowExecutionResponse(
+            execution.Id, execution.WorkflowId, execution.WorkflowVersionId,
+            execution.Status.ToString(), execution.StartedAt, null,
+            execution.TriggeredBy, correlationId, null,
+            wf?.Name, version?.VersionNumber));
     }
 
     /// <summary>

@@ -19,6 +19,10 @@ jest.mock("../NodeConfigDrawer", () => ({
   NodeConfigDrawer: () => <div data-testid="node-config-drawer">NodeConfigDrawer</div>,
 }));
 
+jest.mock("../TriggerSettingsPanel", () => ({
+  TriggerSettingsPanel: () => <div data-testid="trigger-settings-panel">TriggerSettingsPanel</div>,
+}));
+
 jest.mock("@xyflow/react", () => ({
   ReactFlow: ({ children }: { children: React.ReactNode }) => <div data-testid="react-flow">{children}</div>,
   Background: () => null,
@@ -47,6 +51,7 @@ jest.mock("lucide-react", () => ({
   Redo2: () => <span>Redo</span>,
   History: () => <span>History</span>,
   Sparkles: () => <span>Sparkles</span>,
+  Zap: () => <span>Zap</span>,
   X: () => <span>X</span>,
   Check: () => <span>Check</span>,
   Pencil: () => <span>Pencil</span>,
@@ -58,6 +63,9 @@ const mockWorkflow = {
   id: "wf-1",
   name: "Test Workflow",
   description: "A sample workflow",
+  triggerType: "Manual" as const,
+  cronExpression: null,
+  webhookSecret: null,
   createdAt: "2024-01-01",
   updatedAt: "2024-01-02",
 };
