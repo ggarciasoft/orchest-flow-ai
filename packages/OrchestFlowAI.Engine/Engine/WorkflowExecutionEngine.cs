@@ -424,6 +424,20 @@ public async Task ResumeAsync(Guid executionId, ResumeSignal signal, Cancellatio
 
             switch (result.Status)
             {
+                case SDK.Models.NodeExecutionStatus.WaitingForApproval:
+                    // Next node in the chain is also a pause node (e.g. a second form step).
+                    // Create an approval request and suspend exactly as RunAsync does.
+                    ne2.WaitForApproval(JsonSerializer.Serialize(result.Outputs));
+                    await execRepo.UpdateNodeExecutionAsync(ne2, ct);
+                    var nextApproval = ApprovalRequest.Create(
+                        execution.TenantId, executionId, ne2.Id,
+                        JsonSerializer.Serialize(result.Outputs), execution.TriggeredBy);
+                    await execRepo.CreateApprovalAsync(nextApproval, ct);
+                    execution.Pause();
+                    await execRepo.UpdateExecutionAsync(execution, ct);
+                    _logger.LogInformation("Execution {ExecutionId} paused again for approval on node {NodeId}", executionId, current.Id);
+                    return;
+
                 case SDK.Models.NodeExecutionStatus.Succeeded:
                     ne2.Succeed(JsonSerializer.Serialize(result.Outputs));
                     nodeOutputs[current.Id] = result.Outputs;
