@@ -18,7 +18,8 @@ export default function SignupPage() {
   useEffect(() => {
     if (isAuthenticated()) router.replace('/dashboard');
   }, [router]);
- = async (e: React.FormEvent) => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 

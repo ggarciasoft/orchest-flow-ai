@@ -22,6 +22,7 @@ jest.mock("@/lib/api", () => ({
 
 jest.mock("@/lib/auth", () => ({
   setToken: jest.fn(),
+  isAuthenticated: jest.fn(() => false),
 }));
 
 describe("SignupPage", () => {
