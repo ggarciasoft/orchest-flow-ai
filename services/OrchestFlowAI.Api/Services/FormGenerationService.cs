@@ -105,10 +105,11 @@ public sealed class FormGenerationService
         "{\n" +
         "  \"key\": \"<snake_case identifier, no spaces>\",\n" +
         "  \"label\": \"<human-readable label>\",\n" +
-        "  \"type\": \"text\" | \"number\" | \"select\" | \"date\" | \"email\" | \"boolean\",\n" +
+        "  \"type\": \"text\" | \"number\" | \"select\" | \"date\" | \"email\" | \"boolean\" | \"file\",\n" +
         "  \"required\": true | false,\n" +
         "  \"placeholder\": \"<optional hint text>\",\n" +
         "  \"options\": [\"<opt1>\", \"<opt2>\"]   // only for type=select\n" +
+        "  // file type: lets user upload a document; stored as { id, filename, mimeType }\n" +
         "}\n\n" +
         "RULES:\n" +
         "- Use snake_case for keys (e.g. first_name, invoice_date)\n" +
