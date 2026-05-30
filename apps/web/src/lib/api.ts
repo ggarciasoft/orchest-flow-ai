@@ -115,6 +115,9 @@ export interface FormAiAssistResult {
   explanation: string;
   changes: string[];
   fieldsJson: string;
+  provider: string;
+  model: string;
+  totalTokens: number;
 }
 
 export interface FormVersionSummary {
@@ -547,7 +550,14 @@ export interface GmailCredentialSummary { id: string; name: string; email: strin
 export interface FeedbackResponse { id: string; createdAt: string; }
 
 /** Result returned by the AI Assist endpoint. */
-export interface AiAssistResult { definition: object; explanation: string; changes: string[]; }
+export interface AiAssistResult {
+  definition: object;
+  explanation: string;
+  changes: string[];
+  provider: string;
+  model: string;
+  totalTokens: number;
+}
 
 /** AI chat history types. */
 export interface AiChatSessionSummary {

@@ -19,7 +19,10 @@ public sealed record FormGenerationRequest(
 public sealed record FormGenerationResult(
     string FieldsJson,
     string Explanation,
-    IReadOnlyList<string> Changes
+    IReadOnlyList<string> Changes,
+    string Provider,
+    string Model,
+    int TotalTokens
 );
 
 /// <summary>
@@ -86,7 +89,13 @@ public sealed class FormGenerationService
             }, CancellationToken.None);
         }
 
-        return ParseResponse(response.Text);
+        var parsed = ParseResponse(response.Text);
+        return parsed with
+        {
+            Provider    = provider.Id,
+            Model       = model,
+            TotalTokens = response.Usage.TotalTokens
+        };
     }
 
     private static string BuildSystemPrompt() =>
@@ -161,6 +170,9 @@ public sealed class FormGenerationService
         return new FormGenerationResult(
             fieldsEl.GetRawText(),
             explanationEl.GetString() ?? string.Empty,
-            changes);
+            changes,
+            "",
+            "",
+            0);
     }
 }

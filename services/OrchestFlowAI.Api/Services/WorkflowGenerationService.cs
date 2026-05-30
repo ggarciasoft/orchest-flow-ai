@@ -19,7 +19,10 @@ public sealed record WorkflowGenerationRequest(
 public sealed record WorkflowGenerationResult(
     object Definition,
     string Explanation,
-    IReadOnlyList<string> Changes
+    IReadOnlyList<string> Changes,
+    string Provider,
+    string Model,
+    int TotalTokens
 );
 
 public sealed class WorkflowGenerationService
@@ -89,7 +92,13 @@ public sealed class WorkflowGenerationService
             }, CancellationToken.None);
         }
 
-        return ParseResponse(response.Text);
+        var parsed = ParseResponse(response.Text);
+        return parsed with
+        {
+            Provider = provider.Id,
+            Model    = model,
+            TotalTokens = response.Usage.TotalTokens
+        };
     }
 
     private string BuildSystemPrompt()
@@ -220,6 +229,6 @@ public sealed class WorkflowGenerationService
         // Return definition as object (deserialized from JsonElement)
         var definition = JsonSerializer.Deserialize<object>(definitionEl.GetRawText())!;
 
-        return new WorkflowGenerationResult(definition, explanation, changes);
+        return new WorkflowGenerationResult(definition, explanation, changes, "", "", 0);
     }
 }

@@ -7,6 +7,27 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   result?: AiAssistResult;
+  provider?: string;
+  model?: string;
+  totalTokens?: number;
+}
+
+function ActiveProviderBadge() {
+  const [info, setInfo] = useState<{ provider: string; model: string } | null>(null);
+  useEffect(() => {
+    api.settings.get().then(s => {
+      const provider = s['llm.defaultProvider'] ?? 'openai';
+      const model    = s['llm.defaultModel']    ?? 'gpt-4o-mini';
+      setInfo({ provider, model });
+    }).catch(() => {});
+  }, []);
+  if (!info) return null;
+  return (
+    <div className="flex items-center gap-1 mt-1 flex-wrap">
+      <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 px-1.5 py-0.5 rounded font-mono">{info.provider}</span>
+      <span className="text-[10px] bg-slate-50 text-slate-500 border border-slate-200 px-1.5 py-0.5 rounded font-mono">{info.model}</span>
+    </div>
+  );
 }
 
 interface Props {
@@ -50,6 +71,9 @@ export function AiAssistPanel({ workflowName, onClose, onPreview, onAccept, getC
         role: 'assistant',
         content: result.explanation,
         result,
+        provider: result.provider,
+        model: result.model,
+        totalTokens: result.totalTokens,
       };
       setMessages(prev => [...prev, assistantMessage]);
     } catch (e) {
@@ -77,6 +101,7 @@ export function AiAssistPanel({ workflowName, onClose, onPreview, onAccept, getC
         <div>
           <h3 className="font-semibold text-sm text-slate-900">✨ AI Assistant</h3>
           <p className="text-xs text-slate-400 mt-0.5">Describe what you want, I&apos;ll build it</p>
+          <ActiveProviderBadge />
         </div>
         <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded mt-0.5" title="Close">
           <X size={16} />
@@ -109,6 +134,13 @@ export function AiAssistPanel({ workflowName, onClose, onPreview, onAccept, getC
                         <li key={ci} className="text-xs text-slate-600">{change}</li>
                       ))}
                     </ul>
+                  </div>
+                )}
+                {msg.provider && (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-slate-400 flex-wrap">
+                    <span className="bg-slate-100 px-1.5 py-0.5 rounded font-mono">{msg.provider}</span>
+                    <span className="bg-slate-100 px-1.5 py-0.5 rounded font-mono">{msg.model}</span>
+                    {msg.totalTokens ? <span>{msg.totalTokens.toLocaleString()} tokens</span> : null}
                   </div>
                 )}
                 {msg.result && (

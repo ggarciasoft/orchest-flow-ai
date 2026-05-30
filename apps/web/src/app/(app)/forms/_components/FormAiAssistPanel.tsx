@@ -7,6 +7,9 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   result?: FormAiAssistResult;
+  provider?: string;
+  model?: string;
+  totalTokens?: number;
 }
 
 interface FormAiAssistPanelProps {
@@ -21,6 +24,24 @@ interface FormAiAssistPanelProps {
 
 function parseFields(json: string): FormFieldDefinition[] {
   try { return JSON.parse(json) as FormFieldDefinition[]; } catch { return []; }
+}
+
+function ActiveProviderBadge() {
+  const [info, setInfo] = useState<{ provider: string; model: string } | null>(null);
+  useEffect(() => {
+    api.settings.get().then(s => {
+      const provider = s['llm.defaultProvider'] ?? 'openai';
+      const model    = s['llm.defaultModel']    ?? 'gpt-4o-mini';
+      setInfo({ provider, model });
+    }).catch(() => {});
+  }, []);
+  if (!info) return null;
+  return (
+    <div className="flex items-center gap-1 mt-1 flex-wrap">
+      <span className="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 px-1.5 py-0.5 rounded font-mono">{info.provider}</span>
+      <span className="text-[10px] bg-slate-50 text-slate-500 border border-slate-200 px-1.5 py-0.5 rounded font-mono">{info.model}</span>
+    </div>
+  );
 }
 
 /**
@@ -55,7 +76,14 @@ export default function FormAiAssistPanel({
         formName,
         formDescription,
       });
-      setMessages(prev => [...prev, { role: 'assistant', content: result.explanation, result }]);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: result.explanation,
+        result,
+        provider: result.provider,
+        model: result.model,
+        totalTokens: result.totalTokens,
+      }]);
     } catch (e) {
       setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${(e as Error).message}` }]);
     } finally {
@@ -76,6 +104,7 @@ export default function FormAiAssistPanel({
             <Sparkles size={14} className="text-purple-500" /> AI Form Builder
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">Describe your form, I&apos;ll generate the fields</p>
+          <ActiveProviderBadge />
         </div>
         <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded mt-0.5" title="Close">
           <X size={16} />
@@ -109,6 +138,13 @@ export default function FormAiAssistPanel({
                         <li key={ci} className="text-xs text-slate-600">{ch}</li>
                       ))}
                     </ul>
+                  </div>
+                )}
+                {msg.provider && (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-slate-400 flex-wrap">
+                    <span className="bg-slate-100 px-1.5 py-0.5 rounded font-mono">{msg.provider}</span>
+                    <span className="bg-slate-100 px-1.5 py-0.5 rounded font-mono">{msg.model}</span>
+                    {msg.totalTokens ? <span>{msg.totalTokens.toLocaleString()} tokens</span> : null}
                   </div>
                 )}
                 {msg.result && (

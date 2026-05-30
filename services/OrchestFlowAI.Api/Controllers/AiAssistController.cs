@@ -37,9 +37,12 @@ public sealed class AiAssistController : ControllerBase
             var result = await _generationService.GenerateAsync(genReq, TenantId, ct);
             return Ok(new
             {
-                definition = result.Definition,
+                definition  = result.Definition,
                 explanation = result.Explanation,
-                changes = result.Changes
+                changes     = result.Changes,
+                provider    = result.Provider,
+                model       = result.Model,
+                totalTokens = result.TotalTokens,
             });
         }
         catch (Exception ex)

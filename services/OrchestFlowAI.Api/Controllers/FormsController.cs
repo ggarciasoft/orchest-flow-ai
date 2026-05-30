@@ -369,7 +369,15 @@ public sealed class FormsController : ControllerBase
         var result = await _formGen.GenerateAsync(
             new FormGenerationRequest(req.Prompt, req.CurrentFieldsJson, req.FormName, req.FormDescription),
             TenantId, ct);
-        return Ok(new { explanation = result.Explanation, changes = result.Changes, fieldsJson = result.FieldsJson });
+        return Ok(new
+        {
+            explanation = result.Explanation,
+            changes     = result.Changes,
+            fieldsJson  = result.FieldsJson,
+            provider    = result.Provider,
+            model       = result.Model,
+            totalTokens = result.TotalTokens,
+        });
     }
 
 
