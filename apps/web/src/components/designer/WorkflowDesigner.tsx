@@ -98,6 +98,8 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
         restoredNodes = def.nodes.map(n => {
           const descriptor = nodeCatalog.find(d => d.type === ((n.data?.descriptor as NodeDescriptor | undefined)?.type ?? n.type));
           const category = descriptor?.category ?? 'system';
+          // Config may be at top-level n.config (definition format) or nested in n.data.config (React Flow format)
+          const config = (n as unknown as { config?: Record<string, unknown> }).config ?? (n.data?.config as Record<string, unknown> | undefined) ?? {};
           return {
             ...n,
             type: 'default',   // React Flow type — always 'default'; actual type is in data.descriptor
@@ -105,6 +107,7 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
               ...n.data,
               label: descriptor?.displayName ?? (n.data?.label as string) ?? n.type,
               descriptor: descriptor ?? n.data?.descriptor,
+              config,
             },
             style: {
               background: CATEGORY_COLORS[category] ?? '#94a3b8',
@@ -295,9 +298,11 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
       const restoredNodes = def.nodes.map(n => {
         const descriptor = nodeCatalog.find(d => d.type === ((n.data?.descriptor as { type?: string } | undefined)?.type ?? n.type));
         const category = (descriptor?.category ?? 'system') as string;
+        // Config may be at top-level n.config (definition format) or nested in n.data.config (React Flow format)
+        const config = (n as unknown as { config?: Record<string, unknown> }).config ?? (n.data?.config as Record<string, unknown> | undefined) ?? {};
         return {
           ...n, type: 'default' as const,
-          data: { ...n.data, label: descriptor?.displayName ?? (n.data?.label as string) ?? n.type, descriptor: descriptor ?? n.data?.descriptor },
+          data: { ...n.data, label: descriptor?.displayName ?? (n.data?.label as string) ?? n.type, descriptor: descriptor ?? n.data?.descriptor, config },
           style: { background: (CATEGORY_COLORS as Record<string, string>)[category] ?? '#94a3b8', color: 'white', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 500 },
         };
       });
