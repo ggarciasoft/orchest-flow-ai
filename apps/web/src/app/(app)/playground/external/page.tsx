@@ -28,8 +28,8 @@ type Phase =
   | 'error';
 
 interface DbConfig {
-  customer: { connectionString: string; query: string };
-  order: { connectionString: string; query: string };
+  customer: { connectionString: string; statement: string };
+  order: { connectionString: string; statement: string };
 }
 
 interface CheckpointState {
@@ -86,10 +86,10 @@ interface SetupFormProps {
 }
 
 function SetupForm({ onSave, onSkip }: SetupFormProps) {
-  const [customerConnStr, setCustomerConnStr] = useState('');
-  const [customerQuery, setCustomerQuery]     = useState('INSERT INTO customers (name, email) VALUES (@name, @email)');
-  const [orderConnStr, setOrderConnStr]       = useState('');
-  const [orderQuery, setOrderQuery]           = useState('INSERT INTO orders (items, amount) VALUES (@items, @amount)');
+  const [customerConnStr, setCustomerConnStr]         = useState('');
+  const [customerStatement, setCustomerStatement]     = useState('INSERT INTO customers (name, email) VALUES (@name, @email)');
+  const [orderConnStr, setOrderConnStr]               = useState('');
+  const [orderStatement, setOrderStatement]           = useState('INSERT INTO orders (items, amount) VALUES (@items, @amount)');
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const customerTouchedRef = useRef(false);
@@ -106,8 +106,8 @@ function SetupForm({ onSave, onSkip }: SetupFormProps) {
 
     setValidationError(null);
     onSave({
-      customer: { connectionString: customerConnStr, query: customerQuery },
-      order:    { connectionString: orderConnStr,    query: orderQuery },
+      customer: { connectionString: customerConnStr, statement: customerStatement },
+      order:    { connectionString: orderConnStr,    statement: orderStatement },
     });
   };
 
@@ -151,10 +151,10 @@ function SetupForm({ onSave, onSkip }: SetupFormProps) {
           </div>
 
           <div className="space-y-2">
-            <label className="block text-xs font-medium text-slate-600">Query</label>
+            <label className="block text-xs font-medium text-slate-600">SQL Statement</label>
             <textarea
-              value={customerQuery}
-              onChange={e => setCustomerQuery(e.target.value)}
+              value={customerStatement}
+              onChange={e => setCustomerStatement(e.target.value)}
               className="w-full h-20 px-3 py-2 text-sm font-mono border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-y"
             />
           </div>
@@ -187,10 +187,10 @@ function SetupForm({ onSave, onSkip }: SetupFormProps) {
           </div>
 
           <div className="space-y-2">
-            <label className="block text-xs font-medium text-slate-600">Query</label>
+            <label className="block text-xs font-medium text-slate-600">SQL Statement</label>
             <textarea
-              value={orderQuery}
-              onChange={e => setOrderQuery(e.target.value)}
+              value={orderStatement}
+              onChange={e => setOrderStatement(e.target.value)}
               className="w-full h-20 px-3 py-2 text-sm font-mono border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-y"
             />
           </div>

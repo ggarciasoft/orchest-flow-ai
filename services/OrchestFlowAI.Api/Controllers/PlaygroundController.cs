@@ -147,10 +147,10 @@ public sealed class PlaygroundController : ControllerBase
     {
         const string WorkflowName = "🧪 Playground: External Data Intake";
 
-        var customerConnStr = config?.Customer?.ConnectionString ?? "";
-        var customerQuery   = config?.Customer?.Query ?? "";
-        var orderConnStr    = config?.Order?.ConnectionString ?? "";
-        var orderQuery      = config?.Order?.Query ?? "";
+        var customerConnStr    = config?.Customer?.ConnectionString ?? "";
+        var customerStatement  = config?.Customer?.Statement ?? "";
+        var orderConnStr       = config?.Order?.ConnectionString ?? "";
+        var orderStatement     = config?.Order?.Statement ?? "";
 
         var definition = new
         {
@@ -161,9 +161,9 @@ public sealed class PlaygroundController : ControllerBase
             {
                 new { id = "start",       type = "system.start",            position = new { x = 100,  y = 200 }, config = new { } },
                 new { id = "checkpoint1", type = "system.data-checkpoint",  position = new { x = 300,  y = 200 }, config = new { name = "Customer",  description = "POST customer name and email" } },
-                new { id = "db1",         type = "data.db-execute",   position = new { x = 550,  y = 200 }, config = new { connectionString = customerConnStr, query = customerQuery } },
+                new { id = "db1",         type = "data.db-execute",   position = new { x = 550,  y = 200 }, config = new { connectionString = customerConnStr, statement = customerStatement } },
                 new { id = "checkpoint2", type = "system.data-checkpoint",  position = new { x = 800,  y = 200 }, config = new { name = "Order",     description = "POST order items and amount" } },
-                new { id = "db2",         type = "data.db-execute",   position = new { x = 1050, y = 200 }, config = new { connectionString = orderConnStr, query = orderQuery } },
+                new { id = "db2",         type = "data.db-execute",   position = new { x = 1050, y = 200 }, config = new { connectionString = orderConnStr, statement = orderStatement } },
                 new { id = "end",         type = "system.end",              position = new { x = 1300, y = 200 }, config = new { } },
             },
             edges = new object[]
@@ -232,5 +232,5 @@ public sealed class PlaygroundController : ControllerBase
     // ── request models ───────────────────────────────────────────────────────────
 
     public sealed record ExternalDbConfig(DbNodeConfig? Customer, DbNodeConfig? Order);
-    public sealed record DbNodeConfig(string ConnectionString, string Query);
+    public sealed record DbNodeConfig(string ConnectionString, string Statement);
 }
