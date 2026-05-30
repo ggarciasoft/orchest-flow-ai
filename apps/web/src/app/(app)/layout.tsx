@@ -104,7 +104,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 {children && (active || childActive) && (
                   <div className="ml-4 mt-0.5 space-y-0.5 border-l border-slate-200 pl-3">
                     {children.map(({ href: chref, label: clabel, icon: CIcon }) => {
-                      const cActive = pathname === chref || pathname.startsWith(chref + '/');
+                      const cActive = pathname === chref ||
+                        (pathname.startsWith(chref + '/') &&
+                         !children.some(sibling => sibling.href !== chref && pathname.startsWith(sibling.href)));
                       return (
                         <Link
                           key={chref}

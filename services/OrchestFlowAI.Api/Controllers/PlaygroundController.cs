@@ -4,6 +4,7 @@ using OrchestFlowAI.Application.Abstractions;
 using OrchestFlowAI.Domain.Entities;
 using OrchestFlowAI.Engine;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace OrchestFlowAI.Api.Controllers;
 
@@ -231,6 +232,11 @@ public sealed class PlaygroundController : ControllerBase
 
     // ── request models ───────────────────────────────────────────────────────────
 
-    public sealed record ExternalDbConfig(DbNodeConfig? Customer, DbNodeConfig? Order);
-    public sealed record DbNodeConfig(string ConnectionString, string Statement);
+    public sealed record ExternalDbConfig(
+        [property: JsonPropertyName("customer")] DbNodeConfig? Customer,
+        [property: JsonPropertyName("order")]    DbNodeConfig? Order);
+
+    public sealed record DbNodeConfig(
+        [property: JsonPropertyName("connectionString")] string ConnectionString,
+        [property: JsonPropertyName("statement")]        string Statement);
 }
