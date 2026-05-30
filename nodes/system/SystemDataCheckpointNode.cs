@@ -18,6 +18,16 @@ public sealed class SystemDataCheckpointNode : IWorkflowNode
 
     public async Task<NodeExecutionResult> ExecuteAsync(WorkflowExecutionContext ctx, CancellationToken ct)
     {
+        // Resume path: engine calls us again after the external system POSTed data.
+        // The webhook controller always injects _resumedAt into the resume outputs.
+        if (ctx.NodeInputs.ContainsKey("_resumedAt"))
+        {
+            // Surface all posted fields (plus the correlation metadata) as node outputs
+            var resumeOutputs = new Dictionary<string, object?>(ctx.NodeInputs);
+            return NodeExecutionResult.Succeeded(resumeOutputs);
+        }
+
+        // First execution: create a correlation token and suspend
         var tokenRepo = ctx.Services.GetRequiredService<ICorrelationTokenRepository>();
 
         var correlationToken = CorrelationToken.Create(
