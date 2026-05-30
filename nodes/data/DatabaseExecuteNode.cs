@@ -1,4 +1,5 @@
 using System.Data.Common;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using OrchestFlowAI.SDK.Context;
@@ -124,6 +125,43 @@ public sealed class DatabaseExecuteNode : IWorkflowNode
         }
     }
 
+    private static object CoerceParamValue(object? rawValue)
+    {
+        if (rawValue is null) return DBNull.Value;
+
+        // Already a native type Ã¢â‚¬â€ use as-is
+        if (rawValue is bool b)   return b;
+        if (rawValue is double d) return d;
+        if (rawValue is float f)  return (double)f;
+        if (rawValue is long l)   return l;
+        if (rawValue is int i)    return i;
+        if (rawValue is decimal m) return m;
+
+        // JsonElement Ã¢â‚¬â€ extract by kind
+        if (rawValue is JsonElement je)
+        {
+            return je.ValueKind switch
+            {
+                JsonValueKind.True    => (object)true,
+                JsonValueKind.False   => (object)false,
+                JsonValueKind.Null    => DBNull.Value,
+                JsonValueKind.Number  =>
+                    je.TryGetInt64(out var lv)  ? (object)lv  :
+                    je.TryGetDouble(out var dv) ? (object)dv  :
+                    (object)je.GetRawText(),
+                _ => (object)(je.GetString() ?? je.GetRawText()),
+            };
+        }
+
+        // String Ã¢â‚¬â€ try numeric coercion
+        var str = rawValue.ToString()!;
+        if (double.TryParse(str, NumberStyles.Any,
+                            CultureInfo.InvariantCulture, out var parsed))
+            return parsed;
+
+        return str;
+    }
+
     private static void AutoBindFromStatement(
         DbCommand command,
         string statement,
@@ -140,7 +178,7 @@ public sealed class DatabaseExecuteNode : IWorkflowNode
 
             var param = command.CreateParameter();
             param.ParameterName = key;
-            param.Value = rawValue is null ? DBNull.Value : (object)rawValue.ToString()!;
+            param.Value = CoerceParamValue(rawValue);
             command.Parameters.Add(param);
             alreadyBound.Add(key);
         }
@@ -173,7 +211,7 @@ public sealed class DatabaseExecuteNodeDescriptor : IWorkflowNodeDescriptor
     /// <inheritdoc />
     public IReadOnlyCollection<NodeInputDefinition> Inputs => new[]
     {
-        new NodeInputDefinition("connectionString", "Connection String", "Optional — override the config connection string at runtime.", DataType.String, Required: false),
+        new NodeInputDefinition("connectionString", "Connection String", "Optional Ã¢â‚¬â€ override the config connection string at runtime.", DataType.String, Required: false),
     };
     /// <inheritdoc />
     public IReadOnlyCollection<NodeOutputDefinition> Outputs => new[]
