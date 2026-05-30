@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -54,24 +54,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Decode current user from JWT for display in sidebar
-  const jwtPayload = typeof window !== 'undefined' ? decodeJwt(getToken() ?? '') : null;
-  const currentUser = jwtPayload ? {
-    displayName: (jwtPayload['display_name'] as string) ?? (jwtPayload['email'] as string) ?? 'User',
-    email: (jwtPayload['email'] as string) ?? '',
-  } : null;
+  // Decode current user from JWT for display in sidebar (client-only to avoid hydration mismatch)
+  const [currentUser, setCurrentUser] = useState<{ displayName: string; email: string } | null>(null);
 
-  // Auth guard: redirect to login if no token is stored
+  // Auth guard + user decode — runs only on the client after mount
   useEffect(() => {
     if (!isAuthenticated()) {
       router.replace('/login');
+      return;
+    }
+    const payload = decodeJwt(getToken() ?? '');
+    if (payload) {
+      setCurrentUser({
+        displayName: (payload['display_name'] as string) ?? (payload['email'] as string) ?? 'User',
+        email: (payload['email'] as string) ?? '',
+      });
     }
   }, [router]);
-
-  // Render nothing while redirecting to avoid flash of protected content
-  if (typeof window !== 'undefined' && !isAuthenticated()) {
-    return null;
-  }
 
   return (
     <div className="flex h-screen bg-[#f8fafc]">
