@@ -42,6 +42,13 @@ export default function ApprovalDetailPage() {
   const isFormApproval = !!payload._formId;
   const formId = payload._formId as string | undefined;
   const formName = payload._formName as string | undefined;
+
+  const isDataCheckpoint = !!payload._correlationToken && !!payload._resumeUrl;
+  const resumeUrl = payload._resumeUrl as string | undefined;
+  const correlationToken = payload._correlationToken as string | undefined;
+  const checkpointName = payload._checkpointName as string | undefined;
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:5080';
   // _formFields can be a string (double-encoded JSON) or already a parsed array
   const formFields: FormFieldDefinition[] = (() => {
     const raw = payload._formFields;
@@ -169,8 +176,52 @@ export default function ApprovalDetailPage() {
         </div>
       )}
 
+      {/* Data Checkpoint: waiting for external POST */}
+      {isDataCheckpoint && (
+        <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
+          <div className="flex items-center gap-2 text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+            <span className="text-lg">⏳</span>
+            <div>
+              <p className="text-sm font-medium">Waiting for external data</p>
+              <p className="text-xs text-amber-600 mt-0.5">
+                This step cannot be approved here — it resumes automatically when an external system POSTs data to the resume URL.
+              </p>
+            </div>
+          </div>
+
+          {resumeUrl && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Resume URL</p>
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+                <code className="text-xs font-mono text-slate-700 flex-1 break-all">{API_BASE}{resumeUrl}</code>
+                <button
+                  onClick={() => navigator.clipboard.writeText(`${API_BASE}${resumeUrl}`)}
+                  className="text-xs text-indigo-600 hover:text-indigo-800 shrink-0 font-medium"
+                >
+                  Copy
+                </button>
+              </div>
+              <p className="text-xs text-slate-400">
+                POST any JSON payload to this URL to resume the workflow. The token is single-use.
+              </p>
+            </div>
+          )}
+
+          {correlationToken && (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Example curl</p>
+              <pre className="text-xs font-mono bg-slate-900 text-slate-100 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all">
+{`curl -X POST "${API_BASE}${resumeUrl}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"key": "value"}'`}
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Human approval node: context fields + approve/reject ── */}
-      {!isFormApproval && (
+      {!isFormApproval && !isDataCheckpoint && (
         <>
           {visibleFields.length > 0 && (
             <div className="bg-white border border-slate-200 rounded-xl p-6">
