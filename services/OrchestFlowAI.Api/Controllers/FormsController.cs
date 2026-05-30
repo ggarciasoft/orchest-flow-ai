@@ -394,9 +394,24 @@ public sealed class FormsController : ControllerBase
     }
 
 
+    private static readonly JsonSerializerOptions _camelCaseOpts = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, PropertyNameCaseInsensitive = true };
+
     private static FormResponse ToResponse(Form f)
     {
-        var fields = JsonSerializer.Deserialize<JsonElement>(f.FieldsJson.Length > 0 ? f.FieldsJson : "[]");
+        // Normalize FieldsJson to camelCase so the frontend always receives consistent property names
+        // regardless of whether the form was created via API, playground seed, or import.
+        JsonElement fields;
+        try
+        {
+            var fieldDefs = JsonSerializer.Deserialize<List<FormFieldDefinition>>(
+                f.FieldsJson.Length > 0 ? f.FieldsJson : "[]", _camelCaseOpts) ?? new();
+            var normalized = JsonSerializer.Serialize(fieldDefs, _camelCaseOpts);
+            fields = JsonSerializer.Deserialize<JsonElement>(normalized);
+        }
+        catch
+        {
+            fields = JsonSerializer.Deserialize<JsonElement>(f.FieldsJson.Length > 0 ? f.FieldsJson : "[]");
+        }
         return new(f.Id, f.TenantId, f.Name, f.Slug, f.Description, fields, f.CreatedAt, f.UpdatedAt);
     }
 }
