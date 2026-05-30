@@ -48,7 +48,21 @@ export function AiAssistPanel({ workflowName, onClose, onPreview, onAccept, getC
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [aiReady, setAiReady] = useState<boolean | null>(null);
+  const [aiNotConfiguredMsg, setAiNotConfiguredMsg] = useState<string>('');
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Check AI provider status on mount
+  useEffect(() => {
+    api.settings.aiStatus().then(status => {
+      setAiReady(status.isDefaultConfigured);
+      if (!status.isDefaultConfigured) {
+        setAiNotConfiguredMsg(
+          `${status.defaultProvider} is not configured. Go to Settings → AI Providers to add your API key.`
+        );
+      }
+    }).catch(() => setAiReady(true));
+  }, []);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -110,6 +124,16 @@ export function AiAssistPanel({ workflowName, onClose, onPreview, onAccept, getC
 
       {/* Chat area */}
       <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3">
+        {aiReady === false && (
+          <div className="mx-0 mb-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-xs text-amber-800 font-medium">AI not configured</p>
+            <p className="text-xs text-amber-700 mt-0.5">{aiNotConfiguredMsg}</p>
+            <a href="/settings/providers" className="text-xs text-indigo-600 hover:underline mt-1 block">
+              Open AI Providers settings →
+            </a>
+          </div>
+        )}
+
         {messages.length === 0 && (
           <div className="text-center text-xs text-slate-400 mt-6 px-2">
             <p className="mb-1">Start by describing your workflow</p>
@@ -185,12 +209,12 @@ export function AiAssistPanel({ workflowName, onClose, onPreview, onAccept, getC
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={loading}
+            disabled={loading || aiReady === false}
           />
           <button
             className="absolute bottom-2 right-2 p-1 rounded-md bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             onClick={handleSend}
-            disabled={loading || !input.trim()}
+            disabled={loading || !input.trim() || aiReady === false}
             title="Send"
           >
             <Send size={12} />

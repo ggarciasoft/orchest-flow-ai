@@ -374,6 +374,14 @@ export const api = {
     /** Tests the Ollama connection. */
     testOllama: () =>
       apiFetch<{ success: boolean; message: string }>('/api/settings/test/ollama', { method: 'POST' }),
+    /** Returns which AI providers are configured and ready to use. */
+    aiStatus: () =>
+      apiFetch<{
+        defaultProvider: string;
+        defaultModel: string;
+        isDefaultConfigured: boolean;
+        providers: Record<string, boolean>;
+      }>('/api/settings/ai-status'),
   },
   /** AI Assist endpoint — generates or modifies workflow definitions from natural language. */
   aiAssist: {

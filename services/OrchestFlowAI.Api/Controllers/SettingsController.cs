@@ -200,6 +200,36 @@ public sealed class SettingsController : ControllerBase
         }
     }
 
+    /// <summary>Returns which AI providers are ready to use (have a configured API key).</summary>
+    [HttpGet("ai-status")]
+    public async Task<IActionResult> AiStatus(CancellationToken ct)
+    {
+        var tenantId = GetTenantId();
+        var openAiKey   = await _settings.GetAsync(tenantId, "llm.openai.apiKey",       ct) ?? _openAiKeyHolder.ApiKey;
+        var anthropicKey = await _settings.GetAsync(tenantId, "llm.anthropic.apiKey",   ct);
+        var azureKey     = await _settings.GetAsync(tenantId, "llm.azure.apiKey",       ct);
+        var azureEndpoint = await _settings.GetAsync(tenantId, "llm.azure.endpoint",    ct);
+        var ollamaUrl    = await _settings.GetAsync(tenantId, "llm.ollama.baseUrl",     ct);
+        var defaultProvider = await _settings.GetAsync(tenantId, "llm.defaultProvider", ct) ?? "openai";
+        var defaultModel    = await _settings.GetAsync(tenantId, "llm.defaultModel",    ct) ?? "gpt-4o-mini";
+
+        var configured = new Dictionary<string, bool>
+        {
+            ["openai"]    = !string.IsNullOrWhiteSpace(openAiKey),
+            ["anthropic"] = !string.IsNullOrWhiteSpace(anthropicKey),
+            ["azure"]     = !string.IsNullOrWhiteSpace(azureKey) && !string.IsNullOrWhiteSpace(azureEndpoint),
+            ["ollama"]    = true,
+        };
+
+        return Ok(new
+        {
+            defaultProvider,
+            defaultModel,
+            isDefaultConfigured = configured.GetValueOrDefault(defaultProvider, false),
+            providers = configured,
+        });
+    }
+
     private Guid GetTenantId()
     {
         var raw = User.FindFirst("tenant_id")?.Value;

@@ -45,10 +45,14 @@ public sealed class AiAssistController : ControllerBase
                 totalTokens = result.TotalTokens,
             });
         }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("not configured") || ex.Message.Contains("API key"))
+        {
+            return StatusCode(503, new { error = ex.Message, code = "AI_NOT_CONFIGURED" });
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "AI workflow generation failed");
-            return StatusCode(500, new { error = ex.Message });
+            return StatusCode(500, new { error = "AI generation failed. Check server logs for details." });
         }
     }
 }

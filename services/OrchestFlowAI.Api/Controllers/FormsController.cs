@@ -27,9 +27,10 @@ public sealed class FormsController : ControllerBase
     private readonly FormGenerationService _formGen;
     private readonly IFormRepository _formsForFill;
     private readonly ITenantRepository _tenants;
+    private readonly ILogger<FormsController> _logger;
 
-    public FormsController(IFormRepository forms, IExecutionQueue queue, FormNodeRegistrar registrar, IExecutionRepository executions, IApprovalRepository approvals, FormGenerationService formGen, ITenantRepository tenants)
-    { _forms = forms; _queue = queue; _registrar = registrar; _executions = executions; _approvals = approvals; _formGen = formGen; _formsForFill = forms; _tenants = tenants; }
+    public FormsController(IFormRepository forms, IExecutionQueue queue, FormNodeRegistrar registrar, IExecutionRepository executions, IApprovalRepository approvals, FormGenerationService formGen, ITenantRepository tenants, ILogger<FormsController> logger)
+    { _forms = forms; _queue = queue; _registrar = registrar; _executions = executions; _approvals = approvals; _formGen = formGen; _formsForFill = forms; _tenants = tenants; _logger = logger; }
 
     private Guid TenantId => Guid.Parse(User.FindFirst("tenant_id")?.Value ?? Guid.Empty.ToString());
     private Guid UserId => Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? Guid.Empty.ToString());
@@ -366,18 +367,30 @@ public sealed class FormsController : ControllerBase
     public async Task<ActionResult> AiAssist([FromBody] FormAiAssistRequest req, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(req.Prompt)) return BadRequest("Prompt is required.");
-        var result = await _formGen.GenerateAsync(
-            new FormGenerationRequest(req.Prompt, req.CurrentFieldsJson, req.FormName, req.FormDescription),
-            TenantId, ct);
-        return Ok(new
+        try
         {
-            explanation = result.Explanation,
-            changes     = result.Changes,
-            fieldsJson  = result.FieldsJson,
-            provider    = result.Provider,
-            model       = result.Model,
-            totalTokens = result.TotalTokens,
-        });
+            var result = await _formGen.GenerateAsync(
+                new FormGenerationRequest(req.Prompt, req.CurrentFieldsJson, req.FormName, req.FormDescription),
+                TenantId, ct);
+            return Ok(new
+            {
+                explanation = result.Explanation,
+                changes     = result.Changes,
+                fieldsJson  = result.FieldsJson,
+                provider    = result.Provider,
+                model       = result.Model,
+                totalTokens = result.TotalTokens,
+            });
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("not configured") || ex.Message.Contains("API key"))
+        {
+            return StatusCode(503, new { error = ex.Message, code = "AI_NOT_CONFIGURED" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AI form generation failed");
+            return StatusCode(500, new { error = "AI generation failed." });
+        }
     }
 
 

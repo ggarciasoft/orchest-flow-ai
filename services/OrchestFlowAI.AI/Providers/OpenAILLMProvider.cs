@@ -36,6 +36,8 @@ public sealed class OpenAILLMProvider : ILLMProvider
     {
         var model = request.Model == "default" ? "gpt-4o-mini" : request.Model;
         var apiKey = await ResolveApiKeyAsync(request.TenantId, ct);
+        if (string.IsNullOrWhiteSpace(apiKey))
+            throw new InvalidOperationException("OpenAI API key is not configured. Go to Settings → AI Providers to add your key.");
         var client = new ChatClient(model, apiKey);
         var messages = new List<ChatMessage>();
         if (request.SystemPrompt != null) messages.Add(ChatMessage.CreateSystemMessage(request.SystemPrompt));
@@ -53,6 +55,9 @@ public sealed class OpenAILLMProvider : ILLMProvider
 
     public async Task<LLMResponse<TOutput>> GenerateStructuredAsync<TOutput>(LLMRequest request, string jsonSchema, CancellationToken ct = default)
     {
+        var apiKey = await ResolveApiKeyAsync(request.TenantId, ct);
+        if (string.IsNullOrWhiteSpace(apiKey))
+            throw new InvalidOperationException("OpenAI API key is not configured. Go to Settings → AI Providers to add your key.");
         var augmented = request with
         {
             SystemPrompt = (request.SystemPrompt ?? "") +
