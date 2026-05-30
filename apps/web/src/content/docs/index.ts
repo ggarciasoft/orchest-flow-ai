@@ -10,6 +10,7 @@ export const docs: DocEntry[] = [
   { slug: 'howto-designer',    title: 'How To: Visual Designer',  category: 'How To',          filename: 'HOWTO-DESIGNER.md' },
   { slug: 'howto-ai-builder',  title: 'How To: AI Builder',       category: 'How To',          filename: 'HOWTO-AI-BUILDER.md' },
   { slug: 'howto-external-data', title: 'How To: External Data Intake', category: 'How To', filename: 'HOWTO-EXTERNAL-DATA.md' },
+  { slug: 'howto-config',        title: 'How To: Workflow Configuration', category: 'How To', filename: 'HOWTO-CONFIG.md' },
   { slug: 'architecture',      title: 'Architecture',             category: 'Core Concepts',   filename: 'ARCHITECTURE.md' },
   { slug: 'workflow-engine',   title: 'Workflow Engine',          category: 'Core Concepts',   filename: 'WORKFLOW-ENGINE.md' },
   { slug: 'nodes',             title: 'Nodes Reference',          category: 'Core Concepts',   filename: 'NODES.md' },

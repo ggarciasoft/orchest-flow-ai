@@ -111,7 +111,7 @@ public sealed class WorkflowConfigControllerTests
         repo.Setup(r => r.GetAsync(TenantId, "new-key", It.IsAny<CancellationToken>()))
             .ReturnsAsync((WorkflowConfig?)null);
         repo.Setup(r => r.CreateAsync(It.IsAny<WorkflowConfig>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync((WorkflowConfig c, CancellationToken _) => c);
         var controller = BuildController(repo.Object);
 
         var result = await controller.Create(
@@ -174,7 +174,7 @@ public sealed class WorkflowConfigControllerTests
         repo.Setup(r => r.GetAsync(TenantId, "key", It.IsAny<CancellationToken>()))
             .ReturnsAsync((WorkflowConfig?)null);
         repo.Setup(r => r.CreateAsync(It.IsAny<WorkflowConfig>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync((WorkflowConfig c, CancellationToken _) => c);
         var controller = BuildController(repo.Object);
 
         await controller.Create(

@@ -143,7 +143,7 @@ public sealed class AuthControllerTests
     {
         var existing = User.Create(DefaultTenantId, "taken@test.com", "Old User", UserRole.Admin, HashPassword("pass"));
         var users = new Mock<IUserRepository>();
-        users.Setup(r => r.GetByEmailAsync("taken@test.com", DefaultTenantId, default))
+        users.Setup(r => r.GetByEmailAsync("taken@test.com", It.IsAny<Guid>(), default))
              .ReturnsAsync(existing);
 
         var ctrl = BuildController(users);

@@ -77,6 +77,52 @@ Workflow pauses at Customer checkpoint. External system POSTs `{ "name": "Jane",
 - **Outputs:** all workflow inputs as named outputs
 - **Config:** none
 
+
+### `system.read-config`  ✅ Shipped
+
+**Category:** system
+**Description:** Reads a value from the tenant's persistent workflow configuration store. The value is coerced to the declared type on output.
+
+| Config | Type | Default | Description |
+|--------|------|---------|-------------|
+| `key` | String | — | Config key to read, e.g. `gmail.last_sync_date` |
+| `defaultValue` | String | `""` | Value to return if the key doesn't exist |
+
+| Output | Type | Description |
+|--------|------|-------------|
+| `value` | Any | The stored value, coerced to declared type |
+| `found` | Boolean | `true` if the key exists in the store |
+| `key` | String | The key that was read |
+| `valueType` | String | The declared value type |
+
+> See **How To: Workflow Configuration** for usage examples.
+
+---
+
+### `system.write-config`  ✅ Shipped
+
+**Category:** system
+**Description:** Writes a value to the tenant's persistent workflow configuration store. Creates the key if missing, updates it if it exists. The value can come from a wired node input (upstream output) or a literal config value.
+
+| Config | Type | Default | Description |
+|--------|------|---------|-------------|
+| `key` | String | — | Config key to write |
+| `value` | String | — | Literal value (ignored if `value` input is wired) |
+| `valueType` | Enum | `string` | Type hint: `string` \| `number` \| `boolean` \| `json` \| `datetime` |
+
+| Input | Type | Description |
+|-------|------|-------------|
+| `value` | String | Value from upstream (takes priority over literal config) |
+
+| Output | Type | Description |
+|--------|------|-------------|
+| `key` | String | The key that was written |
+| `newValue` | String | The value that was written |
+| `previousValue` | String | The previous value (null if key was new) |
+
+> See **How To: Workflow Configuration** for usage examples.
+
+---
 ### `system.end`  · MVP
 
 - **Purpose:** Terminal node. Marks workflow completion.

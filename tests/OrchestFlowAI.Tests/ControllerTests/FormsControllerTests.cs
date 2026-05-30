@@ -42,7 +42,7 @@ public sealed class FormsControllerTests
         var router = new OrchestFlowAI.AI.Routing.LLMProviderRouter(
             Array.Empty<OrchestFlowAI.AI.Abstractions.ILLMProvider>(), "fake", "fake");
         var formGen = new FormGenerationService(router, NullLogger<FormGenerationService>.Instance);
-        var ctrl = new FormsController(repo, queue, registrar, executions, approvals, formGen, Mock.Of<ITenantRepository>());
+        var ctrl = new FormsController(repo, queue, registrar, executions, approvals, formGen, Mock.Of<ITenantRepository>(), Microsoft.Extensions.Logging.Abstractions.NullLogger<FormsController>.Instance);
         ctrl.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext

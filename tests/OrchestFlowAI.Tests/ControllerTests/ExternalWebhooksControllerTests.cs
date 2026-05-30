@@ -29,7 +29,7 @@ public sealed class ExternalWebhooksControllerTests
         Mock<IExecutionQueue> queue,
         string body = "{}")
     {
-        var controller = new ExternalWebhooksController(tokenRepo.Object, queue.Object);
+        var controller = new ExternalWebhooksController(tokenRepo.Object, queue.Object, Mock.Of<OrchestFlowAI.Application.Abstractions.IExecutionRepository>(), Mock.Of<OrchestFlowAI.Application.Abstractions.IWorkflowRepository>());
         var httpContext = new DefaultHttpContext();
         httpContext.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(body));
         httpContext.Request.ContentType = "application/json";
