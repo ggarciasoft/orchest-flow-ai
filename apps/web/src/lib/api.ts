@@ -23,12 +23,15 @@ function redirectToLogin(): void {
  * @returns Parsed JSON response typed as T
  * @throws Error with message from API response body or "HTTP {status}"
  */
-async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+async function apiFetch<T>(path: string, options?: RequestInit & { skipAuthRedirect?: boolean }): Promise<T> {
   // Read token from localStorage — null on server-side rendering
   const token = typeof window !== 'undefined' ? localStorage.getItem('OrchestFlowAI_token') : null;
 
+  // Skip auto-redirect for auth endpoints (login, register) — they handle 401 themselves
+  const skipRedirect = options?.skipAuthRedirect ?? path.startsWith('/api/auth/');
+
   // If a token exists but is already expired, redirect immediately without making a request
-  if (typeof window !== 'undefined' && token && isTokenExpired()) {
+  if (!skipRedirect && typeof window !== 'undefined' && token && isTokenExpired()) {
     redirectToLogin();
     // Return a promise that never resolves — the page will redirect before any caller handles it
     return new Promise<T>(() => {});
@@ -43,8 +46,8 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     },
   });
   if (!res.ok) {
-    // 401 Unauthorized — token was rejected by the server; clear it and redirect to login
-    if (res.status === 401) {
+    // 401 Unauthorized — redirect to login UNLESS this is an auth endpoint handling its own errors
+    if (res.status === 401 && !skipRedirect) {
       redirectToLogin();
       return new Promise<T>(() => {});
     }
@@ -60,8 +63,8 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
         .join('; ');
       throw new Error(messages);
     }
-    // Problem details: { detail } or { title }
-    const detail = (errJson.detail ?? errJson.title) as string | undefined;
+    // Problem details: { detail } or { title } or { error } (used by auth endpoints)
+    const detail = (errJson.detail ?? errJson.title ?? errJson.error) as string | undefined;
     if (detail) throw new Error(detail);
     // Plain-text body (e.g. BadRequest("Slug is required."))
     if (errText && errText.trim()) throw new Error(errText.trim());
