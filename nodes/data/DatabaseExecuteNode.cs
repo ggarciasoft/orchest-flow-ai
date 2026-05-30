@@ -117,7 +117,7 @@ public sealed class DatabaseExecuteNode : IWorkflowNode
                 JsonValueKind.False => false,
                 JsonValueKind.Number when value.TryGetInt64(out var l) => l,
                 JsonValueKind.Number => value.GetDouble(),
-                _ => (object)ResolveTemplate(value.GetString()!, inputs)
+                _ => (object)ResolveTemplate(value.ValueKind == JsonValueKind.String ? value.GetString()! : value.GetRawText(), inputs)
             };
             param.Value = resolvedValue;
             command.Parameters.Add(param);
@@ -149,7 +149,7 @@ public sealed class DatabaseExecuteNode : IWorkflowNode
                     je.TryGetInt64(out var lv)  ? (object)lv  :
                     je.TryGetDouble(out var dv) ? (object)dv  :
                     (object)je.GetRawText(),
-                _ => (object)(je.GetString() ?? je.GetRawText()),
+                _ => (object)(je.ValueKind == JsonValueKind.String ? je.GetString()! : je.GetRawText()),
             };
         }
 
