@@ -34,7 +34,15 @@ function ProviderIcon({ id }: { id: ProviderId }) {
 
 // ── Provider panels ──────────────────────────────────────────────────────────
 
-function OpenAIPanel({ initialModel }: { initialModel: string }) {
+function OpenAIPanel({ 
+  initialModel, 
+  isDefault, 
+  onSetDefault 
+}: { 
+  initialModel: string; 
+  isDefault: boolean; 
+  onSetDefault: () => void;
+}) {
   const [apiKey, setApiKey] = useState('');
   const [defaultModel, setDefaultModel] = useState(initialModel);
   const [showKey, setShowKey] = useState(false);
@@ -56,6 +64,19 @@ function OpenAIPanel({ initialModel }: { initialModel: string }) {
     } finally { setSaving(false); }
   };
 
+  const handleSetDefault = async () => {
+    setSaving(true);
+    try {
+      await api.settings.update({ 
+        'llm.defaultProvider': 'openai',
+        'llm.defaultModel': defaultModel 
+      });
+      onSetDefault();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } finally { setSaving(false); }
+  };
+
   const handleTest = async () => {
     setTestStatus('testing'); setTestMessage('');
     try {
@@ -67,6 +88,22 @@ function OpenAIPanel({ initialModel }: { initialModel: string }) {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Provider status</span>
+        {isDefault ? (
+          <span className="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-md flex items-center gap-1">
+            <CheckCircle size={12} /> Active default
+          </span>
+        ) : (
+          <button 
+            onClick={handleSetDefault}
+            disabled={saving}
+            className="px-3 py-1 border border-indigo-200 text-indigo-700 text-xs font-medium rounded-md hover:bg-indigo-50 disabled:opacity-50"
+          >
+            Set as default provider
+          </button>
+        )}
+      </div>
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">API Key</label>
         <div className="flex gap-2">
@@ -109,7 +146,13 @@ function OpenAIPanel({ initialModel }: { initialModel: string }) {
   );
 }
 
-function AnthropicPanel() {
+function AnthropicPanel({ 
+  isDefault, 
+  onSetDefault 
+}: { 
+  isDefault: boolean; 
+  onSetDefault: () => void;
+}) {
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -126,6 +169,16 @@ function AnthropicPanel() {
     } finally { setSaving(false); }
   };
 
+  const handleSetDefault = async () => {
+    setSaving(true);
+    try {
+      await api.settings.update({ 'llm.defaultProvider': 'anthropic' });
+      onSetDefault();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } finally { setSaving(false); }
+  };
+
   const handleTest = async () => {
     setTestStatus('testing'); setTestMessage('');
     try {
@@ -137,6 +190,22 @@ function AnthropicPanel() {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Provider status</span>
+        {isDefault ? (
+          <span className="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-md flex items-center gap-1">
+            <CheckCircle size={12} /> Active default
+          </span>
+        ) : (
+          <button 
+            onClick={handleSetDefault}
+            disabled={saving}
+            className="px-3 py-1 border border-amber-200 text-amber-700 text-xs font-medium rounded-md hover:bg-amber-50 disabled:opacity-50"
+          >
+            Set as default provider
+          </button>
+        )}
+      </div>
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">API Key</label>
         <div className="flex gap-2">
@@ -171,7 +240,17 @@ function AnthropicPanel() {
   );
 }
 
-function AzurePanel({ initialEndpoint, initialDeployment }: { initialEndpoint: string; initialDeployment: string }) {
+function AzurePanel({ 
+  initialEndpoint, 
+  initialDeployment, 
+  isDefault, 
+  onSetDefault 
+}: { 
+  initialEndpoint: string; 
+  initialDeployment: string; 
+  isDefault: boolean; 
+  onSetDefault: () => void;
+}) {
   const [endpoint, setEndpoint] = useState(initialEndpoint);
   const [apiKey, setApiKey] = useState('');
   const [deployment, setDeployment] = useState(initialDeployment);
@@ -196,6 +275,16 @@ function AzurePanel({ initialEndpoint, initialDeployment }: { initialEndpoint: s
     } finally { setSaving(false); }
   };
 
+  const handleSetDefault = async () => {
+    setSaving(true);
+    try {
+      await api.settings.update({ 'llm.defaultProvider': 'azure' });
+      onSetDefault();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } finally { setSaving(false); }
+  };
+
   const handleTest = async () => {
     setTestStatus('testing'); setTestMessage('');
     try {
@@ -207,6 +296,22 @@ function AzurePanel({ initialEndpoint, initialDeployment }: { initialEndpoint: s
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Provider status</span>
+        {isDefault ? (
+          <span className="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-md flex items-center gap-1">
+            <CheckCircle size={12} /> Active default
+          </span>
+        ) : (
+          <button 
+            onClick={handleSetDefault}
+            disabled={saving}
+            className="px-3 py-1 border border-blue-200 text-blue-700 text-xs font-medium rounded-md hover:bg-blue-50 disabled:opacity-50"
+          >
+            Set as default provider
+          </button>
+        )}
+      </div>
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">Endpoint</label>
         <input type="text"
@@ -255,7 +360,15 @@ function AzurePanel({ initialEndpoint, initialDeployment }: { initialEndpoint: s
   );
 }
 
-function OllamaPanel({ initialUrl }: { initialUrl: string }) {
+function OllamaPanel({ 
+  initialUrl, 
+  isDefault, 
+  onSetDefault 
+}: { 
+  initialUrl: string; 
+  isDefault: boolean; 
+  onSetDefault: () => void;
+}) {
   const [baseUrl, setBaseUrl] = useState(initialUrl);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -273,6 +386,16 @@ function OllamaPanel({ initialUrl }: { initialUrl: string }) {
     } finally { setSaving(false); }
   };
 
+  const handleSetDefault = async () => {
+    setSaving(true);
+    try {
+      await api.settings.update({ 'llm.defaultProvider': 'ollama' });
+      onSetDefault();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } finally { setSaving(false); }
+  };
+
   const handleTest = async () => {
     setTestStatus('testing'); setTestMessage('');
     try {
@@ -284,6 +407,22 @@ function OllamaPanel({ initialUrl }: { initialUrl: string }) {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Provider status</span>
+        {isDefault ? (
+          <span className="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-md flex items-center gap-1">
+            <CheckCircle size={12} /> Active default
+          </span>
+        ) : (
+          <button 
+            onClick={handleSetDefault}
+            disabled={saving}
+            className="px-3 py-1 border border-green-200 text-green-700 text-xs font-medium rounded-md hover:bg-green-50 disabled:opacity-50"
+          >
+            Set as default provider
+          </button>
+        )}
+      </div>
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">Base URL</label>
         <input type="text"
@@ -317,6 +456,7 @@ function OllamaPanel({ initialUrl }: { initialUrl: string }) {
 export default function ProvidersPage() {
   const [selected, setSelected] = useState<ProviderId>('openai');
   const [open, setOpen] = useState(false);
+  const [activeProvider, setActiveProvider] = useState<ProviderId>('openai');
 
   const [defaultModel, setDefaultModel] = useState('gpt-4o-mini');
   const [azureEndpoint, setAzureEndpoint] = useState('');
@@ -326,6 +466,7 @@ export default function ProvidersPage() {
   useEffect(() => {
     api.settings.get().then(s => {
       if (s['llm.defaultModel'])       setDefaultModel(s['llm.defaultModel'] ?? 'gpt-4o-mini');
+      if (s['llm.defaultProvider'])    setActiveProvider(s['llm.defaultProvider'] as ProviderId ?? 'openai');
       if (s['llm.azure.endpoint'])     setAzureEndpoint(s['llm.azure.endpoint'] ?? '');
       if (s['llm.azure.deploymentName']) setAzureDeployment(s['llm.azure.deploymentName'] ?? '');
       if (s['llm.ollama.baseUrl'])     setOllamaBaseUrl(s['llm.ollama.baseUrl'] ?? 'http://localhost:11434');
@@ -333,12 +474,24 @@ export default function ProvidersPage() {
   }, []);
 
   const current = PROVIDERS.find(p => p.id === selected)!;
+  const activeProviderLabel = PROVIDERS.find(p => p.id === activeProvider)?.label ?? 'OpenAI';
 
   return (
     <div>
       <PageHeader title="AI Providers" subtitle="Configure credentials and options for each LLM provider" />
 
       <div className="mt-6 space-y-6">
+        {/* Active provider info */}
+        <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-slate-600">Active AI provider:</span>
+            <span className="font-semibold text-slate-900">{activeProviderLabel}</span>
+            {activeProvider === 'openai' && (
+              <span className="text-slate-500">({defaultModel})</span>
+            )}
+          </div>
+        </div>
+
         {/* Provider selector */}
         <div className="bg-white border border-slate-200 rounded-xl p-4">
           <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
@@ -369,7 +522,14 @@ export default function ProvidersPage() {
                   >
                     <ProviderIcon id={p.id} />
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium ${p.id === selected ? 'text-indigo-700' : 'text-slate-900'}`}>{p.label}</p>
+                      <div className="flex items-center gap-2">
+                        <p className={`text-sm font-medium ${p.id === selected ? 'text-indigo-700' : 'text-slate-900'}`}>{p.label}</p>
+                        {p.id === activeProvider && (
+                          <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-[10px] font-medium rounded uppercase">
+                            Default
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-slate-500 truncate">{p.description}</p>
                     </div>
                     {p.id === selected && <CheckCircle size={15} className="text-indigo-600 shrink-0" />}
@@ -390,10 +550,10 @@ export default function ProvidersPage() {
             </div>
           </div>
           <div className="p-6">
-            {selected === 'openai'    && <OpenAIPanel    initialModel={defaultModel} />}
-            {selected === 'anthropic' && <AnthropicPanel />}
-            {selected === 'azure'     && <AzurePanel     initialEndpoint={azureEndpoint} initialDeployment={azureDeployment} />}
-            {selected === 'ollama'    && <OllamaPanel    initialUrl={ollamaBaseUrl} />}
+            {selected === 'openai'    && <OpenAIPanel    initialModel={defaultModel} isDefault={activeProvider === 'openai'} onSetDefault={() => setActiveProvider('openai')} />}
+            {selected === 'anthropic' && <AnthropicPanel isDefault={activeProvider === 'anthropic'} onSetDefault={() => setActiveProvider('anthropic')} />}
+            {selected === 'azure'     && <AzurePanel     initialEndpoint={azureEndpoint} initialDeployment={azureDeployment} isDefault={activeProvider === 'azure'} onSetDefault={() => setActiveProvider('azure')} />}
+            {selected === 'ollama'    && <OllamaPanel    initialUrl={ollamaBaseUrl} isDefault={activeProvider === 'ollama'} onSetDefault={() => setActiveProvider('ollama')} />}
           </div>
         </div>
       </div>

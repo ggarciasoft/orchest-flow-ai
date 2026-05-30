@@ -71,7 +71,12 @@ public static class AIServiceExtensions
 
         // Router resolves the correct provider based on the model string or default
         services.AddSingleton(sp =>
-            new LLMProviderRouter(sp.GetServices<ILLMProvider>(), defaultProvider, defaultModel));
+            new LLMProviderRouter(
+                sp.GetServices<ILLMProvider>(),
+                defaultProvider,
+                defaultModel,
+                sp.GetService<OrchestFlowAI.Application.Abstractions.IPlatformSettingsService>(),
+                sp.GetService<OrchestFlowAI.Application.Abstractions.ITenantContext>()));
 
         return services;
     }
