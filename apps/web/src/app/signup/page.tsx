@@ -1,9 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
-import { setToken } from '@/lib/auth';
+import { setToken, isAuthenticated } from '@/lib/auth';
 
 export default function SignupPage() {
   const [displayName, setDisplayName] = useState('');
@@ -14,7 +14,11 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Already logged in — skip straight to dashboard
+  useEffect(() => {
+    if (isAuthenticated()) router.replace('/dashboard');
+  }, [router]);
+ = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
