@@ -233,6 +233,7 @@ All server state flows through TanStack Query keyed on `[entity, params]`. The A
 Demo/testing page for the full form-node execution flow.
 
 - **Start** button calls POST /api/playground/seed (idempotent) to set up the sample workflow, then triggers execution via POST /api/workflows/{id}/execute.
+- **Forms created** ? three form nodes are seeded: `pg-personal-info` (Full Name, Email, Date of Birth), `pg-employment` (Company, Job Title, Start Date), `pg-preferences` (Newsletter, Timezone, Notes). Forms are idempotent ? re-seeding reuses existing forms if their slug already exists.
 - **Step indicator** — three pills (Personal Info / Employment / Preferences) highlight current and completed steps.
 - **Polling** — GET /api/executions/{id} every 2 s detects status transitions; GET /api/approvals/by-execution/{id} fetches the pending form when the execution is Paused.
 - **Inline FormRenderer** — renders the paused form step; submits via POST /api/forms/{id}/submit and resumes polling for the next step.
@@ -241,10 +242,12 @@ Demo/testing page for the full form-node execution flow.
 ### External Data Playground (/playground/external)
 Demo/testing page for the `system.data-checkpoint` node - purely API-driven, no form rendering.
 
-- **Start** button calls POST /api/playground/seed-external to seed a workflow with 2 data checkpoints and 2 DB-execute nodes, then starts execution.
+- **Setup screen** ? shown on first load; lets the user configure the two database nodes (Customer DB + Order DB) with connection string and SQL statement. Each section includes a copyable `CREATE TABLE` SQL snippet. "Skip DB setup" skips DB config entirely; "Save & Continue" validates and persists config for the seed call.
+- **Start** button calls POST /api/playground/seed-external with optional `{ customer: { connectionString, statement }, order: { connectionString, statement } }` body to seed a workflow with 2 data checkpoints and 2 DB-execute nodes, then starts execution.
 - **Checkpoint indicator** - two pills (Customer / Order) track which checkpoint is active/completed.
 - **Pause panel** - when the workflow pauses at a checkpoint, shows the full resume URL with a copy button.
 - **Simulate External System panel** - JSON textarea pre-filled with example data + Send button that POSTs to `/api/webhooks/resume/{token}` via `api.webhooks.resume()`.
+- **Field validation** ? checkpoint nodes are seeded with `fields` config (`name`+`email` required for Customer; `items`+`amount` required for Order, `amount` type=number). If the posted JSON is missing a required field or fails type validation, the execution is marked Failed with a descriptive error shown in the activity log.
 - **curl command** - live curl snippet (updates as JSON is edited) with a Copy button for testing from a real terminal.
 - **Activity log** - timestamped log of all events (seeding, polling, pauses, resumes, errors).
 - **Completion screen** - shows data collected at each checkpoint once the workflow reaches system.end.

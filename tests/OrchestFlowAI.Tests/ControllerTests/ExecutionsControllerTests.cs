@@ -25,7 +25,7 @@ public sealed class ExecutionsControllerTests
     {
         wfRepo ??= Mock.Of<IWorkflowRepository>();
         engine ??= Mock.Of<IWorkflowEngine>();
-        var ctrl = new ExecutionsController(execRepo, wfRepo, engine);
+        var ctrl = new ExecutionsController(execRepo, wfRepo, engine, Mock.Of<IExecutionQueue>());
         ctrl.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext

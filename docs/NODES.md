@@ -21,13 +21,42 @@ Each entry has:
 |--------|------|---------|-------------|
 | `name` | String | — | Descriptive label for this checkpoint (shown in designer) |
 | `description` | String | — | Documents what data the external system is expected to POST |
+| `fields` | String (JSON) | — | JSON array of field definitions. Each entry: `{"key":"fieldName","type":"string|number|boolean|any","required":true|false}`. When set, posted data is validated on resume. |
 
 | Output | Type | Description |
 |--------|------|-------------|
 | `_correlationToken` | String | One-time token for the resume URL |
 | `_resumeUrl` | String | Full path: `/api/webhooks/resume/{token}` |
 | `_resumedAt` | String | ISO timestamp when data was received |
+| `_validationPassed` | Boolean | `true` when all field validations passed (or no fields config is set) |
+| `_validationErrors` | String (JSON) | JSON array of validation error messages; empty array `[]` when no errors |
 | *(any field POSTed)* | Any | All fields from the external POST body |
+
+#### Field Validation
+
+Set the `fields` config to validate and coerce incoming data before it flows to downstream nodes.
+
+**Field definition schema:**
+```json
+[
+  { "key": "name",   "type": "string",  "required": true  },
+  { "key": "amount", "type": "number",  "required": true  },
+  { "key": "active", "type": "boolean", "required": false }
+]
+```
+
+**Supported types:**
+| Type | Behaviour |
+|------|-----------|
+| `string` | No coercion; validates presence only |
+| `number` | Must parse as a decimal number; coerced to `double` in outputs |
+| `boolean` | Must be `true`, `false`, `1`, or `0`; coerced to `bool` in outputs |
+| `any` | No type check; value passed through as-is |
+
+**Validation failure** returns `Failed` with a message like:  
+`"Validation failed: Missing required field: 'name'; Field 'amount' must be a number (got 'xyz')"`
+
+The workflow execution is marked **Failed** and stops. The external system should fix the payload and trigger a new execution.
 
 **Resume URL** is shown in the execution timeline and the External Data playground when the node is paused.
 
