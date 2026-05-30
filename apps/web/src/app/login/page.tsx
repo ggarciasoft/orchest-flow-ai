@@ -32,9 +32,9 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo mark */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-10 h-10 bg-indigo-600 rounded-xl mb-4">
+          <Link href="/" className="inline-flex items-center justify-center w-10 h-10 bg-indigo-600 rounded-xl mb-4 hover:bg-indigo-700 transition-colors">
             <span className="text-white font-bold text-lg">O</span>
-          </div>
+          </Link>
           <h1 className="text-xl font-semibold text-slate-900">OrchestFlowAI</h1>
           <p className="text-sm text-slate-500 mt-1">Sign in to your workspace</p>
         </div>

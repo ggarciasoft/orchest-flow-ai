@@ -79,7 +79,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <aside className="w-56 bg-white border-r border-slate-200 flex flex-col shrink-0">
         {/* Logo */}
         <div className="px-5 py-5 border-b border-slate-200">
-          <span className="text-base font-semibold text-slate-900 tracking-tight">OrchestFlowAI</span>
+          <Link href="/" className="text-base font-semibold text-slate-900 tracking-tight hover:text-indigo-600 transition-colors">
+            OrchestFlowAI
+          </Link>
         </div>
 
         {/* Nav */}
