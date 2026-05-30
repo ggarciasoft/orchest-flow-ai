@@ -17,6 +17,7 @@ public static class NodeRegistrationExtensions
         // Register nodes + descriptors
         RegisterNode<SystemStartNode, SystemStartNodeDescriptor>(services);
         RegisterNode<SystemEndNode, SystemEndNodeDescriptor>(services);
+        RegisterNode<SystemDataCheckpointNode, SystemDataCheckpointNodeDescriptor>(services);
         RegisterNode<ConditionNode, ConditionNodeDescriptor>(services);
         RegisterNode<DelayNode, DelayNodeDescriptor>(services);
         RegisterNode<SwitchNode, SwitchNodeDescriptor>(services);

@@ -238,3 +238,15 @@ Demo/testing page for the full form-node execution flow.
 - **Inline FormRenderer** — renders the paused form step; submits via POST /api/forms/{id}/submit and resumes polling for the next step.
 - **Completion screen** — shows all collected data from every step in a summary view once the workflow reaches system.end.
 - **Run Again** resets all state and allows restarting from scratch.
+### External Data Playground (/playground/external)
+Demo/testing page for the `system.data-checkpoint` node - purely API-driven, no form rendering.
+
+- **Start** button calls POST /api/playground/seed-external to seed a workflow with 2 data checkpoints and 2 DB-execute nodes, then starts execution.
+- **Checkpoint indicator** - two pills (Customer / Order) track which checkpoint is active/completed.
+- **Pause panel** - when the workflow pauses at a checkpoint, shows the full resume URL with a copy button.
+- **Simulate External System panel** - JSON textarea pre-filled with example data + Send button that POSTs to `/api/webhooks/resume/{token}` via `api.webhooks.resume()`.
+- **curl command** - live curl snippet (updates as JSON is edited) with a Copy button for testing from a real terminal.
+- **Activity log** - timestamped log of all events (seeding, polling, pauses, resumes, errors).
+- **Completion screen** - shows data collected at each checkpoint once the workflow reaches system.end.
+- **Run Again** resets all state.
+- Uses `apiFetch` exclusively (no bare fetch); no `any` TypeScript.

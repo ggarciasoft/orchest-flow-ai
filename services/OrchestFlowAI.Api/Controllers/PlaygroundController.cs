@@ -135,6 +135,66 @@ public sealed class PlaygroundController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Seeds (or upserts) the "External Data Intake" playground workflow.
+    /// Creates a workflow with 2 data-checkpoints and 2 database-execute nodes.
+    /// No forms are required — external systems POST data to the resume URLs.
+    /// Returns the workflow id.
+    /// </summary>
+    [HttpPost("seed-external"), Authorize(Policy = "EditorOrAbove")]
+    public async Task<ActionResult> SeedExternal(CancellationToken ct)
+    {
+        const string WorkflowName = "🧪 Playground: External Data Intake";
+
+        var definition = new
+        {
+            id      = "playground-external",
+            name    = WorkflowName,
+            version = 1,
+            nodes   = new object[]
+            {
+                new { id = "start",       type = "system.start",            position = new { x = 100,  y = 200 }, config = new { } },
+                new { id = "checkpoint1", type = "system.data-checkpoint",  position = new { x = 300,  y = 200 }, config = new { name = "Customer",  description = "POST customer name and email" } },
+                new { id = "db1",         type = "data.database-execute",   position = new { x = 550,  y = 200 }, config = new { connectionString = "Server=localhost;Database=Demo;User Id=demo;Password=demo;", query = "INSERT INTO customers (name, email) VALUES (@name, @email)" } },
+                new { id = "checkpoint2", type = "system.data-checkpoint",  position = new { x = 800,  y = 200 }, config = new { name = "Order",     description = "POST order items and amount" } },
+                new { id = "db2",         type = "data.database-execute",   position = new { x = 1050, y = 200 }, config = new { connectionString = "Server=localhost;Database=Demo;User Id=demo;Password=demo;", query = "INSERT INTO orders (items, amount) VALUES (@items, @amount)" } },
+                new { id = "end",         type = "system.end",              position = new { x = 1300, y = 200 }, config = new { } },
+            },
+            edges = new object[]
+            {
+                new { source = "start",       target = "checkpoint1" },
+                new { source = "checkpoint1", target = "db1"         },
+                new { source = "db1",         target = "checkpoint2" },
+                new { source = "checkpoint2", target = "db2"         },
+                new { source = "db2",         target = "end"         },
+            },
+        };
+
+        var defJson = JsonSerializer.Serialize(definition);
+
+        var workflows = await _workflows.ListAsync(TenantId, WorkflowName, 1, 1, ct);
+        Workflow workflow;
+        if (workflows.Count == 0)
+        {
+            workflow = Workflow.Create(TenantId, WorkflowName,
+                "External data intake demo: two data-checkpoints that wait for external system POSTs.",
+                UserId, OrchestFlowAI.Domain.Enums.TriggerType.Manual, null, null);
+            await _workflows.CreateAsync(workflow, ct);
+        }
+        else
+        {
+            workflow = workflows[0];
+        }
+
+        var nextVersion = (await _workflows.ListVersionsAsync(workflow.Id, ct)).Count + 1;
+        var version     = WorkflowVersion.Create(workflow.Id, nextVersion, defJson, UserId);
+        version.Activate();
+        await _workflows.CreateVersionAsync(version, ct);
+        await _workflows.ActivateVersionAsync(version.Id, workflow.Id, ct);
+
+        return Ok(new { workflowId = workflow.Id, message = "External playground seeded successfully." });
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────────
 
     private async Task<Form> EnsureForm(string slug, string name, string description,

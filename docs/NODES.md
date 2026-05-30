@@ -12,6 +12,35 @@ Each entry has:
 
 ## System
 
+### `system.data-checkpoint`  ✅ Shipped
+
+**Category:** system
+**Description:** Pauses the workflow and waits for an external system to POST data to the resume URL. Unlike `integrations.wait-for-webhook`, this is a first-class system node — no integration category needed, no timeout config required. All fields in the POSTed JSON body become node outputs for downstream nodes.
+
+| Config | Type | Default | Description |
+|--------|------|---------|-------------|
+| `name` | String | — | Descriptive label for this checkpoint (shown in designer) |
+| `description` | String | — | Documents what data the external system is expected to POST |
+
+| Output | Type | Description |
+|--------|------|-------------|
+| `_correlationToken` | String | One-time token for the resume URL |
+| `_resumeUrl` | String | Full path: `/api/webhooks/resume/{token}` |
+| `_resumedAt` | String | ISO timestamp when data was received |
+| *(any field POSTed)* | Any | All fields from the external POST body |
+
+**Resume URL** is shown in the execution timeline and the External Data playground when the node is paused.
+
+**Example:**
+```
+system.start → system.data-checkpoint (Customer) → data.db-execute → system.data-checkpoint (Order) → data.db-execute → system.end
+```
+Workflow pauses at Customer checkpoint. External system POSTs `{ "name": "Jane", "email": "jane@example.com" }`. Workflow resumes, `{{name}}` and `{{email}}` flow to the database node.
+
+> **Playground:** See `/playground/external` for a live interactive demo with a built-in "Simulate External System" panel and curl command generator.
+
+---
+
 ### `system.start`  · MVP
 
 - **Purpose:** Entry point of every workflow. Surfaces workflow inputs.

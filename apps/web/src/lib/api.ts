@@ -259,6 +259,8 @@ export const api = {
   playground: {
     /** Seeds (or upserts) the playground workflow and forms. Returns workflowId. */
     seed: () => apiFetch<{ workflowId: string; message: string }>('/api/playground/seed', { method: 'POST' }),
+    /** Seeds (or upserts) the External Data Intake workflow. Returns workflowId. */
+    seedExternal: () => apiFetch<{ workflowId: string; message: string }>('/api/playground/seed-external', { method: 'POST' }),
   },
   /** Node catalog endpoint — returns all registered node descriptors. */
   nodes: {
@@ -408,6 +410,12 @@ export const api = {
         formName: data.formName,
         formDescription: data.formDescription,
       }) }),
+  },
+  /** Webhook resume — POST data to resume a paused data-checkpoint node. */
+  webhooks: {
+    /** Resumes a paused workflow execution by posting data to the given token. */
+    resume: (token: string, data: Record<string, unknown>) =>
+      apiFetch<void>(`/api/webhooks/resume/${token}`, { method: 'POST', body: JSON.stringify(data) }),
   },
   /** Secret vault endpoints — encrypted named values for use in node config as {{secret:name}}. */
   secrets: {
