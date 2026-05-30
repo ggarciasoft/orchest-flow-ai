@@ -17,6 +17,7 @@ const CHECKPOINT_LABELS = ['Customer', 'Order'] as const;
 // ── types ────────────────────────────────────────────────────────────────────
 
 type Phase =
+  | 'setup'     // initial config screen
   | 'idle'
   | 'seeding'
   | 'starting'
@@ -25,6 +26,11 @@ type Phase =
   | 'sending'    // user is posting data
   | 'done'
   | 'error';
+
+interface DbConfig {
+  customer: { connectionString: string; query: string };
+  order: { connectionString: string; query: string };
+}
 
 interface CheckpointState {
   label: string;
@@ -72,10 +78,161 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
   );
 }
 
+// ── SetupForm component ───────────────────────────────────────────────────────
+
+interface SetupFormProps {
+  onSave: (config: DbConfig) => void;
+  onSkip: () => void;
+}
+
+function SetupForm({ onSave, onSkip }: SetupFormProps) {
+  const [customerConnStr, setCustomerConnStr] = useState('');
+  const [customerQuery, setCustomerQuery]     = useState('INSERT INTO customers (name, email) VALUES (@name, @email)');
+  const [orderConnStr, setOrderConnStr]       = useState('');
+  const [orderQuery, setOrderQuery]           = useState('INSERT INTO orders (items, amount) VALUES (@items, @amount)');
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const customerTouchedRef = useRef(false);
+  const orderTouchedRef    = useRef(false);
+
+  const handleSave = () => {
+    const customerTouched = customerTouchedRef.current;
+    const orderTouched    = orderTouchedRef.current;
+
+    if ((customerTouched || orderTouched) && (!customerConnStr || !orderConnStr)) {
+      setValidationError('If you configure one database, both connection strings are required.');
+      return;
+    }
+
+    setValidationError(null);
+    onSave({
+      customer: { connectionString: customerConnStr, query: customerQuery },
+      order:    { connectionString: orderConnStr,    query: orderQuery },
+    });
+  };
+
+  const customerCreateTable = `CREATE TABLE IF NOT EXISTS customers (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);`;
+
+  const orderCreateTable = `CREATE TABLE IF NOT EXISTS orders (
+  id SERIAL PRIMARY KEY,
+  items TEXT NOT NULL,
+  amount NUMERIC(10,2) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);`;
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <div className="px-6 py-4 border-b border-slate-200">
+        <h2 className="text-lg font-semibold text-slate-800">Database Setup</h2>
+      </div>
+
+      <div className="p-6 space-y-8">
+        {/* Customer DB */}
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-700">Customer DB</h3>
+            <p className="text-xs text-slate-500 mt-1">Runs after the Customer checkpoint</p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-medium text-slate-600">Connection String</label>
+            <input
+              type="text"
+              placeholder="Host=localhost;Database=mydb;Username=...;Password=..."
+              value={customerConnStr}
+              onChange={e => { setCustomerConnStr(e.target.value); customerTouchedRef.current = true; setValidationError(null); }}
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-medium text-slate-600">Query</label>
+            <textarea
+              value={customerQuery}
+              onChange={e => setCustomerQuery(e.target.value)}
+              className="w-full h-20 px-3 py-2 text-sm font-mono border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-y"
+            />
+          </div>
+
+          <div className="border border-slate-200 rounded-lg overflow-hidden">
+            <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <span className="text-xs font-medium text-slate-600">CREATE TABLE snippet</span>
+              <CopyButton text={customerCreateTable} />
+            </div>
+            <pre className="p-3 text-xs font-mono text-slate-700 overflow-x-auto">{customerCreateTable}</pre>
+          </div>
+        </div>
+
+        {/* Order DB */}
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-700">Order DB</h3>
+            <p className="text-xs text-slate-500 mt-1">Runs after the Order checkpoint</p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-medium text-slate-600">Connection String</label>
+            <input
+              type="text"
+              placeholder="Host=localhost;Database=mydb;Username=...;Password=..."
+              value={orderConnStr}
+              onChange={e => { setOrderConnStr(e.target.value); orderTouchedRef.current = true; setValidationError(null); }}
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-medium text-slate-600">Query</label>
+            <textarea
+              value={orderQuery}
+              onChange={e => setOrderQuery(e.target.value)}
+              className="w-full h-20 px-3 py-2 text-sm font-mono border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-y"
+            />
+          </div>
+
+          <div className="border border-slate-200 rounded-lg overflow-hidden">
+            <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <span className="text-xs font-medium text-slate-600">CREATE TABLE snippet</span>
+              <CopyButton text={orderCreateTable} />
+            </div>
+            <pre className="p-3 text-xs font-mono text-slate-700 overflow-x-auto">{orderCreateTable}</pre>
+          </div>
+        </div>
+
+        {validationError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+            {validationError}
+          </div>
+        )}
+      </div>
+
+      <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center gap-3">
+        <button
+          onClick={onSkip}
+          className="px-4 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-white transition-colors"
+        >
+          Skip DB setup
+        </button>
+        <button
+          onClick={handleSave}
+          className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+        >
+          Save &amp; Continue
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── main component ────────────────────────────────────────────────────────────
 
 export default function ExternalPlaygroundPage() {
-  const [phase, setPhase]               = useState<Phase>('idle');
+  const [phase, setPhase]               = useState<Phase>('setup');
   const [error, setError]               = useState<string | null>(null);
   const [execution, setExecution]       = useState<WorkflowExecution | null>(null);
   const [checkpoints, setCheckpoints]   = useState<CheckpointState[]>([]);
@@ -83,6 +240,7 @@ export default function ExternalPlaygroundPage() {
   const [log, setLog]                   = useState<LogEntry[]>([]);
   const [jsonPayload, setJsonPayload]   = useState('');
   const [jsonError, setJsonError]       = useState<string | null>(null);
+  const [dbConfig, setDbConfig]         = useState<DbConfig | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
 
   // auto-scroll log
@@ -164,7 +322,7 @@ export default function ExternalPlaygroundPage() {
     addLog('info', 'Seeding External Data Intake workflow…');
 
     try {
-      const { workflowId } = await api.playground.seedExternal();
+      const { workflowId } = await api.playground.seedExternal(dbConfig);
       addLog('info', `Workflow seeded (id: ${workflowId.slice(0, 8)}…). Starting execution…`);
       setPhase('starting');
       const exec = await api.workflows.execute(workflowId, {});
@@ -218,7 +376,7 @@ export default function ExternalPlaygroundPage() {
   };
 
   const handleReset = () => {
-    setPhase('idle');
+    setPhase('setup');
     setError(null);
     setExecution(null);
     setCheckpoints([]);
@@ -284,14 +442,37 @@ export default function ExternalPlaygroundPage() {
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">{error}</div>
       )}
 
+      {/* Setup */}
+      {phase === 'setup' && (
+        <div className="space-y-6">
+          <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+            <p className="text-sm text-indigo-700">
+              The workflow includes two database nodes that execute SQL after each checkpoint. Configure them below, or skip to run the workflow without DB writes.
+            </p>
+          </div>
+
+          <SetupForm
+            onSave={(config) => {
+              setDbConfig(config);
+              setPhase('idle');
+            }}
+            onSkip={() => {
+              setDbConfig(null);
+              setPhase('idle');
+            }}
+          />
+        </div>
+      )}
+
       {/* Idle */}
       {phase === 'idle' && (
         <div className="bg-white border border-slate-200 rounded-xl p-8 text-center space-y-4">
           <div className="text-4xl">📡</div>
-          <h2 className="text-lg font-semibold text-slate-800">External Data Intake</h2>
+          <h2 className="text-lg font-semibold text-slate-800">Ready to Start</h2>
           <p className="text-sm text-slate-500 max-w-sm mx-auto">
-            Starts a workflow with two data checkpoints. Each checkpoint pauses and exposes a resume URL.
-            Use the built-in panel (or a real external system) to POST data and advance the workflow.
+            {dbConfig
+              ? 'Database configuration saved. Click below to start the workflow.'
+              : 'Database setup skipped. The workflow will run without DB writes.'}
           </p>
           <button
             onClick={handleStart}

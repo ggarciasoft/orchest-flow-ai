@@ -260,7 +260,11 @@ export const api = {
     /** Seeds (or upserts) the playground workflow and forms. Returns workflowId. */
     seed: () => apiFetch<{ workflowId: string; message: string }>('/api/playground/seed', { method: 'POST' }),
     /** Seeds (or upserts) the External Data Intake workflow. Returns workflowId. */
-    seedExternal: () => apiFetch<{ workflowId: string; message: string }>('/api/playground/seed-external', { method: 'POST' }),
+    seedExternal: (config?: { customer: { connectionString: string; query: string }; order: { connectionString: string; query: string } } | null) =>
+      apiFetch<{ workflowId: string; message: string }>('/api/playground/seed-external', {
+        method: 'POST',
+        body: JSON.stringify(config ?? {}),
+      }),
   },
   /** Node catalog endpoint — returns all registered node descriptors. */
   nodes: {

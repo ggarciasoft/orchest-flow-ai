@@ -139,12 +139,18 @@ public sealed class PlaygroundController : ControllerBase
     /// Seeds (or upserts) the "External Data Intake" playground workflow.
     /// Creates a workflow with 2 data-checkpoints and 2 database-execute nodes.
     /// No forms are required — external systems POST data to the resume URLs.
+    /// Accepts an optional JSON request body with customer and order database configs.
     /// Returns the workflow id.
     /// </summary>
     [HttpPost("seed-external"), Authorize(Policy = "EditorOrAbove")]
-    public async Task<ActionResult> SeedExternal(CancellationToken ct)
+    public async Task<ActionResult> SeedExternal([FromBody] ExternalDbConfig? config, CancellationToken ct)
     {
         const string WorkflowName = "🧪 Playground: External Data Intake";
+
+        var customerConnStr = config?.Customer?.ConnectionString ?? "";
+        var customerQuery   = config?.Customer?.Query ?? "";
+        var orderConnStr    = config?.Order?.ConnectionString ?? "";
+        var orderQuery      = config?.Order?.Query ?? "";
 
         var definition = new
         {
@@ -155,9 +161,9 @@ public sealed class PlaygroundController : ControllerBase
             {
                 new { id = "start",       type = "system.start",            position = new { x = 100,  y = 200 }, config = new { } },
                 new { id = "checkpoint1", type = "system.data-checkpoint",  position = new { x = 300,  y = 200 }, config = new { name = "Customer",  description = "POST customer name and email" } },
-                new { id = "db1",         type = "data.db-execute",   position = new { x = 550,  y = 200 }, config = new { connectionString = "Server=localhost;Database=Demo;User Id=demo;Password=demo;", query = "INSERT INTO customers (name, email) VALUES (@name, @email)" } },
+                new { id = "db1",         type = "data.db-execute",   position = new { x = 550,  y = 200 }, config = new { connectionString = customerConnStr, query = customerQuery } },
                 new { id = "checkpoint2", type = "system.data-checkpoint",  position = new { x = 800,  y = 200 }, config = new { name = "Order",     description = "POST order items and amount" } },
-                new { id = "db2",         type = "data.db-execute",   position = new { x = 1050, y = 200 }, config = new { connectionString = "Server=localhost;Database=Demo;User Id=demo;Password=demo;", query = "INSERT INTO orders (items, amount) VALUES (@items, @amount)" } },
+                new { id = "db2",         type = "data.db-execute",   position = new { x = 1050, y = 200 }, config = new { connectionString = orderConnStr, query = orderQuery } },
                 new { id = "end",         type = "system.end",              position = new { x = 1300, y = 200 }, config = new { } },
             },
             edges = new object[]
@@ -222,4 +228,9 @@ public sealed class PlaygroundController : ControllerBase
 
         return form;
     }
+
+    // ── request models ───────────────────────────────────────────────────────────
+
+    public sealed record ExternalDbConfig(DbNodeConfig? Customer, DbNodeConfig? Order);
+    public sealed record DbNodeConfig(string ConnectionString, string Query);
 }
