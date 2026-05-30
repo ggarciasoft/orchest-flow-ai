@@ -1,5 +1,6 @@
 using System.Data.Common;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using OrchestFlowAI.SDK.Context;
 using OrchestFlowAI.SDK.Exceptions;
 using OrchestFlowAI.SDK.Interfaces;
@@ -43,8 +44,18 @@ public sealed class DatabaseExecuteNode : IWorkflowNode
         command.CommandText = statement;
         command.CommandTimeout = timeoutSeconds;
 
+        var lookup = BuildLookup(ctx);
+
+        // Bind explicitly configured parameters first
+        var explicitKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (!string.IsNullOrWhiteSpace(parametersJson))
-            BindParameters(command, parametersJson, BuildLookup(ctx));
+        {
+            BindParameters(command, parametersJson, lookup, explicitKeys);
+        }
+
+        // Auto-bind any @placeholder in the statement that wasn't already bound
+        // and has a matching value in upstream inputs/outputs
+        AutoBindFromStatement(command, statement, lookup, explicitKeys);
 
         try
         {
@@ -86,7 +97,11 @@ public sealed class DatabaseExecuteNode : IWorkflowNode
         return lookup;
     }
 
-    private static void BindParameters(DbCommand command, string parametersJson, IReadOnlyDictionary<string, object?> inputs)
+    private static void BindParameters(
+        DbCommand command,
+        string parametersJson,
+        IReadOnlyDictionary<string, object?> inputs,
+        HashSet<string> alreadyBound)
     {
         var parameters = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(parametersJson)
             ?? new Dictionary<string, JsonElement>();
@@ -105,12 +120,35 @@ public sealed class DatabaseExecuteNode : IWorkflowNode
             };
             param.Value = resolvedValue;
             command.Parameters.Add(param);
+            alreadyBound.Add(param.ParameterName);
+        }
+    }
+
+    private static void AutoBindFromStatement(
+        DbCommand command,
+        string statement,
+        IReadOnlyDictionary<string, object?> lookup,
+        HashSet<string> alreadyBound)
+    {
+        var matches = Regex.Matches(
+            statement, @"@(\w+)");
+        foreach (Match match in matches)
+        {
+            var key = match.Groups[1].Value;
+            if (alreadyBound.Contains(key)) continue;
+            if (!lookup.TryGetValue(key, out var rawValue)) continue;
+
+            var param = command.CreateParameter();
+            param.ParameterName = key;
+            param.Value = rawValue is null ? DBNull.Value : (object)rawValue.ToString()!;
+            command.Parameters.Add(param);
+            alreadyBound.Add(key);
         }
     }
 
     /// <summary>Resolves <c>{{key}}</c> placeholders in a string against the provided input dictionary.</summary>
     private static string ResolveTemplate(string template, IReadOnlyDictionary<string, object?> inputs)
-        => global::System.Text.RegularExpressions.Regex.Replace(template, @"\{\{(\w+)\}}", match =>
+        => Regex.Replace(template, @"\{\{(\w+)\}}", match =>
         {
             var key = match.Groups[1].Value;
             return inputs.TryGetValue(key, out var val) ? val?.ToString() ?? string.Empty : match.Value;
