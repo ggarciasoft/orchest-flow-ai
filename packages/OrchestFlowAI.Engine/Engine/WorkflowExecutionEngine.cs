@@ -375,7 +375,55 @@ public async Task ResumeAsync(Guid executionId, ResumeSignal signal, Cancellatio
         var nodeExec = await execRepo.GetNodeExecutionAsync(signal.NodeExecutionId, ct)
             ?? throw new InvalidOperationException($"NodeExecution {signal.NodeExecutionId} not found");
 
-        nodeExec.Succeed(JsonSerializer.Serialize(signal.ResumeOutputs));
+        // Re-run the paused node with resume outputs as inputs so node-level validation fires.
+        var pausedNode = _registry.GetNode(nodeExec.NodeType);
+        if (pausedNode != null)
+        {
+            var resumeNodeInputs = signal.ResumeOutputs.ToDictionary(kv => kv.Key, kv => kv.Value);
+            var resumeNodeConfig = new Dictionary<string, object?>();
+
+            // Load the workflow definition to get the node's config
+            var versionForValidation = await execRepo.GetWorkflowVersionAsync(execution.WorkflowVersionId, ct);
+            if (versionForValidation != null)
+            {
+                var defForValidation = JsonSerializer.Deserialize<WorkflowDefinition>(versionForValidation.DefinitionJson, _jsonOpts);
+                var pausedNodeDef = defForValidation?.Nodes.FirstOrDefault(n => n.Id == nodeExec.NodeId);
+                if (pausedNodeDef != null)
+                    resumeNodeConfig = pausedNodeDef.Config.ToDictionary(kv => kv.Key, kv => (object?)kv.Value);
+            }
+
+            var validationCtx = BuildContext(executionId, execution, resumeNodeInputs, resumeNodeConfig,
+                new Dictionary<string, IReadOnlyDictionary<string, object?>>(),
+                new Dictionary<string, object?>(), nodeExec.Step, scope.ServiceProvider, ct, nodeExec.Id);
+
+            NodeExecutionResult validationResult;
+            try { validationResult = await pausedNode.ExecuteAsync(validationCtx, ct); }
+            catch (Exception ex) { validationResult = SDK.Models.NodeExecutionResult.Failed(ex.Message); }
+
+            if (validationResult.Status == SDK.Models.NodeExecutionStatus.Failed)
+            {
+                nodeExec.Fail(validationResult.ErrorMessage ?? "Validation failed");
+                await execRepo.UpdateNodeExecutionAsync(nodeExec, ct);
+                execution.Fail(validationResult.ErrorMessage ?? "Validation failed");
+                await execRepo.UpdateExecutionAsync(execution, ct);
+                await _notifier.NotifyExecutionCompleted(executionId, "Failed", ct);
+                return;
+            }
+
+            // Use the node's own outputs (may differ from raw signal outputs, e.g. coerced types)
+            var finalOutputs = validationResult.Status == SDK.Models.NodeExecutionStatus.Succeeded
+                ? validationResult.Outputs
+                : signal.ResumeOutputs;
+
+            nodeExec.Succeed(JsonSerializer.Serialize(finalOutputs));
+            // Override signal.ResumeOutputs so the rest of the method uses the node's processed outputs
+            signal = signal with { ResumeOutputs = finalOutputs };
+        }
+        else
+        {
+            nodeExec.Succeed(JsonSerializer.Serialize(signal.ResumeOutputs));
+        }
+
         await execRepo.UpdateNodeExecutionAsync(nodeExec, ct);
         execution.Resume();
         await execRepo.UpdateExecutionAsync(execution, ct);
