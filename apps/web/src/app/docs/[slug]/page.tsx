@@ -29,7 +29,7 @@ export default async function DocPage({ params }: { params: Promise<{ slug: stri
       prose-h1:text-xl prose-h2:text-base prose-h3:text-sm
       prose-p:text-slate-600 prose-p:leading-relaxed
       prose-code:bg-slate-100 prose-code:text-slate-800 prose-code:rounded prose-code:px-1 prose-code:text-xs
-      prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-pre:rounded-xl
+      prose-pre:bg-slate-50 prose-pre:text-slate-800 prose-pre:border prose-pre:border-slate-200 prose-pre:rounded-xl
       prose-a:text-indigo-600 prose-a:no-underline hover:prose-a:underline
       prose-strong:text-slate-900
       prose-li:text-slate-600
