@@ -83,7 +83,7 @@ async function apiFetch<T>(path: string, options?: RequestInit & { skipAuthRedir
 export interface FormFieldDefinition {
   key: string;
   label: string;
-  type: 'text' | 'number' | 'select' | 'date' | 'email' | 'boolean';
+  type: 'text' | 'number' | 'select' | 'date' | 'email' | 'boolean' | 'file';
   required?: boolean;
   placeholder?: string;
   options?: string[];
@@ -93,6 +93,8 @@ export interface FormFieldDefinition {
   validationRegex?: string;
   /** Human-readable message shown when validationRegex does not match. */
   validationMessage?: string;
+  /** For file fields: accepted MIME types or extensions (e.g. ".pdf,.png"). */
+  accept?: string;
 }
 
 /** A custom form definition for collecting user input during workflow execution. */

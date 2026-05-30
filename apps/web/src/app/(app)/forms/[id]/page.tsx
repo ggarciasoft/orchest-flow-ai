@@ -19,7 +19,7 @@ function slugify(name: string): string {
     .replace(/^-|-$/g, '');
 }
 
-const TYPE_OPTIONS = ['text', 'number', 'select', 'date', 'email', 'boolean'] as const;
+const TYPE_OPTIONS = ['text', 'number', 'select', 'date', 'email', 'boolean', 'file'] as const;
 
 const emptyField = (): FormFieldDefinition => ({
   key: '',
@@ -28,6 +28,7 @@ const emptyField = (): FormFieldDefinition => ({
   required: false,
   placeholder: '',
   options: [],
+  accept: undefined,
 });
 
 /**
@@ -453,6 +454,22 @@ export default function FormBuilderPage({ params }: { params: Promise<{ id: stri
                     <p className="text-xs text-slate-400">The output key from a previous node whose value is a JSON array. E.g. a <code className="bg-slate-100 px-1 rounded">data.db-query</code> node outputting <code className="bg-slate-100 px-1 rounded">rows=["Food","Transport"]</code>.</p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {editingField.type === 'file' && (
+              <div className="space-y-1">
+                <label className="block text-xs font-medium text-slate-700">
+                  Accepted file types
+                  <span className="text-slate-400 font-normal ml-1">(optional)</span>
+                </label>
+                <input
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  placeholder=".pdf,.png,image/*"
+                  value={editingField.accept ?? ''}
+                  onChange={e => setEditingField(f => ({ ...f, accept: e.target.value || undefined }))}
+                />
+                <p className="text-xs text-slate-400">Comma-separated MIME types or extensions. Leave blank to allow any file.</p>
               </div>
             )}
 

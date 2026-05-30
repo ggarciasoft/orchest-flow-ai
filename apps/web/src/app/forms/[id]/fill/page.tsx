@@ -55,10 +55,11 @@ export default function FormFillPage({ params }: { params: Promise<{ id: string 
         setSubmitError(`Please fill in required fields: ${missing.map(f => f.label).join(', ')}`);
         return;
       }
-      // Client-side regex validation
+      // Client-side regex validation (skip for file/boolean fields)
       const newFieldErrors: Record<string, string> = {};
       for (const field of form.fields) {
         if (!field.validationRegex) continue;
+        if (field.type === 'file' || field.type === 'boolean') continue;
         const val = values[field.key];
         if (typeof val !== 'string' || val === '') continue;
         try {
