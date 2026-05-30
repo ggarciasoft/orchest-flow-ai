@@ -155,9 +155,9 @@ public sealed class PlaygroundController : ControllerBase
             {
                 new { id = "start",       type = "system.start",            position = new { x = 100,  y = 200 }, config = new { } },
                 new { id = "checkpoint1", type = "system.data-checkpoint",  position = new { x = 300,  y = 200 }, config = new { name = "Customer",  description = "POST customer name and email" } },
-                new { id = "db1",         type = "data.database-execute",   position = new { x = 550,  y = 200 }, config = new { connectionString = "Server=localhost;Database=Demo;User Id=demo;Password=demo;", query = "INSERT INTO customers (name, email) VALUES (@name, @email)" } },
+                new { id = "db1",         type = "data.db-execute",   position = new { x = 550,  y = 200 }, config = new { connectionString = "Server=localhost;Database=Demo;User Id=demo;Password=demo;", query = "INSERT INTO customers (name, email) VALUES (@name, @email)" } },
                 new { id = "checkpoint2", type = "system.data-checkpoint",  position = new { x = 800,  y = 200 }, config = new { name = "Order",     description = "POST order items and amount" } },
-                new { id = "db2",         type = "data.database-execute",   position = new { x = 1050, y = 200 }, config = new { connectionString = "Server=localhost;Database=Demo;User Id=demo;Password=demo;", query = "INSERT INTO orders (items, amount) VALUES (@items, @amount)" } },
+                new { id = "db2",         type = "data.db-execute",   position = new { x = 1050, y = 200 }, config = new { connectionString = "Server=localhost;Database=Demo;User Id=demo;Password=demo;", query = "INSERT INTO orders (items, amount) VALUES (@items, @amount)" } },
                 new { id = "end",         type = "system.end",              position = new { x = 1300, y = 200 }, config = new { } },
             },
             edges = new object[]
