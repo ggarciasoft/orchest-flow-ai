@@ -219,7 +219,7 @@ public sealed class PlaygroundController : ControllerBase
             Options: (string[]?)f.options
         )).ToList();
 
-        var fieldsJson = JsonSerializer.Serialize(fields);
+        var fieldsJson = JsonSerializer.Serialize(fields, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
         var form = Form.Create(TenantId, name, slug, description, fieldsJson);
         await _forms.CreateAsync(form, ct);
 
