@@ -447,6 +447,20 @@ export const api = {
     /** Deletes a secret. */
     delete: (id: string) => apiFetch<void>(`/api/secrets/${id}`, { method: 'DELETE' }),
   },
+  /** AI chat history endpoints — view AI assistant session history and token usage. */
+  aiHistory: {
+    listSessions: (params?: { surface?: string; page?: number; pageSize?: number }) => {
+      const q = new URLSearchParams();
+      if (params?.surface)  q.set('surface',  params.surface);
+      if (params?.page)     q.set('page',     String(params.page));
+      if (params?.pageSize) q.set('pageSize', String(params.pageSize));
+      return apiFetch<AiChatSessionSummary[]>(`/api/ai/sessions?${q}`);
+    },
+    getMessages: (sessionId: string) =>
+      apiFetch<AiChatMessage[]>(`/api/ai/sessions/${sessionId}/messages`),
+    usageSummary: () =>
+      apiFetch<AiUsageSummary>('/api/ai/usage-summary'),
+  },
 };
 
 // ---- Type Definitions ----
@@ -534,4 +548,34 @@ export interface FeedbackResponse { id: string; createdAt: string; }
 
 /** Result returned by the AI Assist endpoint. */
 export interface AiAssistResult { definition: object; explanation: string; changes: string[]; }
+
+/** AI chat history types. */
+export interface AiChatSessionSummary {
+  id: string;
+  surface: string;
+  contextId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'tool';
+  contentText: string | null;
+  toolName: string | null;
+  toolInputJson: string | null;
+  toolOutputJson: string | null;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  model: string | null;
+  provider: string | null;
+  createdAt: string;
+}
+
+export interface AiUsageSummary {
+  totalSessions: number;
+  totalTokens: number;
+  bySurface: Array<{ surface: string; sessionCount: number }>;
+}
 

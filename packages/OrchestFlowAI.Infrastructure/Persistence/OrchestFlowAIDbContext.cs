@@ -33,6 +33,8 @@ public sealed class OrchestFlowAIDbContext : DbContext
     public DbSet<FormVersion> FormVersions => Set<FormVersion>();
     public DbSet<FormSubmission> FormSubmissions => Set<FormSubmission>();
     public DbSet<CorrelationToken> CorrelationTokens => Set<CorrelationToken>();
+    public DbSet<AiChatSession> AiChatSessions => Set<AiChatSession>();
+    public DbSet<AiChatMessage> AiChatMessages => Set<AiChatMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -223,6 +225,27 @@ public sealed class OrchestFlowAIDbContext : DbContext
             e.Property(ct => ct.Kind).IsRequired().HasMaxLength(20);
             e.HasIndex(ct => ct.Token).IsUnique();
             e.HasIndex(ct => ct.ExecutionId);
+        });
+
+        modelBuilder.Entity<AiChatSession>(e =>
+        {
+            e.HasKey(s => s.Id);
+            e.Property(s => s.Surface).IsRequired().HasMaxLength(100);
+            e.HasIndex(s => new { s.TenantId, s.Surface });
+            e.HasIndex(s => s.ContextId);
+        });
+
+        modelBuilder.Entity<AiChatMessage>(e =>
+        {
+            e.HasKey(m => m.Id);
+            e.Property(m => m.Role).IsRequired().HasMaxLength(20);
+            e.Property(m => m.ContentText).HasColumnType("text");
+            e.Property(m => m.ToolInputJson).HasColumnType("text");
+            e.Property(m => m.ToolOutputJson).HasColumnType("text");
+            e.Property(m => m.ToolName).HasMaxLength(200);
+            e.Property(m => m.Model).HasMaxLength(100);
+            e.Property(m => m.Provider).HasMaxLength(50);
+            e.HasIndex(m => m.SessionId);
         });
 
         modelBuilder.Entity<ExecutionQueueItem>(e =>

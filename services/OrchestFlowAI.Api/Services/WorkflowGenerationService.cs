@@ -1,8 +1,11 @@
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OrchestFlowAI.AI.Routing;
 using OrchestFlowAI.AI.Abstractions;
+using OrchestFlowAI.Application.Abstractions;
+using OrchestFlowAI.Domain.Entities;
 using OrchestFlowAI.Engine.Registry;
 
 namespace OrchestFlowAI.Api.Services;
@@ -24,15 +27,18 @@ public sealed class WorkflowGenerationService
     private readonly LLMProviderRouter _router;
     private readonly INodeRegistry _nodeRegistry;
     private readonly ILogger<WorkflowGenerationService> _logger;
+    private readonly IServiceScopeFactory? _scopeFactory;
 
     public WorkflowGenerationService(
         LLMProviderRouter router,
         INodeRegistry nodeRegistry,
-        ILogger<WorkflowGenerationService> logger)
+        ILogger<WorkflowGenerationService> logger,
+        IServiceScopeFactory? scopeFactory = null)
     {
         _router = router;
         _nodeRegistry = nodeRegistry;
         _logger = logger;
+        _scopeFactory = scopeFactory;
     }
 
     public async Task<WorkflowGenerationResult> GenerateAsync(
@@ -57,6 +63,31 @@ public sealed class WorkflowGenerationService
         var response = await provider.GenerateTextAsync(llmRequest with { Model = model }, ct);
 
         _logger.LogInformation("LLM response received, tokens used: {Total}", response.Usage.TotalTokens);
+
+        if (_scopeFactory != null)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    using var scope = _scopeFactory.CreateScope();
+                    var chatRepo = scope.ServiceProvider.GetRequiredService<IAiChatRepository>();
+                    
+                    var session = AiChatSession.Create(tenantId, Guid.Empty, "workflow-assist");
+                    await chatRepo.CreateSessionAsync(session);
+                    await chatRepo.AddMessageAsync(AiChatMessage.CreateUserMessage(session.Id, userPrompt));
+                    await chatRepo.AddMessageAsync(AiChatMessage.CreateAssistantMessage(
+                        session.Id, response.Text, provider.Id, model,
+                        response.Usage.PromptTokens, response.Usage.CompletionTokens));
+                    session.Touch();
+                    await chatRepo.UpdateSessionAsync(session);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to log AI chat history for workflow generation");
+                }
+            }, CancellationToken.None);
+        }
 
         return ParseResponse(response.Text);
     }

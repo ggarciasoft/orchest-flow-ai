@@ -487,3 +487,33 @@ public sealed class EfCorrelationTokenRepository : ICorrelationTokenRepository
     public async Task UpdateAsync(CorrelationToken token, CancellationToken ct = default)
     { _db.CorrelationTokens.Update(token); await _db.SaveChangesAsync(ct); }
 }
+
+/// <summary>EF Core implementation of <see cref="IAiChatRepository"/>.</summary>
+public sealed class EfAiChatRepository : IAiChatRepository
+{
+    private readonly OrchestFlowAIDbContext _db;
+    public EfAiChatRepository(OrchestFlowAIDbContext db) => _db = db;
+
+    public async Task<AiChatSession> CreateSessionAsync(AiChatSession session, CancellationToken ct = default)
+    { _db.AiChatSessions.Add(session); await _db.SaveChangesAsync(ct); return session; }
+
+    public Task<AiChatSession?> GetSessionAsync(Guid id, CancellationToken ct = default)
+        => _db.AiChatSessions.FindAsync(new object[] { id }, ct).AsTask();
+
+    public async Task<IReadOnlyList<AiChatSession>> ListSessionsAsync(Guid tenantId, string? surface = null, Guid? contextId = null, int page = 1, int pageSize = 20, CancellationToken ct = default)
+    {
+        var q = _db.AiChatSessions.Where(s => s.TenantId == tenantId);
+        if (surface   != null) q = q.Where(s => s.Surface   == surface);
+        if (contextId != null) q = q.Where(s => s.ContextId == contextId);
+        return await q.OrderByDescending(s => s.UpdatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+    }
+
+    public async Task UpdateSessionAsync(AiChatSession session, CancellationToken ct = default)
+    { _db.AiChatSessions.Update(session); await _db.SaveChangesAsync(ct); }
+
+    public async Task<AiChatMessage> AddMessageAsync(AiChatMessage message, CancellationToken ct = default)
+    { _db.AiChatMessages.Add(message); await _db.SaveChangesAsync(ct); return message; }
+
+    public async Task<IReadOnlyList<AiChatMessage>> GetMessagesAsync(Guid sessionId, CancellationToken ct = default)
+        => await _db.AiChatMessages.Where(m => m.SessionId == sessionId).OrderBy(m => m.CreatedAt).ToListAsync(ct);
+}

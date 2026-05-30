@@ -1,8 +1,11 @@
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OrchestFlowAI.AI.Abstractions;
 using OrchestFlowAI.AI.Routing;
+using OrchestFlowAI.Application.Abstractions;
+using OrchestFlowAI.Domain.Entities;
 
 namespace OrchestFlowAI.Api.Services;
 
@@ -27,11 +30,16 @@ public sealed class FormGenerationService
 {
     private readonly LLMProviderRouter _router;
     private readonly ILogger<FormGenerationService> _logger;
+    private readonly IServiceScopeFactory? _scopeFactory;
 
-    public FormGenerationService(LLMProviderRouter router, ILogger<FormGenerationService> logger)
+    public FormGenerationService(
+        LLMProviderRouter router,
+        ILogger<FormGenerationService> logger,
+        IServiceScopeFactory? scopeFactory = null)
     {
         _router = router;
         _logger = logger;
+        _scopeFactory = scopeFactory;
     }
 
     public async Task<FormGenerationResult> GenerateAsync(
@@ -52,6 +60,31 @@ public sealed class FormGenerationService
         var (provider, model) = _router.Route("default");
         var response = await provider.GenerateTextAsync(llmRequest with { Model = model }, ct);
         _logger.LogInformation("FormGenerationService: LLM tokens used: {Total}", response.Usage.TotalTokens);
+
+        if (_scopeFactory != null)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    using var scope = _scopeFactory.CreateScope();
+                    var chatRepo = scope.ServiceProvider.GetRequiredService<IAiChatRepository>();
+                    
+                    var session = AiChatSession.Create(tenantId, Guid.Empty, "form-generator");
+                    await chatRepo.CreateSessionAsync(session);
+                    await chatRepo.AddMessageAsync(AiChatMessage.CreateUserMessage(session.Id, llmRequest.Prompt));
+                    await chatRepo.AddMessageAsync(AiChatMessage.CreateAssistantMessage(
+                        session.Id, response.Text, provider.Id, model,
+                        response.Usage.PromptTokens, response.Usage.CompletionTokens));
+                    session.Touch();
+                    await chatRepo.UpdateSessionAsync(session);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to log AI chat history for form generation");
+                }
+            }, CancellationToken.None);
+        }
 
         return ParseResponse(response.Text);
     }
