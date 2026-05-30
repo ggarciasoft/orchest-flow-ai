@@ -416,7 +416,7 @@ public async Task ResumeAsync(Guid executionId, ResumeSignal signal, Cancellatio
             ne2.Start(JsonSerializer.Serialize(nodeInputs));
             await execRepo.CreateNodeExecutionAsync(ne2, ct);
 
-            var ctx = BuildContext(executionId, execution, nodeInputs, config, nodeOutputs, inputs, step, scope.ServiceProvider, ct);
+            var ctx = BuildContext(executionId, execution, nodeInputs, config, nodeOutputs, inputs, step, scope.ServiceProvider, ct, ne2.Id);
 
             NodeExecutionResult result;
             try { result = await node.ExecuteAsync(ctx, ct); }
