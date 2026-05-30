@@ -58,6 +58,14 @@ function defaultPayload(label: string): string {
   return JSON.stringify({ items: ['Widget A', 'Widget B'], amount: 99.95 }, null, 2);
 }
 
+function safeJsonCompact(json: string): string {
+  try {
+    return JSON.stringify(JSON.parse(json));
+  } catch {
+    return json.trim();
+  }
+}
+
 // ── small CopyButton component ────────────────────────────────────────────────
 
 function CopyButton({ text, label }: { text: string; label?: string }) {
@@ -391,7 +399,7 @@ export default function ExternalPlaygroundPage() {
   const cp = checkpoints[currentCp];
   const fullResumeUrl = cp ? `${API_BASE}${cp.resumeUrl}` : '';
   const curlCmd = cp
-    ? `curl -X POST "${fullResumeUrl}" \\\n  -H "Content-Type: application/json" \\\n  -d '${JSON.stringify(JSON.parse(jsonPayload || '{}'), null, 0)}'`
+    ? `curl -X POST "${fullResumeUrl}" \\\n  -H "Content-Type: application/json" \\\n  -d '${safeJsonCompact(jsonPayload || '{}')}'`
     : '';
 
   // ── render ───────────────────────────────────────────────────────────────────
