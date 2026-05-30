@@ -161,9 +161,9 @@ public sealed class PlaygroundController : ControllerBase
             nodes   = new object[]
             {
                 new { id = "start",       type = "system.start",            position = new { x = 100,  y = 200 }, config = new { } },
-                new { id = "checkpoint1", type = "system.data-checkpoint",  position = new { x = 300,  y = 200 }, config = new { name = "Customer",  description = "POST customer name and email" } },
+                new { id = "checkpoint1", type = "system.data-checkpoint",  position = new { x = 300,  y = 200 }, config = new { name = "Customer",  description = "POST customer name and email", fields = "[{\"key\":\"name\",\"type\":\"string\",\"required\":true},{\"key\":\"email\",\"type\":\"string\",\"required\":true}]" } },
                 new { id = "db1",         type = "data.db-execute",   position = new { x = 550,  y = 200 }, config = new { connectionString = customerConnStr, statement = customerStatement } },
-                new { id = "checkpoint2", type = "system.data-checkpoint",  position = new { x = 800,  y = 200 }, config = new { name = "Order",     description = "POST order items and amount" } },
+                new { id = "checkpoint2", type = "system.data-checkpoint",  position = new { x = 800,  y = 200 }, config = new { name = "Order",     description = "POST order items and amount", fields = "[{\"key\":\"items\",\"type\":\"string\",\"required\":true},{\"key\":\"amount\",\"type\":\"number\",\"required\":true}]" } },
                 new { id = "db2",         type = "data.db-execute",   position = new { x = 1050, y = 200 }, config = new { connectionString = orderConnStr, statement = orderStatement } },
                 new { id = "end",         type = "system.end",              position = new { x = 1300, y = 200 }, config = new { } },
             },
