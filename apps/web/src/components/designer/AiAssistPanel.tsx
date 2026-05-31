@@ -116,6 +116,7 @@ export function AiAssistPanel({ workflowName, onClose, onPreview, onAccept, getC
           <h3 className="font-semibold text-sm text-slate-900">✨ AI Assistant</h3>
           <p className="text-xs text-slate-400 mt-0.5">Describe what you want, I&apos;ll build it</p>
           <ActiveProviderBadge />
+          <p className="text-xs text-amber-600 mt-1">⚠️ AI can make mistakes — always review before saving.</p>
         </div>
         <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded mt-0.5" title="Close">
           <X size={16} />

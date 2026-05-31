@@ -118,6 +118,7 @@ export default function FormAiAssistPanel({
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">Describe your form, I&apos;ll generate the fields</p>
           <ActiveProviderBadge />
+          <p className="text-xs text-amber-600 mt-1">⚠️ AI can make mistakes — always review before applying.</p>
         </div>
         <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded mt-0.5" title="Close">
           <X size={16} />
