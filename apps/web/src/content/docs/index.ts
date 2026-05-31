@@ -7,8 +7,9 @@ export interface DocEntry {
 
 export const docs: DocEntry[] = [
   { slug: 'setup',             title: 'Getting Started',          category: 'Getting Started', filename: 'SETUP.md' },
-  { slug: 'howto-designer',    title: 'How To: Visual Designer',  category: 'How To',          filename: 'HOWTO-DESIGNER.md' },
-  { slug: 'howto-ai-builder',  title: 'How To: AI Builder',       category: 'How To',          filename: 'HOWTO-AI-BUILDER.md' },
+  { slug: 'howto-designer',    title: 'How To: Visual Designer',         category: 'How To', filename: 'HOWTO-DESIGNER.md' },
+  { slug: 'howto-form-builder',  title: 'How To: Form Builder',           category: 'How To', filename: 'HOWTO-FORM-BUILDER.md' },
+  { slug: 'howto-ai-builder',   title: 'How To: AI Builder',              category: 'How To', filename: 'HOWTO-AI-BUILDER.md' },
   { slug: 'howto-external-data', title: 'How To: External Data Intake', category: 'How To', filename: 'HOWTO-EXTERNAL-DATA.md' },
   { slug: 'howto-config',        title: 'How To: Workflow Configuration', category: 'How To', filename: 'HOWTO-CONFIG.md' },
   { slug: 'architecture',      title: 'Architecture',             category: 'Core Concepts',   filename: 'ARCHITECTURE.md' },
