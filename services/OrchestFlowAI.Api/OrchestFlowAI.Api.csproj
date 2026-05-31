@@ -4,6 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>OrchestFlowAI.Api</RootNamespace>
+    <UserSecretsId>9a318357-8a2a-4d12-af21-14c04c6e823b</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Cronos" Version="0.13.0" />
