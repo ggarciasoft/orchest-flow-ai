@@ -8,11 +8,13 @@ import { PageHeader, Badge, statusVariant, statusLabel, EmptyState, Pagination, 
 import { useState } from 'react';
 import { CancelExecutionModal } from '@/components/CancelExecutionModal';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useAuth } from '@/contexts/AuthContext';
 
 const PAGE_SIZE = 20;
 const STATUS_OPTIONS = ['', 'Running', 'Queued', 'Paused', 'Completed', 'Failed', 'Cancelled'] as const;
 
 export default function ExecutionsPage() {
+  const { canEdit } = useAuth();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState('');
@@ -99,7 +101,7 @@ export default function ExecutionsPage() {
                 <div className="flex items-center gap-4">
                   <Badge variant={statusVariant(e.status)}>{statusLabel(e.status)}</Badge>
                   <span className="text-xs text-slate-400">{formatDate(e.startedAt)}</span>
-                  {['Queued', 'Running', 'Paused'].includes(e.status) && (
+                  {canEdit && ['Queued', 'Running', 'Paused'].includes(e.status) && (
                     <button
                       onClick={() => setCancelTarget(e)}
                       title="Cancel execution"

@@ -9,11 +9,13 @@ import { ArrowLeft, XCircle, ClipboardCheck, RotateCcw } from 'lucide-react';
 import { PageHeader, Badge, statusVariant, statusLabel } from '@/components/ui';
 import { useState } from 'react';
 import { CancelExecutionModal } from '@/components/CancelExecutionModal';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * ExecutionDetailPage - shows execution metadata, node timeline, and a live SignalR event log.
  */
 export default function ExecutionDetailPage() {
+  const { canEdit } = useAuth();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -86,7 +88,7 @@ export default function ExecutionDetailPage() {
         action={
           <div className="flex items-center gap-3">
             <Badge variant={statusVariant(exec.status)}>{statusLabel(exec.status)}</Badge>
-            {isActive && (
+            {canEdit && isActive && (
               <button
                 onClick={() => setShowCancelModal(true)}
                 disabled={cancelling}
@@ -96,7 +98,7 @@ export default function ExecutionDetailPage() {
                 {cancelling ? 'Cancelling…' : 'Cancel Execution'}
               </button>
             )}
-            {isTerminal && (
+            {canEdit && isTerminal && (
               <button
                 onClick={handleRerun}
                 disabled={rerunning}

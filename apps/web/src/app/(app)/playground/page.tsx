@@ -4,6 +4,7 @@ import { api, WorkflowExecution, ApprovalRequest, WorkflowForm } from '@/lib/api
 import { PageHeader, Badge, statusVariant, statusLabel } from '@/components/ui';
 import FormRenderer from '@/app/(app)/forms/_components/FormRenderer';
 import { Play, RotateCcw, CheckCircle2, Loader2, ChevronRight } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 // ── types ────────────────────────────────────────────────────────────────────
 
@@ -25,6 +26,7 @@ const POLL_MS = 2000;
 // ── component ────────────────────────────────────────────────────────────────
 
 export default function PlaygroundPage() {
+  const { canEdit } = useAuth();
   const [phase, setPhase] = useState<Phase>('idle');
   const [error, setError] = useState<string | null>(null);
   const [execution, setExecution] = useState<WorkflowExecution | null>(null);
@@ -166,6 +168,18 @@ export default function PlaygroundPage() {
   // ── render ───────────────────────────────────────────────────────────────────
 
   const isRunning = ['seeding', 'starting', 'polling', 'submitting'].includes(phase);
+
+  if (!canEdit) {
+    return (
+      <div className="max-w-2xl space-y-6">
+        <PageHeader title="Workflow Playground" subtitle="Run the sample User Onboarding workflow step by step to see how form nodes, approvals, and execution flow work." />
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center space-y-2">
+          <p className="text-sm font-medium text-amber-800">Editor or Admin role required</p>
+          <p className="text-xs text-amber-700">The Playground creates and executes workflows. Contact an Admin to get the Editor role.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl space-y-6">

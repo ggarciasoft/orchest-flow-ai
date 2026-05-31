@@ -48,7 +48,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [auth, setAuth] = useState<AuthState>(defaultState);
 
   useEffect(() => {
+    // Read immediately on mount (handles page refresh while already authenticated).
     setAuth(readAuthState());
+
+    // Re-read whenever setToken / clearToken fires (handles login → navigate without full reload).
+    const handleAuthChanged = () => setAuth(readAuthState());
+    window.addEventListener('orchest:auth-changed', handleAuthChanged);
+    return () => window.removeEventListener('orchest:auth-changed', handleAuthChanged);
   }, []);
 
   return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;

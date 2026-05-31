@@ -40,14 +40,14 @@ const NAV_BASE: NavItem[] = [
 ];
 
 // Settings sub-routes with visibility rules.
-// minRole: 'admin' → Admin only; 'editor' → Editor or Admin; undefined → all roles.
-const SETTINGS_CHILDREN: (NavChild & { minRole?: 'admin' | 'editor' })[] = [
-  { href: '/settings/tenant',       label: 'Tenant',        icon: Building2,         minRole: 'admin'  },
-  { href: '/settings/team',         label: 'Team',          icon: Users,             minRole: 'admin'  },
-  { href: '/settings/providers',    label: 'AI Providers',  icon: Cpu,               minRole: 'admin'  },
-  { href: '/settings/integrations', label: 'Integrations',  icon: Plug,              minRole: 'admin'  },
-  { href: '/settings/secrets',      label: 'Secrets',       icon: KeyRound,          minRole: 'admin'  },
-  { href: '/settings/presets',      label: 'Presets',       icon: BookOpen,          minRole: 'editor' },
+// minRole: 'Admin' → Admin only; 'Editor' → Editor or Admin; undefined → all roles.
+const SETTINGS_CHILDREN: (NavChild & { minRole?: UserRole })[] = [
+  { href: '/settings/tenant',       label: 'Tenant',        icon: Building2,         minRole: 'Admin'  },
+  { href: '/settings/team',         label: 'Team',          icon: Users,             minRole: 'Admin'  },
+  { href: '/settings/providers',    label: 'AI Providers',  icon: Cpu,               minRole: 'Admin'  },
+  { href: '/settings/integrations', label: 'Integrations',  icon: Plug,              minRole: 'Admin'  },
+  { href: '/settings/secrets',      label: 'Secrets',       icon: KeyRound,          minRole: 'Admin'  },
+  { href: '/settings/presets',      label: 'Presets',       icon: BookOpen,          minRole: 'Editor' },
   { href: '/settings/config',       label: 'Configuration', icon: SlidersHorizontal                   },
   { href: '/settings/ai-history',   label: 'AI History',    icon: MessageSquare                       },
 ];
@@ -71,8 +71,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Build the settings nav children visible to this role
   const settingsChildren = useMemo<NavChild[]>(() => {
     return SETTINGS_CHILDREN.filter(c => {
-      if (c.minRole === 'admin')  return auth.isAdmin;
-      if (c.minRole === 'editor') return auth.canEdit;
+      if (c.minRole === 'Admin')  return auth.isAdmin;
+      if (c.minRole === 'Editor') return auth.canEdit;
       return true;
     });
   }, [auth.isAdmin, auth.canEdit]);

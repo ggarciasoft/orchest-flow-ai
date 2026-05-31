@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { PageHeader, Badge, statusVariant, statusLabel } from '@/components/ui';
 import FormRenderer from '@/app/(app)/forms/_components/FormRenderer';
 import ApprovalCommentThread from '../_components/ApprovalCommentThread';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * ApprovalDetailPage — shows full context for a single approval request.
@@ -16,6 +17,7 @@ import ApprovalCommentThread from '../_components/ApprovalCommentThread';
  * - For human-approval nodes: shows approve/reject with optional comment.
  */
 export default function ApprovalDetailPage() {
+  const { isApprover } = useAuth();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const qc = useQueryClient();
@@ -165,13 +167,17 @@ export default function ApprovalDetailPage() {
             <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2">{submitError}</p>
           )}
           <div className="pt-2 border-t border-slate-100 flex justify-end">
-            <button
-              onClick={() => submitForm.mutate()}
-              disabled={submitForm.isPending}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-6 py-2.5 rounded-lg"
-            >
-              {submitForm.isPending ? 'Submitting…' : 'Submit Form'}
-            </button>
+            {isApprover ? (
+              <button
+                onClick={() => submitForm.mutate()}
+                disabled={submitForm.isPending}
+                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-6 py-2.5 rounded-lg"
+              >
+                {submitForm.isPending ? 'Submitting…' : 'Submit Form'}
+              </button>
+            ) : (
+              <p className="text-xs text-slate-400 italic">You need the Approver or Admin role to submit this form.</p>
+            )}
           </div>
         </div>
       )}
@@ -240,29 +246,35 @@ export default function ApprovalDetailPage() {
           {approval.status?.toLowerCase() === 'pending' && (
             <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
               <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wide">Decision</h3>
-              <textarea
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                placeholder="Add a comment (optional)…"
-                rows={3}
-                value={comment}
-                onChange={e => setComment(e.target.value)}
-              />
-              <div className="flex gap-3">
-                <button
-                  onClick={() => approve.mutate()}
-                  disabled={approve.isPending}
-                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2.5 rounded-lg"
-                >
-                  <CheckCircle size={16} /> Approve
-                </button>
-                <button
-                  onClick={() => reject.mutate()}
-                  disabled={reject.isPending}
-                  className="flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2.5 rounded-lg"
-                >
-                  <XCircle size={16} /> Reject
-                </button>
-              </div>
+              {isApprover ? (
+                <>
+                  <textarea
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    placeholder="Add a comment (optional)…"
+                    rows={3}
+                    value={comment}
+                    onChange={e => setComment(e.target.value)}
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => approve.mutate()}
+                      disabled={approve.isPending}
+                      className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2.5 rounded-lg"
+                    >
+                      <CheckCircle size={16} /> Approve
+                    </button>
+                    <button
+                      onClick={() => reject.mutate()}
+                      disabled={reject.isPending}
+                      className="flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2.5 rounded-lg"
+                    >
+                      <XCircle size={16} /> Reject
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-slate-400 italic">You need the Approver or Admin role to act on this request.</p>
+              )}
             </div>
           )}
         </>

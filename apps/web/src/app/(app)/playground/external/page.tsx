@@ -6,6 +6,7 @@ import {
   Play, RotateCcw, Copy, Check, Loader2, ChevronRight,
   Terminal, Send, Database, CheckCircle2, AlertCircle,
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 // ── constants ────────────────────────────────────────────────────────────────
 
@@ -242,6 +243,7 @@ function SetupForm({ onSave, onSkip, initialConfig }: SetupFormProps) {
 // ── main component ────────────────────────────────────────────────────────────
 
 export default function ExternalPlaygroundPage() {
+  const { canEdit } = useAuth();
   const [phase, setPhase]               = useState<Phase>('setup');
   const [error, setError]               = useState<string | null>(null);
   const [execution, setExecution]       = useState<WorkflowExecution | null>(null);
@@ -426,6 +428,18 @@ export default function ExternalPlaygroundPage() {
     : '';
 
   // ── render ───────────────────────────────────────────────────────────────────
+
+  if (!canEdit) {
+    return (
+      <div className="max-w-3xl space-y-6">
+        <PageHeader title="External Data Intake" subtitle="Walk through a workflow that pauses and waits for external systems to POST data — no forms, purely API-driven." />
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center space-y-2">
+          <p className="text-sm font-medium text-amber-800">Editor or Admin role required</p>
+          <p className="text-xs text-amber-700">The Playground creates and executes workflows. Contact an Admin to get the Editor role.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl space-y-6">

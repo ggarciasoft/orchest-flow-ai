@@ -36,8 +36,8 @@ OrchestFlowAI is a modular platform that lets teams build AI-driven business wor
 | Node Library | ✅ **21 nodes** across 6 categories |
 | Unit Tests | ✅ **299/299 backend** · **59/59 frontend** passing |
 | Database | ⚠️ In-memory stubs (PostgreSQL not yet wired) |
-| Designer Save | ⚠️ Not yet implemented — see `BACKLOG.md` |
-| Auth guard (frontend) | ⚠️ Partial — login works, route guard pending |
+| Auth guard (frontend) | ✅ Complete — RBAC enforced across all pages and actions |
+| Role-gated UI | ✅ Viewers/Approvers cannot trigger write actions anywhere in the UI |
 
 > See [`BACKLOG.md`](./BACKLOG.md) for the full list of known gaps and next steps.
 

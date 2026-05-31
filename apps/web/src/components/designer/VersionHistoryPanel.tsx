@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, WorkflowVersionSummary } from '@/lib/api';
 import { X, CheckCircle2, Clock, Eye, RotateCcw } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Props {
   workflowId: string;
@@ -19,6 +20,7 @@ interface Props {
  * Supports viewing a version's definition on canvas and restoring (activating) old versions.
  */
 export function VersionHistoryPanel({ workflowId, currentVersionNumber, onClose, onLoadVersion, onActivated }: Props) {
+  const { canEdit } = useAuth();
   const queryClient = useQueryClient();
   const [loadingVersionId, setLoadingVersionId] = useState<string | null>(null);
 
@@ -99,8 +101,8 @@ export function VersionHistoryPanel({ workflowId, currentVersionNumber, onClose,
                     <Eye size={11} />
                     {isLoading_ ? '…' : 'Load'}
                   </button>
-                  {/* Activate */}
-                  {!v.isActive && (
+                  {/* Activate — Editors/Admins only */}
+                  {canEdit && !v.isActive && (
                     <button
                       className="flex items-center gap-1 text-xs px-2 py-1 rounded border text-emerald-700 hover:bg-emerald-50 disabled:opacity-40"
                       onClick={() => activateMutation.mutate(v.id)}

@@ -5,6 +5,7 @@ import { api, WorkflowConfigEntry } from '@/lib/api';
 import { Plus, Trash2, Edit, X, Check, ChevronDown, ChevronUp, AlertCircle, Database } from 'lucide-react';
 import { PageHeader } from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 type ValueType = 'string' | 'number' | 'boolean' | 'json' | 'datetime';
 
@@ -21,6 +22,7 @@ const TYPE_COLORS: Record<ValueType, string> = {
  * Persistent key-value store that workflows can read and write using config nodes.
  */
 export default function ConfigurationPage() {
+  const { canEdit } = useAuth();
   const queryClient = useQueryClient();
   const [showAddForm, setShowAddForm] = useState(false);
   const [newKey, setNewKey] = useState('');
@@ -149,8 +151,8 @@ export default function ConfigurationPage() {
         </div>
       </div>
 
-      {/* Add entry form */}
-      <div className="bg-white border border-slate-200 rounded-xl">
+      {/* Add entry form — only visible to Editors and Admins */}
+      {canEdit && <div className="bg-white border border-slate-200 rounded-xl">
         <button
           onClick={() => setShowAddForm(v => !v)}
           className="w-full px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
@@ -249,7 +251,7 @@ export default function ConfigurationPage() {
             </form>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Entries table */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
@@ -280,7 +282,7 @@ export default function ConfigurationPage() {
                   <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Value</th>
                   <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
                   <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Last Updated</th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                  {canEdit && <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -359,7 +361,7 @@ export default function ConfigurationPage() {
                             {new Date(entry.updatedAt).toLocaleString()}
                           </td>
                           <td className="px-5 py-3 whitespace-nowrap">
-                            {isDeleting ? (
+                            {canEdit && (isDeleting ? (
                               <div className="flex items-center gap-2">
                                 <span className="text-xs text-red-600">Delete?</span>
                                 <button
@@ -393,7 +395,7 @@ export default function ConfigurationPage() {
                                   <Trash2 size={16} />
                                 </button>
                               </div>
-                            )}
+                            ))}
                           </td>
                         </>
                       )}

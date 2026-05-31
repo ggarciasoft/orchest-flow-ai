@@ -12,18 +12,22 @@ export function getToken(): string | null {
 
 /**
  * Persists the JWT auth token to localStorage after a successful login.
+ * Dispatches a custom event so AuthProvider re-reads state without a full page reload.
  *
  * @param token - The JWT token returned by the auth API
  */
 export function setToken(token: string) {
   localStorage.setItem('OrchestFlowAI_token', token);
+  window.dispatchEvent(new Event('orchest:auth-changed'));
 }
 
 /**
  * Removes the JWT auth token from localStorage, effectively logging the user out.
+ * Dispatches a custom event so AuthProvider clears its state immediately.
  */
 export function clearToken() {
   localStorage.removeItem('OrchestFlowAI_token');
+  window.dispatchEvent(new Event('orchest:auth-changed'));
 }
 
 /**

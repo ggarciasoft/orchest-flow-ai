@@ -4,6 +4,7 @@ import type { NodeDescriptor, GmailCredentialSummary } from '@/lib/api';
 import { X, Trash2, Plus, ExternalLink } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { api, PresetResponse } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Props { node: Node; catalog: NodeDescriptor[]; onClose: () => void; onDelete: () => void; onConfigChange: (config: Record<string, unknown>) => void; }
 
@@ -18,6 +19,7 @@ interface Props { node: Node; catalog: NodeDescriptor[]; onClose: () => void; on
  * @param onConfigChange - Called with updated config when the user changes a field.
  */
 export function NodeConfigDrawer({ node, catalog, onClose, onDelete, onConfigChange }: Props) {
+  const { canEdit } = useAuth();
   const data = node.data as { descriptor?: NodeDescriptor; config?: Record<string, unknown> };
   const descriptor = catalog.find(d => d.type === data.descriptor?.type);
   const config = data.config ?? {};
@@ -300,15 +302,17 @@ export function NodeConfigDrawer({ node, catalog, onClose, onDelete, onConfigCha
         )}
       </div>
 
-      {/* Delete button */}
-      <div className="p-4 border-t shrink-0">
-        <button
-          onClick={onDelete}
-          className="w-full flex items-center justify-center gap-2 text-sm text-red-600 hover:bg-red-50 border border-red-200 rounded-lg py-2 transition-colors"
-        >
-          <Trash2 size={14} /> Delete Node
-        </button>
-      </div>
+      {/* Delete button — Editors and Admins only */}
+      {canEdit && (
+        <div className="p-4 border-t shrink-0">
+          <button
+            onClick={onDelete}
+            className="w-full flex items-center justify-center gap-2 text-sm text-red-600 hover:bg-red-50 border border-red-200 rounded-lg py-2 transition-colors"
+          >
+            <Trash2 size={14} /> Delete Node
+          </button>
+        </div>
+      )}
     </div>
   );
 }

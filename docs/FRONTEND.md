@@ -83,21 +83,23 @@ const nav: NavItem[] = [
     label: 'Settings',
     icon: Settings,
     children: [
-      // Admin-only (minRole: 'admin')
-      { href: '/settings/tenant',       label: 'Tenant',        icon: Building2  },
-      { href: '/settings/team',         label: 'Team',          icon: Users      },
-      { href: '/settings/providers',    label: 'AI Providers',  icon: Cpu        },
-      { href: '/settings/integrations', label: 'Integrations',  icon: Plug       },
-      { href: '/settings/secrets',      label: 'Secrets',       icon: KeyRound   },
-      // Editor+ (minRole: 'editor')
-      { href: '/settings/presets',      label: 'Presets',       icon: BookOpen   },
+      // Admin-only (minRole: 'Admin')
+      { href: '/settings/tenant',       label: 'Tenant',        icon: Building2,         minRole: 'Admin'  },
+      { href: '/settings/team',         label: 'Team',          icon: Users,             minRole: 'Admin'  },
+      { href: '/settings/providers',    label: 'AI Providers',  icon: Cpu,               minRole: 'Admin'  },
+      { href: '/settings/integrations', label: 'Integrations',  icon: Plug,              minRole: 'Admin'  },
+      { href: '/settings/secrets',      label: 'Secrets',       icon: KeyRound,          minRole: 'Admin'  },
+      // Editor+ (minRole: 'Editor')
+      { href: '/settings/presets',      label: 'Presets',       icon: BookOpen,          minRole: 'Editor' },
       // All roles
       { href: '/settings/config',       label: 'Configuration', icon: SlidersHorizontal },
-      { href: '/settings/ai-history',   label: 'AI History',    icon: MessageSquare },
+      { href: '/settings/ai-history',   label: 'AI History',    icon: MessageSquare     },
     ],
   },
 ];
 ```
+
+The `minRole` property uses the same PascalCase values as the `UserRole` type (`'Admin' | 'Editor' | 'Approver' | 'Viewer'`). The filter maps `'Admin'` → `auth.isAdmin` and `'Editor'` → `auth.canEdit`.
 
 - Top-level items highlight in **indigo** when active.
 - Sub-items are **filtered by role** (via `AuthContext`) — admins see all settings; editors see a subset; viewers see only Configuration and AI History.
@@ -182,7 +184,8 @@ Each palette item shows:
 ### Execution Timeline
 - Per-node status, timestamps, input/output JSON, retry count.
 - Status badges use `statusLabel()` for human-readable text (e.g. `WaitingForApproval` → `"Waiting for Approval"`).
-- **Cancel Execution** button appears in the header when status is `Queued`, `Running`, or `Paused`. Opens `CancelExecutionModal` — an amber warning dialog showing workflow name/version and execution ID. Calls `POST /api/executions/{id}/cancel`.
+- **Cancel Execution** button appears in the header when status is `Queued`, `Running`, or `Paused` — visible to `canEdit` users only. Opens `CancelExecutionModal` — an amber warning dialog showing workflow name/version and execution ID. Calls `POST /api/executions/{id}/cancel`.
+- **Re-run** button appears for terminal executions (Completed/Failed/Cancelled) — visible to `canEdit` users only.
 - **Waiting for Approval banner** — when the execution is `Paused`, the detail page fetches the pending approval via `GET /api/approvals/by-execution/{id}`. If one exists, an amber clickable banner links directly to `/approvals/{id}`. The `WaitingForApproval` node row in the timeline also shows an inline "Review" link.
 
 ### Approval Inbox / Detail
@@ -194,10 +197,11 @@ The approval detail page (`/approvals/[id]`) behaves differently depending on th
 - Required-field validation runs client-side before submit.
 - Submit calls `POST /api/forms/{id}/submit` → resumes the workflow execution.
 - Shows a **"Form submission"** pill badge to distinguish from human-approval nodes.
+- **Submit Form** button is only rendered for `isApprover` users; others see a "Approver or Admin role required" notice.
 
 #### Human-approval nodes (no `_formId`)
 - Shows context payload fields (non-`_` keys).
-- **Approve** / **Reject** with optional comment textarea.
+- **Approve** / **Reject** with optional comment textarea — only rendered for `isApprover` users; others see a role notice.
 
 All badges use `statusLabel()` — `WaitingForApproval` displays as amber "Waiting for Approval", `Succeeded` as green, `Failed` as red, etc.
 
@@ -219,7 +223,7 @@ Cards linking to sub-sections. Cards are **filtered by role** — admins see all
 - **Integrations** (`/settings/integrations`) _(Admin only)_ — external service credentials (Gmail OAuth2). Same dropdown pattern.
 - **Secrets** (`/settings/secrets`) _(Admin only)_ — encrypted named vault; reference as `{{secret:name}}` in any node config.
 - **Node Presets** (`/settings/presets`) _(Editor+)_ — reusable named node config sets.
-- **Configuration** (`/settings/config`) _(All roles)_ — persistent workflow key-value store.
+- **Configuration** (`/settings/config`) _(All roles, read; Editor+ to add/edit/delete)_ — persistent workflow key-value store. Viewers see entries but the Add Entry form and Edit/Delete buttons are hidden.
 
 All admin-only settings pages are wrapped with `<AdminPageGuard>` — non-admins are redirected to `/settings`.
 
@@ -236,7 +240,7 @@ Read-only view of all AI chat sessions for the tenant.
 - **Status filter pills** — All / Running / Queued / Paused / Completed / Failed / Cancelled. Resets to page 1.
 - **Search** — debounced (350 ms) match against Correlation ID.
 - **Pagination** — 20 per page with accurate total.
-- **Cancel** icon on active rows (Queued/Running/Paused) — opens `CancelExecutionModal`.
+- **Cancel** icon on active rows (Queued/Running/Paused) — opens `CancelExecutionModal`. Only visible to `canEdit` users.
 - Auto-refreshes every 10 s.
 
 ### Forms Builder
@@ -275,7 +279,7 @@ Multi-step flow for new users:
 
 ### `AuthContext` (`src/contexts/AuthContext.tsx`)
 
-React Context providing the authenticated user's state, derived from the JWT in `localStorage`. Hydrated client-side on mount.
+React Context providing the authenticated user's state, derived from the JWT in `localStorage`. Populated client-side on mount and refreshed automatically whenever the token changes (login / logout).
 
 ```ts
 interface AuthState {
@@ -294,16 +298,26 @@ Usage in any component:
 const { isAdmin, canEdit, isApprover, role, displayName } = useAuth();
 ```
 
-`AuthProvider` is registered in `components/providers.tsx` and wraps the entire app.
+`AuthProvider` is registered in `components/providers.tsx` and wraps the entire app (root layout). Because it is mounted once for the whole session, `setToken` and `clearToken` in `lib/auth.ts` dispatch a custom `orchest:auth-changed` window event after writing to `localStorage`. `AuthProvider` listens for this event and calls `readAuthState()` immediately — so the sidebar role badge and all permission flags update the moment the user logs in or out, without a page refresh.
 
 ### Role-Gated UI
 
-| Guard | How |
-|-------|-----|
-| Admin-only pages | Wrapped with `<AdminPageGuard>` — redirects to `/settings` if not admin |
-| Sidebar nav filtering | `SETTINGS_CHILDREN` filtered in `layout.tsx` via `useMemo` |
-| Mutation buttons | Conditional render based on `canEdit` / `isAdmin` / `isApprover` |
-| Settings hub cards | Conditional render based on `isAdmin` / `canEdit` |
+The frontend mirrors the backend authorization policies so that Viewers and non-privileged roles never see actions they cannot perform.
+
+| Area | Guarded by | Requires |
+|------|-----------|----------|
+| Admin-only settings pages | `<AdminPageGuard>` (redirect to `/settings`) | `isAdmin` |
+| Sidebar settings sub-items | `SETTINGS_CHILDREN` filtered in `layout.tsx` | `isAdmin` / `canEdit` |
+| Settings hub cards | Conditional render | `isAdmin` / `canEdit` |
+| **Workflow Designer** — AI, Trigger, Save, Run, Undo/Redo, rename pencil, NodePalette | Conditional render | `canEdit` |
+| **Workflow Designer** — Node delete (keyboard, right-click, drawer button) | Guard + conditional render | `canEdit` |
+| **Version History** — Activate button | Conditional render | `canEdit` |
+| **Workflow Configuration** (`/settings/config`) — Add Entry form, Edit/Delete per row | Conditional render | `canEdit` |
+| **Executions list** — Cancel icon per active row | Conditional render | `canEdit` |
+| **Execution detail** — Cancel Execution, Re-run buttons | Conditional render | `canEdit` |
+| **Approval detail** — Submit Form (form approvals) | Conditional render / role notice | `isApprover` |
+| **Approval detail** — Approve / Reject (human approvals) | Conditional render / role notice | `isApprover` |
+| **Playground** (`/playground`, `/playground/external`) — entire interactive area | Permission notice shown instead | `canEdit` |
 
 ### `AdminPageGuard` (`src/components/AdminPageGuard.tsx`)
 
@@ -373,8 +387,8 @@ All server state flows through TanStack Query keyed on `[entity, params]`. The A
 
 ---
 
-### Workflow Playground (/playground)
-Demo/testing page for the full form-node execution flow.
+### Workflow Playground (/playground) _(Editor+ only)_
+Demo/testing page for the full form-node execution flow. Viewers and Approvers see a permission notice instead of the interactive playground.
 
 - **Start** button calls POST /api/playground/seed (idempotent) to set up the sample workflow, then triggers execution via POST /api/workflows/{id}/execute.
 - **Forms created** ? three form nodes are seeded: `pg-personal-info` (Full Name, Email, Date of Birth), `pg-employment` (Company, Job Title, Start Date), `pg-preferences` (Newsletter, Timezone, Notes). Forms are idempotent ? re-seeding reuses existing forms if their slug already exists.
@@ -383,8 +397,8 @@ Demo/testing page for the full form-node execution flow.
 - **Inline FormRenderer** � renders the paused form step; submits via POST /api/forms/{id}/submit and resumes polling for the next step.
 - **Completion screen** � shows all collected data from every step in a summary view once the workflow reaches system.end.
 - **Run Again** resets all state and allows restarting from scratch.
-### External Data Playground (/playground/external)
-Demo/testing page for the `system.data-checkpoint` node - purely API-driven, no form rendering.
+### External Data Playground (/playground/external) _(Editor+ only)_
+Demo/testing page for the `system.data-checkpoint` node — purely API-driven, no form rendering. Viewers and Approvers see a permission notice instead of the interactive playground.
 
 - **Setup screen** ? shown on first load; lets the user configure the two database nodes (Customer DB + Order DB) with connection string and SQL statement. Each section includes a copyable `CREATE TABLE` SQL snippet. "Skip DB setup" skips DB config entirely; "Save & Continue" validates and persists config for the seed call.
 - **Start** button calls POST /api/playground/seed-external with optional `{ customer: { connectionString, statement }, order: { connectionString, statement } }` body to seed a workflow with 2 data checkpoints and 2 DB-execute nodes, then starts execution.

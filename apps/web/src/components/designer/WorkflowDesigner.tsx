@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useHistory } from '@/hooks/useHistory';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Props {
   /** Workflow metadata (id, name, description). */
@@ -124,6 +125,7 @@ CustomNode.displayName = 'CustomNode';
  * @param initialDefinitionJson - Optional saved definition to restore on mount
  */
 export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson, activeVersionNumber }: Props) {
+  const { canEdit } = useAuth();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -259,8 +261,9 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
     setSelectedEdgeId(null);
   }, [historyRedo, setNodes, setEdges]);
 
-  /** Delete/Backspace removes the selected node or edge; Ctrl+Z/Y for undo/redo. Skips when typing in inputs. */
+  /** Delete/Backspace removes the selected node or edge; Ctrl+Z/Y for undo/redo. Skips when typing in inputs or when user lacks edit permission. */
   const onKeyDown = useCallback((evt: React.KeyboardEvent) => {
+    if (!canEdit) return;
     const tag = (evt.target as HTMLElement).tagName;
     const inInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
     if ((evt.ctrlKey || evt.metaKey) && evt.key === 'z' && !evt.shiftKey) {
@@ -278,7 +281,7 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
       if (selectedEdgeId) { deleteEdge(selectedEdgeId); return; }
       if (selected) { deleteNode(selected.id); }
     }
-  }, [selected, selectedEdgeId, deleteNode, deleteEdge, handleUndo, handleRedo]);
+  }, [canEdit, selected, selectedEdgeId, deleteNode, deleteEdge, handleUndo, handleRedo]);
 
   const onEdgeClick: EdgeMouseHandler = useCallback((_evt, edge) => {
     setSelectedId(null);
@@ -383,7 +386,7 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
 
   return (
     <div className="flex h-screen overflow-hidden" onKeyDown={onKeyDown} tabIndex={0} style={{ outline: 'none' }}>
-      <NodePalette catalog={nodeCatalog} onAddNode={addNode} />
+      {canEdit && <NodePalette catalog={nodeCatalog} onAddNode={addNode} />}
       <div className="flex-1 flex flex-col min-w-0">
         <div className="flex items-center justify-between px-5 py-3 border-b bg-white shrink-0">
           <div>
@@ -413,10 +416,12 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
               <div className="flex items-center gap-2">
                 <h2 className="font-semibold text-gray-900">{editName || workflow.name}</h2>
                 {canvasVersionNumber != null && (<span className="text-xs text-slate-500 border border-slate-200 rounded px-2 py-0.5 bg-slate-50">v{canvasVersionNumber}</span>)}
-                <button onClick={() => { setEditName(workflow.name); setEditDescription(workflow.description ?? ''); setEditingName(true); }}
-                  className="text-slate-300 hover:text-indigo-500 transition-colors" title="Rename workflow">
-                  <Pencil size={13} />
-                </button>
+                {canEdit && (
+                  <button onClick={() => { setEditName(workflow.name); setEditDescription(workflow.description ?? ''); setEditingName(true); }}
+                    className="text-slate-300 hover:text-indigo-500 transition-colors" title="Rename workflow">
+                    <Pencil size={13} />
+                  </button>
+                )}
               </div>
             )}
             {!editingName && (
@@ -427,27 +432,29 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
             )}
           </div>
           <div className="flex gap-2">
-            {/* Undo/Redo buttons */}
-            <button
-              className={`border text-sm px-2 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${
-                canUndo ? 'hover:bg-gray-50 text-gray-600' : 'opacity-30 cursor-not-allowed text-gray-400'
-              }`}
-              onClick={handleUndo}
-              disabled={!canUndo}
-              title="Undo (Ctrl+Z)"
-            >
-              <Undo2 size={14} />
-            </button>
-            <button
-              className={`border text-sm px-2 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${
-                canRedo ? 'hover:bg-gray-50 text-gray-600' : 'opacity-30 cursor-not-allowed text-gray-400'
-              }`}
-              onClick={handleRedo}
-              disabled={!canRedo}
-              title="Redo (Ctrl+Y)"
-            >
-              <Redo2 size={14} />
-            </button>
+            {/* Undo/Redo — only useful when the user can edit */}
+            {canEdit && <>
+              <button
+                className={`border text-sm px-2 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${
+                  canUndo ? 'hover:bg-gray-50 text-gray-600' : 'opacity-30 cursor-not-allowed text-gray-400'
+                }`}
+                onClick={handleUndo}
+                disabled={!canUndo}
+                title="Undo (Ctrl+Z)"
+              >
+                <Undo2 size={14} />
+              </button>
+              <button
+                className={`border text-sm px-2 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${
+                  canRedo ? 'hover:bg-gray-50 text-gray-600' : 'opacity-30 cursor-not-allowed text-gray-400'
+                }`}
+                onClick={handleRedo}
+                disabled={!canRedo}
+                title="Redo (Ctrl+Y)"
+              >
+                <Redo2 size={14} />
+              </button>
+            </>}
             <button
               className={`border text-sm px-2 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
                 showVersionHistory ? 'bg-slate-100 text-slate-800' : 'hover:bg-gray-50 text-gray-600'
@@ -457,43 +464,46 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
             >
               <History size={14} /> History
             </button>
-            <button
-              className={`border text-sm px-2 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
-                showAiAssist ? 'bg-purple-100 text-purple-800 border-purple-300' : 'hover:bg-gray-50 text-gray-600'
-              }`}
-              onClick={() => { setShowAiAssist(v => !v); setShowVersionHistory(false); setShowTrigger(false); }}
-              title="AI Workflow Assistant"
-            >
-              <Sparkles size={14} /> AI
-            </button>
-            <button
-              className={`border text-sm px-2 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
-                showTrigger ? 'bg-amber-100 text-amber-800 border-amber-300' : 'hover:bg-gray-50 text-gray-600'
-              }`}
-              onClick={() => { setShowTrigger(v => !v); setShowVersionHistory(false); setShowAiAssist(false); }}
-              title="Trigger settings"
-            >
-              <Zap size={14} /> Trigger
-            </button>
-            <button
-              className={`border text-sm px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
-                saving ? 'opacity-50 cursor-not-allowed text-gray-400' : 'hover:bg-gray-50 text-gray-600'
-              }`}
-              onClick={handleSave}
-              disabled={saving}
-            >
-              {saving ? <span className="animate-spin text-xs">⏳</span> : <Save size={14} />}
-              {saving ? 'Saving…' : 'Save'}
-            </button>
-            <button
-              className={`text-sm px-4 py-1.5 rounded-lg flex items-center gap-1.5 font-medium ${
-                !canvasVersionNumber ? 'bg-gray-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'
-              } text-white`}
-              onClick={handleExecute}
-              disabled={!canvasVersionNumber}
-            >
-              <Play size={14} />Run
-            </button>
+            {/* Edit-only actions — hidden for Viewers */}
+            {canEdit && <>
+              <button
+                className={`border text-sm px-2 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
+                  showAiAssist ? 'bg-purple-100 text-purple-800 border-purple-300' : 'hover:bg-gray-50 text-gray-600'
+                }`}
+                onClick={() => { setShowAiAssist(v => !v); setShowVersionHistory(false); setShowTrigger(false); }}
+                title="AI Workflow Assistant"
+              >
+                <Sparkles size={14} /> AI
+              </button>
+              <button
+                className={`border text-sm px-2 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
+                  showTrigger ? 'bg-amber-100 text-amber-800 border-amber-300' : 'hover:bg-gray-50 text-gray-600'
+                }`}
+                onClick={() => { setShowTrigger(v => !v); setShowVersionHistory(false); setShowAiAssist(false); }}
+                title="Trigger settings"
+              >
+                <Zap size={14} /> Trigger
+              </button>
+              <button
+                className={`border text-sm px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
+                  saving ? 'opacity-50 cursor-not-allowed text-gray-400' : 'hover:bg-gray-50 text-gray-600'
+                }`}
+                onClick={handleSave}
+                disabled={saving}
+              >
+                {saving ? <span className="animate-spin text-xs">⏳</span> : <Save size={14} />}
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+              <button
+                className={`text-sm px-4 py-1.5 rounded-lg flex items-center gap-1.5 font-medium ${
+                  !canvasVersionNumber ? 'bg-gray-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'
+                } text-white`}
+                onClick={handleExecute}
+                disabled={!canvasVersionNumber}
+              >
+                <Play size={14} />Run
+              </button>
+            </>}
           </div>
         </div>
         <div className="flex-1" onClick={() => setContextMenu(null)}>
@@ -601,8 +611,8 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
         <RunWorkflowModal workflow={workflow} onClose={() => setShowRunModal(false)} />
       )}
 
-      {/* Right-click context menu — nodes */}
-      {contextMenu && (
+      {/* Right-click context menu — nodes (Editors/Admins only) */}
+      {canEdit && contextMenu && (
         <div
           className="fixed z-50 bg-white border rounded-lg shadow-lg py-1 min-w-[140px]"
           style={{ top: contextMenu.y, left: contextMenu.x }}
@@ -617,8 +627,8 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
         </div>
       )}
 
-      {/* Right-click context menu — edges */}
-      {edgeContextMenu && (
+      {/* Right-click context menu — edges (Editors/Admins only) */}
+      {canEdit && edgeContextMenu && (
         <div
           className="fixed z-50 bg-white border rounded-lg shadow-lg py-1 min-w-[140px]"
           style={{ top: edgeContextMenu.y, left: edgeContextMenu.x }}
