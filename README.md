@@ -1,10 +1,10 @@
 # OrchestFlowAI
 
 <!-- Status & Build -->
-[![Status](https://img.shields.io/badge/status-active%20development-yellow?style=flat-square)](https://github.com/ggarciasoft/OrchestFlowAI)
+[![Status](https://img.shields.io/badge/status-active%20development-yellow?style=flat-square)](https://github.com/ggarciasoft/orchest-flow-ai)
 [![Backend Tests](https://img.shields.io/badge/backend%20tests-316%20passing-brightgreen?style=flat-square&logo=dotnet)](./tests/OrchestFlowAI.Tests)
 [![Frontend Tests](https://img.shields.io/badge/frontend%20tests-62%20passing-brightgreen?style=flat-square&logo=jest)](./apps/web)
-[![Last Commit](https://img.shields.io/github/last-commit/ggarciasoft/OrchestFlowAI?style=flat-square)](https://github.com/ggarciasoft/OrchestFlowAI/commits/main)
+[![Last Commit](https://img.shields.io/github/last-commit/ggarciasoft/orchest-flow-ai?style=flat-square)](https://github.com/ggarciasoft/orchest-flow-ai/commits/main)
 
 <!-- Stack -->
 [![.NET](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com)
@@ -15,12 +15,15 @@
 <!-- Project Stats -->
 [![Nodes](https://img.shields.io/badge/nodes-21%20built--in-blue?style=flat-square)](./docs/NODES.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green?style=flat-square)](./LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/ggarciasoft/orchest-flow-ai?style=flat-square)](https://github.com/ggarciasoft/orchest-flow-ai/stargazers)
 
 <!-- TODO: replace static test badges with dynamic CI badges once GitHub Actions is configured -->
 
-> Open-source enterprise AI workflow platform for orchestrating agents, tools, human approvals, documents, and business automation.
+> Open-source, self-hosted enterprise AI workflow platform for orchestrating agents, tools, human approvals, documents, and business automation.
 
-OrchestFlowAI is a modular platform that lets teams build AI-driven business workflows using reusable nodes. Workflows are stored as **data**, executed by a backend **engine**, and surfaced through a **visual designer**.
+**GitHub:** https://github.com/ggarciasoft/orchest-flow-ai
+
+OrchestFlowAI is a modular platform that lets teams build AI-driven business workflows using reusable nodes. Workflows are stored as **data**, executed by a backend **engine**, and surfaced through a **visual designer**. You deploy it yourself — no vendor lock-in, no subscription, no data leaving your infrastructure.
 
 ---
 
@@ -143,7 +146,8 @@ Full catalog with inputs/outputs/config: [`docs/NODES.md`](./docs/NODES.md)
 ```
 OrchestFlowAI/
 ├── apps/
-│   └── web/                    # Next.js frontend (designer, pages, auth)
+│   ├── web/                    # Next.js full app (designer, pages, auth)
+│   └── marketing/              # Static marketing site (Next.js, output: export)
 ├── services/
 │   ├── OrchestFlowAI.Api/          # REST API (.NET 9)
 │   ├── OrchestFlowAI.Worker/       # Background workflow executor
@@ -201,7 +205,7 @@ OrchestFlowAI/
 
 ### Option A — Local dev (no Docker, in-memory DB)
 ```bash
-git clone https://github.com/ggarciasoft/OrchestFlowAI.git
+git clone https://github.com/ggarciasoft/orchest-flow-ai.git
 cd OrchestFlowAI
 
 # Backend API (runs at http://localhost:5080 — Swagger at /swagger)
@@ -242,8 +246,14 @@ cd apps/web && npm test
 
 ---
 
+## 🤝 Contributing
+
+Contributions are welcome. Please open an issue or pull request on [GitHub](https://github.com/ggarciasoft/orchest-flow-ai). See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for guidelines.
+
+---
+
 ## 📜 License
 
-TBD (suggested: Apache 2.0 for OSS-friendly enterprise use).
+[Apache 2.0](./LICENSE) — free to use, modify, and distribute, including commercially.
 
 

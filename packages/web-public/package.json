@@ -1,0 +1,24 @@
+{
+  "name": "@orchest-flow-ai/web-public",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./pages/*": "./src/pages/*.tsx",
+    "./components/*": "./src/components/*.tsx",
+    "./content/*": "./src/content/*.ts"
+  },
+  "peerDependencies": {
+    "lucide-react": ">=1",
+    "next": ">=16",
+    "react": ">=19",
+    "react-dom": ">=19",
+    "react-markdown": ">=10",
+    "remark-gfm": ">=4"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "typescript": "^5"
+  }
+}

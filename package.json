@@ -1,0 +1,11 @@
+{
+  "name": "orchest-flow-ai",
+  "private": true,
+  "scripts": {
+    "dev:marketing":   "pnpm --filter marketing dev",
+    "dev:app":         "pnpm --filter web dev",
+    "build:marketing": "pnpm --filter marketing build",
+    "build:app":       "pnpm --filter web build",
+    "build:all":       "pnpm --filter marketing build && pnpm --filter web build"
+  }
+}
