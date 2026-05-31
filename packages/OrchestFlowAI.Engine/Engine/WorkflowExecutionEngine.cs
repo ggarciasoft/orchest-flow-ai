@@ -237,12 +237,12 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
                             string.Join(",", iterOutputs.Keys.Select(k => k.Split('-')[0])),
                             string.Join(",", iterInputs.Keys));
                         var iterConfig = iterNode.Config.ToDictionary(kv => kv.Key, kv => (object?)kv.Value);
-                        var iterCtx = BuildContext(executionId, execution, iterInputs, iterConfig, iterOutputs, inputs, ++step, scope.ServiceProvider, ct);
 
                         // Record each loop body node execution in the DB so it appears in the timeline
-                        var iterNodeExec = NodeExecution.Create(executionId, iterNode.Id, iterNode.Type, step);
+                        var iterNodeExec = NodeExecution.Create(executionId, iterNode.Id, iterNode.Type, ++step);
                         iterNodeExec.Start(JsonSerializer.Serialize(iterInputs));
                         await execRepo.CreateNodeExecutionAsync(iterNodeExec, ct);
+                        var iterCtx = BuildContext(executionId, execution, iterInputs, iterConfig, iterOutputs, inputs, step, scope.ServiceProvider, ct, iterNodeExec.Id);
                         await _notifier.NotifyNodeStarted(executionId, iterNodeExec.Id, iterNode.Type, ct);
 
                         NodeExecutionResult iterResult;
@@ -250,10 +250,29 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
                         catch (Exception ex)
                         {
                             _logger.LogWarning(ex, "ForEach body node {NodeType} threw on item {Idx}", iterNode.Type, idx);
-                            iterNodeExec.Fail(ex.Message);
+                            iterResult = SDK.Models.NodeExecutionResult.Failed(ex.Message);
+                        }
+
+                        // Retry loop for body nodes — same policy as the main path
+                        while (iterResult.Status == SDK.Models.NodeExecutionStatus.Failed
+                               && iterNodeExec.AttemptNumber < retryPolicy.MaxAttempts)
+                        {
+                            var iterDelay = retryPolicy.GetDelay(iterNodeExec.AttemptNumber);
+                            _logger.LogWarning(
+                                "ForEach body node {NodeType} failed (attempt {Attempt}/{Max}). Retrying in {DelayMs}ms. Item={Idx}",
+                                iterNode.Type, iterNodeExec.AttemptNumber, retryPolicy.MaxAttempts, iterDelay.TotalMilliseconds, idx);
+                            iterNodeExec.IncrementAttempt();
                             await execRepo.UpdateNodeExecutionAsync(iterNodeExec, ct);
-                            await _notifier.NotifyNodeFailed(executionId, iterNodeExec.Id, iterNode.Type, ex.Message, ct);
-                            break;
+                            await Task.Delay(iterDelay, ct);
+                            iterNodeExec.Start(iterNodeExec.InputJson);
+                            await execRepo.UpdateNodeExecutionAsync(iterNodeExec, ct);
+                            iterCtx = BuildContext(executionId, execution, iterInputs, iterConfig, iterOutputs, inputs, step, scope.ServiceProvider, ct, iterNodeExec.Id);
+                            try { iterResult = await iterNodeImpl.ExecuteAsync(iterCtx, ct); }
+                            catch (Exception retryEx)
+                            {
+                                _logger.LogWarning(retryEx, "ForEach body node {NodeType} threw on retry, item {Idx}", iterNode.Type, idx);
+                                iterResult = SDK.Models.NodeExecutionResult.Failed(retryEx.Message);
+                            }
                         }
 
                         if (iterResult.Status == SDK.Models.NodeExecutionStatus.Succeeded)
@@ -269,7 +288,11 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
                             iterNodeExec.Fail(iterResult.ErrorMessage ?? "error");
                             await execRepo.UpdateNodeExecutionAsync(iterNodeExec, ct);
                             await _notifier.NotifyNodeFailed(executionId, iterNodeExec.Id, iterNode.Type, iterResult.ErrorMessage ?? "error", ct);
-                            break;
+                            // Propagate body failure to the workflow execution — same behaviour as the main path
+                            execution.Fail(iterResult.ErrorMessage ?? "ForEach body node failed");
+                            await execRepo.UpdateExecutionAsync(execution, ct);
+                            await _notifier.NotifyExecutionCompleted(executionId, "Failed", ct);
+                            return;
                         }
 
                         iterNode = ResolveNextNode(iterNode.Id, def.Edges, nodeMap,

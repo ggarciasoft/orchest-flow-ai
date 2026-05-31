@@ -1,22 +1,27 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { isAuthenticated, clearToken, decodeJwt, getToken } from '@/lib/auth';
+import { isAuthenticated, clearToken, UserRole } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard, GitBranch, Play, CheckSquare,
-  FileText, Settings, LogOut, KeyRound, ClipboardList, Cpu, Plug, Building2, FlaskConical, Database, MessageSquare, SlidersHorizontal
+  FileText, Settings, LogOut, KeyRound, ClipboardList, Cpu, Plug, Building2,
+  FlaskConical, Database, MessageSquare, SlidersHorizontal, BookOpen, Users,
 } from 'lucide-react';
 
-type NavItem = {
-  href: string;
-  label: string;
-  icon: React.ElementType;
-  children?: { href: string; label: string; icon: React.ElementType }[];
+type NavChild = { href: string; label: string; icon: React.ElementType };
+type NavItem  = { href: string; label: string; icon: React.ElementType; children?: NavChild[] };
+
+const ROLE_BADGE: Record<UserRole, string> = {
+  Admin:    'bg-violet-100 text-violet-700',
+  Editor:   'bg-indigo-100 text-indigo-700',
+  Approver: 'bg-emerald-100 text-emerald-700',
+  Viewer:   'bg-slate-100   text-slate-600',
 };
 
-const nav: NavItem[] = [
+const NAV_BASE: NavItem[] = [
   { href: '/dashboard',  label: 'Dashboard',  icon: LayoutDashboard },
   { href: '/workflows',  label: 'Workflows',   icon: GitBranch },
   { href: '/forms',      label: 'Forms',       icon: ClipboardList },
@@ -28,51 +33,54 @@ const nav: NavItem[] = [
     label: 'Playground',
     icon: FlaskConical,
     children: [
-      { href: '/playground',          label: 'Form Playground',     icon: Play },
-      { href: '/playground/external', label: 'External Data',       icon: Database },
-    ],
-  },
-  {
-    href: '/settings',
-    label: 'Settings',
-    icon: Settings,
-    children: [
-      { href: '/settings/tenant',        label: 'Tenant',        icon: Building2 },
-      { href: '/settings/providers',     label: 'AI Providers',  icon: Cpu },
-      { href: '/settings/integrations',  label: 'Integrations',  icon: Plug },
-      { href: '/settings/secrets',       label: 'Secrets',       icon: KeyRound },
-      { href: '/settings/config',        label: 'Configuration', icon: SlidersHorizontal },
-      { href: '/settings/ai-history',    label: 'AI History',    icon: MessageSquare },
+      { href: '/playground',          label: 'Form Playground', icon: Play },
+      { href: '/playground/external', label: 'External Data',   icon: Database },
     ],
   },
 ];
 
+// Settings sub-routes with visibility rules.
+// minRole: 'admin' → Admin only; 'editor' → Editor or Admin; undefined → all roles.
+const SETTINGS_CHILDREN: (NavChild & { minRole?: 'admin' | 'editor' })[] = [
+  { href: '/settings/tenant',       label: 'Tenant',        icon: Building2,         minRole: 'admin'  },
+  { href: '/settings/team',         label: 'Team',          icon: Users,             minRole: 'admin'  },
+  { href: '/settings/providers',    label: 'AI Providers',  icon: Cpu,               minRole: 'admin'  },
+  { href: '/settings/integrations', label: 'Integrations',  icon: Plug,              minRole: 'admin'  },
+  { href: '/settings/secrets',      label: 'Secrets',       icon: KeyRound,          minRole: 'admin'  },
+  { href: '/settings/presets',      label: 'Presets',       icon: BookOpen,          minRole: 'editor' },
+  { href: '/settings/config',       label: 'Configuration', icon: SlidersHorizontal                   },
+  { href: '/settings/ai-history',   label: 'AI History',    icon: MessageSquare                       },
+];
+
 /**
  * AppLayout — the shell for all authenticated app pages.
- * Renders the sidebar nav and main content area.
- * Redirects to /login if no JWT token is present.
+ * Handles auth guard, sidebar navigation (filtered by role), and user/role display.
  */
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
+  const router   = useRouter();
+  const auth     = useAuth();
 
-  // Decode current user from JWT for display in sidebar (client-only to avoid hydration mismatch)
-  const [currentUser, setCurrentUser] = useState<{ displayName: string; email: string } | null>(null);
-
-  // Auth guard + user decode — runs only on the client after mount
+  // Auth guard — redirect to login when not authenticated
   useEffect(() => {
     if (!isAuthenticated()) {
       router.replace('/login');
-      return;
-    }
-    const payload = decodeJwt(getToken() ?? '');
-    if (payload) {
-      setCurrentUser({
-        displayName: (payload['display_name'] as string) ?? (payload['email'] as string) ?? 'User',
-        email: (payload['email'] as string) ?? '',
-      });
     }
   }, [router]);
+
+  // Build the settings nav children visible to this role
+  const settingsChildren = useMemo<NavChild[]>(() => {
+    return SETTINGS_CHILDREN.filter(c => {
+      if (c.minRole === 'admin')  return auth.isAdmin;
+      if (c.minRole === 'editor') return auth.canEdit;
+      return true;
+    });
+  }, [auth.isAdmin, auth.canEdit]);
+
+  const nav: NavItem[] = useMemo(() => [
+    ...NAV_BASE,
+    { href: '/settings', label: 'Settings', icon: Settings, children: settingsChildren },
+  ], [settingsChildren]);
 
   return (
     <div className="flex h-screen bg-[#f8fafc]">
@@ -98,7 +106,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                     active || childActive
                       ? 'bg-indigo-50 text-indigo-700 font-medium'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
                   )}
                 >
                   <Icon size={16} />
@@ -110,7 +118,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     {children.map(({ href: chref, label: clabel, icon: CIcon }) => {
                       const cActive = pathname === chref ||
                         (pathname.startsWith(chref + '/') &&
-                         !children.some(sibling => sibling.href !== chref && pathname.startsWith(sibling.href)));
+                          !children.some(sibling => sibling.href !== chref && pathname.startsWith(sibling.href)));
                       return (
                         <Link
                           key={chref}
@@ -119,7 +127,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             'flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors',
                             cActive
                               ? 'bg-violet-50 text-violet-700 font-medium'
-                              : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                              : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800',
                           )}
                         >
                           <CIcon size={13} />
@@ -134,13 +142,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        {/* Footer */}
+        {/* Footer — user info + role badge + sign out */}
         <div className="px-3 py-4 border-t border-slate-200 space-y-2">
-          {/* Logged-in user */}
-          {currentUser && (
+          {auth.displayName && (
             <div className="px-3 py-2 rounded-lg bg-slate-50 border border-slate-200">
-              <p className="text-xs font-medium text-slate-800 truncate">{currentUser.displayName}</p>
-              <p className="text-xs text-slate-400 truncate">{currentUser.email}</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-medium text-slate-800 truncate">{auth.displayName}</p>
+                {auth.role && (
+                  <span className={cn('text-[10px] px-1.5 py-0.5 rounded font-semibold shrink-0', ROLE_BADGE[auth.role])}>
+                    {auth.role}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-400 truncate mt-0.5">{auth.email}</p>
             </div>
           )}
           <button

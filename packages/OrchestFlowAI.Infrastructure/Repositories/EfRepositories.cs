@@ -180,6 +180,23 @@ public sealed class EfUserRepository : IUserRepository
 
     public async Task<User> CreateAsync(User user, CancellationToken ct = default)
     { _db.Users.Add(user); await _db.SaveChangesAsync(ct); return user; }
+
+    public async Task<IReadOnlyList<User>> ListByTenantAsync(Guid tenantId, CancellationToken ct = default)
+        => await _db.Users.AsNoTracking().Where(u => u.TenantId == tenantId).OrderBy(u => u.DisplayName).ToListAsync(ct);
+
+    public async Task UpdateRoleAsync(Guid userId, Guid tenantId, UserRole role, CancellationToken ct = default)
+    {
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId && u.TenantId == tenantId, ct);
+        if (user == null) return;
+        user.SetRole(role);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task DeleteAsync(Guid userId, Guid tenantId, CancellationToken ct = default)
+    {
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId && u.TenantId == tenantId, ct);
+        if (user != null) { _db.Users.Remove(user); await _db.SaveChangesAsync(ct); }
+    }
 }
 
 /// <summary>EF Core implementation of <see cref="IDocumentRepository"/>.</summary>
@@ -307,11 +324,26 @@ public sealed class EfTenantInviteRepository : ITenantInviteRepository
     public Task<TenantInvite?> GetByTokenAsync(string token, CancellationToken ct = default)
         => _db.TenantInvites.FirstOrDefaultAsync(i => i.Token == token, ct);
 
+    public Task<TenantInvite?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default)
+        => _db.TenantInvites.FirstOrDefaultAsync(i => i.Id == id && i.TenantId == tenantId, ct);
+
     public async Task<TenantInvite> CreateAsync(TenantInvite invite, CancellationToken ct = default)
     { _db.TenantInvites.Add(invite); await _db.SaveChangesAsync(ct); return invite; }
 
     public async Task UpdateAsync(TenantInvite invite, CancellationToken ct = default)
     { _db.TenantInvites.Update(invite); await _db.SaveChangesAsync(ct); }
+
+    public async Task<IReadOnlyList<TenantInvite>> ListByTenantAsync(Guid tenantId, CancellationToken ct = default)
+        => await _db.TenantInvites.AsNoTracking()
+            .Where(i => i.TenantId == tenantId && i.AcceptedAt == null)
+            .OrderByDescending(i => i.CreatedAt)
+            .ToListAsync(ct);
+
+    public async Task DeleteAsync(Guid id, Guid tenantId, CancellationToken ct = default)
+    {
+        var invite = await _db.TenantInvites.FirstOrDefaultAsync(i => i.Id == id && i.TenantId == tenantId, ct);
+        if (invite != null) { _db.TenantInvites.Remove(invite); await _db.SaveChangesAsync(ct); }
+    }
 }
 
 /// <summary>EF Core implementation of <see cref="IGmailCredentialRepository"/>.</summary>

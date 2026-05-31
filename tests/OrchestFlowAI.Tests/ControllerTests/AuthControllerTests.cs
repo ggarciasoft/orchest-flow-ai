@@ -29,7 +29,10 @@ public sealed class AuthControllerTests
         var tenantRepo = tenants ?? new Mock<ITenantRepository>();
         tenantRepo.Setup(r => r.CreateAsync(It.IsAny<Tenant>(), default))
             .ReturnsAsync((Tenant t, CancellationToken _) => t);
-        return new AuthController(users.Object, tenantRepo.Object, new JwtTokenService(), config);
+        var emailMock = new Mock<IEmailService>();
+        emailMock.Setup(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        return new AuthController(users.Object, tenantRepo.Object, new JwtTokenService(), config, emailMock.Object);
     }
 
     private static string HashPassword(string password)

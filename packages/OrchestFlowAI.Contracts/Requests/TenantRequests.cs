@@ -9,6 +9,9 @@ public sealed record InviteUserRequest(string Email, string Role);
 /// <summary>Request body for accepting a tenant invite and creating an account.</summary>
 public sealed record AcceptInviteRequest(string Token, string Password);
 
+/// <summary>Request body for changing a tenant member's role.</summary>
+public sealed record UpdateMemberRoleRequest(string Role);
+
 /// <summary>Request body for updating tenant configuration. Null fields are left unchanged.</summary>
 public sealed record UpdateTenantConfigRequest(
     string? DisplayName,

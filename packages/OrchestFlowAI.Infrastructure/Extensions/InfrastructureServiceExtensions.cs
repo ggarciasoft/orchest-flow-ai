@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using OrchestFlowAI.Application.Abstractions;
 using OrchestFlowAI.Contracts.Notifications;
 using OrchestFlowAI.Infrastructure.Auth;
+using OrchestFlowAI.Infrastructure.Email;
 using OrchestFlowAI.Infrastructure.Persistence;
 using OrchestFlowAI.Infrastructure.Queue;
 using OrchestFlowAI.Infrastructure.Repositories;
@@ -101,6 +102,14 @@ public static class InfrastructureServiceExtensions
             services.AddScoped<ICorrelationTokenRepository, StubCorrelationTokenRepository>();
             // In-memory stub persistent queue
         }
+
+        // Email service — SMTP when configured, log/console fallback for dev
+        var smtpHost = configuration["Email:Smtp:Host"]
+            ?? Environment.GetEnvironmentVariable("Email__Smtp__Host");
+        if (!string.IsNullOrWhiteSpace(smtpHost))
+            services.AddScoped<IEmailService, SmtpEmailService>();
+        else
+            services.AddScoped<IEmailService, LogEmailService>();
 
         // Platform settings service — singleton with in-memory cache, backed by DB
         services.AddSingleton<IPlatformSettingsService, PlatformSettingsService>();

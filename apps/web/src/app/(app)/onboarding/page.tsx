@@ -17,7 +17,7 @@ export default function OnboardingPage() {
   const [workspaceName, setWorkspaceName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('Viewer');
-  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [invitedEmails, setInvitedEmails] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -47,9 +47,8 @@ export default function OnboardingPage() {
     setError(null);
     setLoading(true);
     try {
-      const invite = await api.tenants.invite(tenantId, inviteEmail.trim(), inviteRole);
-      const acceptUrl = `${window.location.origin}/invite/${tenantId}?token=${invite.token}`;
-      setInviteLink(acceptUrl);
+      await api.tenants.invite(tenantId, inviteEmail.trim(), inviteRole);
+      setInvitedEmails(prev => [...prev, inviteEmail.trim()]);
       setInviteEmail('');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to send invite.');
@@ -140,10 +139,14 @@ export default function OnboardingPage() {
               </select>
             </label>
             {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
-            {inviteLink && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-xs break-all">
-                <p className="font-medium text-green-800 mb-1">Invite link generated:</p>
-                <span className="text-green-700">{inviteLink}</span>
+            {invitedEmails.length > 0 && (
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs">
+                <p className="mb-1 font-medium text-emerald-800">Invites sent:</p>
+                <ul className="space-y-0.5">
+                  {invitedEmails.map(e => (
+                    <li key={e} className="text-emerald-700">✓ {e}</li>
+                  ))}
+                </ul>
               </div>
             )}
             <div className="flex gap-3">
@@ -170,7 +173,8 @@ export default function OnboardingPage() {
             <div className="text-5xl">🎉</div>
             <h2 className="text-xl font-semibold text-slate-900">You&apos;re all set!</h2>
             <p className="text-sm text-slate-500">
-              <span className="font-semibold text-slate-800">{tenantName}</span> is ready. Your team will receive their invite links shortly.
+              <span className="font-semibold text-slate-800">{tenantName}</span> is ready.
+              {invitedEmails.length > 0 && ` Invitation emails have been sent to ${invitedEmails.length} team member${invitedEmails.length !== 1 ? 's' : ''}.`}
             </p>
             <a
               href="/dashboard"

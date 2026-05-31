@@ -276,7 +276,7 @@ Service build version.
 MVP ships with email/password JWT auth.
 
 ### `POST /api/auth/register` _(public)_
-Create a new account. Returns `201` with a JWT token so the user is logged in immediately.
+Create a new account. Returns `201` with a JWT token so the user is logged in immediately. A welcome email is sent asynchronously (best-effort).
 
 Body:
 ```json
@@ -286,6 +286,7 @@ Body:
 - Password minimum: **8 characters**
 - Returns `400` for missing/invalid fields or short password
 - Returns `409 Conflict` if the email is already registered
+- Creates a new isolated tenant for the registering user (who becomes `Admin`)
 
 ### `POST /api/auth/login` _(public)_
 Authenticate with email + password. Returns a JWT token.
@@ -307,17 +308,92 @@ SSO/OIDC arrives in Phase 14.
 
 ## 7a. Tenant Management
 
-### `GET /api/tenants/{id}`
+### `GET /api/tenants/{id}` _(ViewerOrAbove)_
 Get tenant info. Must be the caller's own tenant.
 
 ### `POST /api/tenants` _(AdminOnly)_
 Create a tenant workspace. Body: `{ "name": "string" }`
 
-### `POST /api/tenants/{id}/invite` _(AdminOnly)_
-Invite a user by email. Body: `{ "email": "string", "role": "Viewer|Editor|Admin|Approver" }`
+---
 
-### `POST /api/tenants/{id}/invite/accept` _(public)_
-Accept an invite and create an account. Body: `{ "token": "string", "password": "string" }`
+### Team Members
+
+#### `GET /api/tenants/{id}/members` _(AdminOnly)_
+List all users in the tenant.
+
+Response: array of
+```json
+{ "id": "uuid", "email": "user@example.com", "displayName": "Jane", "role": "Editor", "createdAt": "..." }
+```
+
+#### `PUT /api/tenants/{id}/members/{userId}/role` _(AdminOnly)_
+Change a member's role.
+
+Body: `{ "role": "Viewer|Editor|Admin|Approver" }`
+
+- Returns `400` if the caller tries to change their own role
+- Returns `400` for unrecognized role strings
+
+#### `DELETE /api/tenants/{id}/members/{userId}` _(AdminOnly)_
+Remove a member from the tenant.
+
+- Returns `400` if the caller tries to remove themselves
+
+---
+
+### Invitations
+
+#### `POST /api/tenants/{id}/invite` _(AdminOnly)_
+Invite a user by email. Sends an invitation email; **does not return the token**.
+
+Body: `{ "email": "string", "role": "Viewer|Editor|Admin|Approver" }`
+
+Response `201`:
+```json
+{ "id": "uuid", "tenantId": "uuid", "email": "user@example.com", "role": "Viewer", "expiresAt": "..." }
+```
+
+- Normalizes email to lowercase
+- Returns `409 Conflict` if the email already belongs to a tenant member or has an active pending invite
+- Returns `400` for invalid role strings
+- Email delivery failure does **not** fail the request (invite is still created; share the accept URL manually if needed)
+
+#### `GET /api/tenants/{id}/invite/preview` _(public — no auth required)_
+Returns non-secret invite metadata for the accept page.
+
+Query: `?token=<invite_token>`
+
+Response `200`:
+```json
+{ "email": "user@example.com", "tenantName": "Acme Corp", "role": "Viewer", "expiresAt": "..." }
+```
+
+- Returns `404` if the token is invalid, expired, or already accepted
+
+#### `POST /api/tenants/{id}/invite/accept` _(public — no auth required)_
+Accept an invite, create the user account, and return a JWT for immediate login.
+
+Body: `{ "token": "string", "password": "string" }`
+
+Response `200`:
+```json
+{
+  "token": "<jwt>",
+  "user": { "id": "uuid", "email": "user@example.com", "displayName": "user", "role": "Viewer" }
+}
+```
+
+- Password minimum: **8 characters**
+- Returns `400` for expired, already-accepted, or wrong-tenant tokens
+- The JWT can be stored and used immediately — no separate login step required
+
+#### `GET /api/tenants/{id}/invites` _(AdminOnly)_
+List pending (not yet accepted) invites for the tenant.
+
+Response: array of invite objects (same shape as `POST /invite` response, excluding token).
+
+#### `DELETE /api/tenants/{id}/invites/{inviteId}` _(AdminOnly)_
+Revoke (delete) a pending invite. Returns `204 No Content`.
 
 ### `GET /api/tenants/{id}/config` _(ViewerOrAbove)_
 Get tenant configuration.

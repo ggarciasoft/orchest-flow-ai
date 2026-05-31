@@ -10,10 +10,12 @@ import { Plus, GitBranch, Play, Copy, Loader2, History } from 'lucide-react';
 import { PageHeader, Button, EmptyState, Pagination, SearchInput } from '@/components/ui';
 import { RunWorkflowModal } from '@/components/RunWorkflowModal';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useAuth } from '@/contexts/AuthContext';
 
 const PAGE_SIZE = 20;
 
 export default function WorkflowsPage() {
+  const { canEdit } = useAuth();
   const [searchRaw, setSearchRaw] = useState('');
   const search = useDebounce(searchRaw, 350);
   const [page, setPage] = useState(1);
@@ -48,11 +50,11 @@ export default function WorkflowsPage() {
       <PageHeader
         title="Workflows"
         subtitle="Manage your AI workflow definitions"
-        action={
+        action={canEdit ? (
           <Link href="/workflows/new">
             <Button><Plus size={15} />New Workflow</Button>
           </Link>
-        }
+        ) : undefined}
       />
 
       <div className="flex items-center gap-4 mb-6">
@@ -73,7 +75,7 @@ export default function WorkflowsPage() {
           icon={GitBranch}
           title="No workflows found"
           subtitle={search ? 'Try a different search term' : 'Create your first workflow to get started'}
-          action={!search ? <Link href="/workflows/new"><Button>New Workflow</Button></Link> : undefined}
+          action={!search && canEdit ? <Link href="/workflows/new"><Button>New Workflow</Button></Link> : undefined}
         />
       ) : (
         <>
@@ -89,23 +91,27 @@ export default function WorkflowsPage() {
                     <span className="text-xs text-slate-400 border border-slate-200 rounded px-2 py-0.5">v{w.activeVersion}</span>
                   )}
                   <span className="text-xs text-slate-400">{formatDate(w.updatedAt)}</span>
-                  <button
-                    onClick={() => setSelectedWorkflow(w)}
-                    disabled={!w.activeVersion}
-                    title={!w.activeVersion ? 'No active version — save from the designer first' : 'Run workflow'}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <Play size={12} />Run
-                  </button>
-                  <button
-                    onClick={() => cloneMutation.mutate(w.id)}
-                    disabled={cloningId === w.id || !w.activeVersion}
-                    title={!w.activeVersion ? 'No active version to clone' : 'Duplicate workflow'}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {cloningId === w.id ? <Loader2 size={12} className="animate-spin" /> : <Copy size={12} />}
-                    Duplicate
-                  </button>
+                  {canEdit && (
+                    <button
+                      onClick={() => setSelectedWorkflow(w)}
+                      disabled={!w.activeVersion}
+                      title={!w.activeVersion ? 'No active version — save from the designer first' : 'Run workflow'}
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Play size={12} />Run
+                    </button>
+                  )}
+                  {canEdit && (
+                    <button
+                      onClick={() => cloneMutation.mutate(w.id)}
+                      disabled={cloningId === w.id || !w.activeVersion}
+                      title={!w.activeVersion ? 'No active version to clone' : 'Duplicate workflow'}
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {cloningId === w.id ? <Loader2 size={12} className="animate-spin" /> : <Copy size={12} />}
+                      Duplicate
+                    </button>
+                  )}
                   <Link href={`/workflows/${w.id}/executions`}>
                     <Button variant="ghost" size="sm"><History size={13} />History</Button>
                   </Link>

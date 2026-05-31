@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/ui';
+import { AdminPageGuard } from '@/components/AdminPageGuard';
 import { api } from '@/lib/api';
 import { CheckCircle, Loader2, Eye, EyeOff, Mail, ChevronDown } from 'lucide-react';
 
@@ -98,6 +99,7 @@ export default function IntegrationsPage() {
   const current = INTEGRATIONS.find(p => p.id === selected)!;
 
   return (
+    <AdminPageGuard>
     <div>
       <PageHeader title="Integrations" subtitle="Connect external services used in workflow nodes" />
 
@@ -158,5 +160,6 @@ export default function IntegrationsPage() {
         </div>
       </div>
     </div>
+    </AdminPageGuard>
   );
 }

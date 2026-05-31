@@ -309,16 +309,43 @@ export const api = {
         body: JSON.stringify({ email, role }),
       }),
     /**
-     * Accepts a tenant invite and creates the user account.
+     * Accepts a tenant invite, creates the user account, and returns a JWT for auto-login.
      * @param tenantId - The tenant id.
      * @param token - The invite token.
      * @param password - The desired password for the new account.
      */
     acceptInvite: (tenantId: string, token: string, password: string) =>
-      apiFetch<{ message: string }>(`/api/tenants/${tenantId}/invite/accept`, {
+      apiFetch<AcceptInviteResponse>(`/api/tenants/${tenantId}/invite/accept`, {
         method: 'POST',
         body: JSON.stringify({ token, password }),
+        skipAuthRedirect: true,
       }),
+    /**
+     * Fetches public invite preview (email, workspace name, role) for the accept page.
+     * Anonymous — no auth required.
+     */
+    invitePreview: (tenantId: string, token: string) =>
+      apiFetch<InvitePreviewResponse>(`/api/tenants/${tenantId}/invite/preview?token=${encodeURIComponent(token)}`, {
+        skipAuthRedirect: true,
+      }),
+    /** Lists all users in the tenant. */
+    listMembers: (tenantId: string) =>
+      apiFetch<TenantMemberResponse[]>(`/api/tenants/${tenantId}/members`),
+    /** Changes a member's role. */
+    updateMemberRole: (tenantId: string, userId: string, role: string) =>
+      apiFetch<void>(`/api/tenants/${tenantId}/members/${userId}/role`, {
+        method: 'PUT',
+        body: JSON.stringify({ role }),
+      }),
+    /** Removes a member from the tenant. */
+    removeMember: (tenantId: string, userId: string) =>
+      apiFetch<void>(`/api/tenants/${tenantId}/members/${userId}`, { method: 'DELETE' }),
+    /** Lists pending invites for the tenant. */
+    listInvites: (tenantId: string) =>
+      apiFetch<TenantInviteResponse[]>(`/api/tenants/${tenantId}/invites`),
+    /** Revokes (deletes) a pending invite. */
+    revokeInvite: (tenantId: string, inviteId: string) =>
+      apiFetch<void>(`/api/tenants/${tenantId}/invites/${inviteId}`, { method: 'DELETE' }),
     /** Gets the configuration for a tenant. */
     getConfig: (tenantId: string) => apiFetch<TenantConfig>(`/api/tenants/${tenantId}/config`),
     /** Updates the configuration for a tenant. Null fields are left unchanged. */
@@ -556,8 +583,17 @@ export interface TenantConfig {
   allowGuestFormFill: boolean;
 }
 
-/** Tenant invite response — includes the token for the MVP invite flow. */
-export interface TenantInviteResponse { id: string; tenantId: string; email: string; role: string; token: string; expiresAt: string; }
+/** Tenant invite response — token removed; invite is sent by email. */
+export interface TenantInviteResponse { id: string; tenantId: string; email: string; role: string; expiresAt: string; }
+
+/** Public preview of an invite for the accept page (no secrets). */
+export interface InvitePreviewResponse { email: string; tenantName: string; role: string; expiresAt: string; }
+
+/** Response when accepting an invite — includes a JWT for auto-login. */
+export interface AcceptInviteResponse { token: string; user: { id: string; email: string; displayName: string; role: string; }; }
+
+/** A team member within a tenant. */
+export interface TenantMemberResponse { id: string; email: string; displayName: string; role: string; createdAt: string; }
 
 /** Summary of a saved Gmail credential (no secrets). */
 /** Summary of a saved secret (name only, never the value). */

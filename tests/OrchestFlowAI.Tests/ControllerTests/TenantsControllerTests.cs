@@ -46,8 +46,11 @@ public sealed class TenantsControllerTests
             .Build();
 
         var jwt = new JwtTokenService();
+        var emailMock = new Mock<IEmailService>();
+        emailMock.Setup(e => e.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
-        var controller = new TenantsController(tenantRepo.Object, inviteRepo.Object, userRepo.Object, jwt, config);
+        var controller = new TenantsController(tenantRepo.Object, inviteRepo.Object, userRepo.Object, jwt, config, emailMock.Object);
 
         // Set up fake authenticated user claims
         var effectiveTenantId = tenantId ?? TenantId;
@@ -160,13 +163,23 @@ public sealed class TenantsControllerTests
     // ────────────────────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task Invite_ValidRequest_Returns201WithToken()
+    public async Task Invite_ValidRequest_Returns201()
     {
         var inviteRepo = new Mock<ITenantInviteRepository>();
         inviteRepo.Setup(r => r.CreateAsync(It.IsAny<TenantInvite>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((TenantInvite i, CancellationToken _) => i);
+        inviteRepo.Setup(r => r.ListByTenantAsync(TenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<TenantInvite>());
 
-        var controller = BuildController(invites: inviteRepo);
+        var userRepo = new Mock<IUserRepository>();
+        userRepo.Setup(r => r.GetByEmailAsync("bob@example.com", TenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((OrchestFlowAI.Domain.Entities.User?)null);
+
+        var tenantRepo = new Mock<ITenantRepository>();
+        tenantRepo.Setup(r => r.GetAsync(TenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Tenant.Create("Test Workspace"));
+
+        var controller = BuildController(tenants: tenantRepo, invites: inviteRepo, users: userRepo);
 
         var result = await controller.Invite(TenantId, new InviteUserRequest("bob@example.com", "Viewer"), CancellationToken.None);
 
@@ -175,7 +188,6 @@ public sealed class TenantsControllerTests
         var response = status.Value.Should().BeOfType<TenantInviteResponse>().Subject;
         response.Email.Should().Be("bob@example.com");
         response.Role.Should().Be("Viewer");
-        response.Token.Should().NotBeNullOrEmpty();
     }
 
     [Fact]
@@ -215,6 +227,8 @@ public sealed class TenantsControllerTests
             .Returns(Task.CompletedTask);
 
         var userRepo = new Mock<IUserRepository>();
+        userRepo.Setup(r => r.GetByEmailAsync("carol@example.com", TenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((OrchestFlowAI.Domain.Entities.User?)null);
         userRepo.Setup(r => r.CreateAsync(It.IsAny<OrchestFlowAI.Domain.Entities.User>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((OrchestFlowAI.Domain.Entities.User u, CancellationToken _) => u);
 
@@ -222,7 +236,7 @@ public sealed class TenantsControllerTests
 
         var result = await controller.AcceptInvite(TenantId, new AcceptInviteRequest(invite.Token, "Secure1234"), CancellationToken.None);
 
-        result.Should().BeOfType<OkObjectResult>();
+        result.Result.Should().BeOfType<OkObjectResult>();
         userRepo.Verify(r => r.CreateAsync(
             It.Is<OrchestFlowAI.Domain.Entities.User>(u => u.Email == "carol@example.com" && u.Role == UserRole.Editor),
             It.IsAny<CancellationToken>()), Times.Once);
@@ -239,7 +253,7 @@ public sealed class TenantsControllerTests
 
         var result = await controller.AcceptInvite(TenantId, new AcceptInviteRequest("bad-token", "Password1"), CancellationToken.None);
 
-        result.Should().BeOfType<BadRequestObjectResult>();
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
     }
 
     [Fact]
@@ -256,7 +270,7 @@ public sealed class TenantsControllerTests
 
         var result = await controller.AcceptInvite(TenantId, new AcceptInviteRequest(invite.Token, "Password1"), CancellationToken.None);
 
-        result.Should().BeOfType<BadRequestObjectResult>();
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
     }
 
     [Fact]
@@ -266,7 +280,7 @@ public sealed class TenantsControllerTests
 
         var result = await controller.AcceptInvite(TenantId, new AcceptInviteRequest("some-token", ""), CancellationToken.None);
 
-        result.Should().BeOfType<BadRequestObjectResult>();
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
     }
 
     [Fact]
@@ -283,6 +297,6 @@ public sealed class TenantsControllerTests
 
         var result = await controller.AcceptInvite(differentTenantId, new AcceptInviteRequest(invite.Token, "Password1"), CancellationToken.None);
 
-        result.Should().BeOfType<BadRequestObjectResult>();
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
     }
 }

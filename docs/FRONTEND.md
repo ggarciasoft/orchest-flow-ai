@@ -39,20 +39,27 @@ apps/web/
 │   │   │   └── _components/FormRenderer.tsx
 │   │   ├── documents/page.tsx
 │   │   └── settings/
-│   │       ├── page.tsx                  # settings hub (cards)
-│   │       ├── providers/page.tsx        # AI providers (dropdown + panel)
-│   │       ├── integrations/page.tsx     # external integrations (Gmail etc.)
-│   │       ├── secrets/page.tsx          # secret vault
-│   │       └── presets/page.tsx          # node config presets
+│   │       ├── page.tsx                  # settings hub (role-filtered cards)
+│   │       ├── team/page.tsx             # team members + invitations (admin)
+│   │       ├── tenant/page.tsx           # workspace config (admin)
+│   │       ├── providers/page.tsx        # AI providers (admin)
+│   │       ├── integrations/page.tsx     # external integrations (admin)
+│   │       ├── secrets/page.tsx          # secret vault (admin)
+│   │       ├── presets/page.tsx          # node config presets (editor+)
+│   │       ├── config/page.tsx           # workflow key-value config
+│   │       └── ai-history/page.tsx       # AI chat history
 │   ├── forms/[id]/fill/page.tsx          # public form fill (no auth)
-│   └── invite/[token]/page.tsx
+│   └── invite/[token]/page.tsx           # invite accept (no auth)
 ├── components/
 │   ├── ui/                               # Badge, Button, Card, Input, PageHeader, EmptyState
 │   ├── designer/                         # WorkflowDesigner, NodePalette, NodeConfigDrawer, VersionHistoryPanel, AiAssistPanel
+│   ├── AdminPageGuard.tsx                # redirects non-admins away from admin pages
 │   └── RunWorkflowModal.tsx
+├── contexts/
+│   └── AuthContext.tsx                   # AuthProvider + useAuth() — role, canEdit, isAdmin, isApprover
 ├── lib/
 │   ├── api.ts                            # typed API client (all apiFetch calls)
-│   ├── auth.ts
+│   ├── auth.ts                           # JWT helpers: getToken, setToken, getRoleFromToken, getTenantId
 │   └── utils.ts
 └── src/__tests__/
 ```
@@ -76,9 +83,16 @@ const nav: NavItem[] = [
     label: 'Settings',
     icon: Settings,
     children: [
-      { href: '/settings/providers',    label: 'AI Providers',  icon: Cpu },
-      { href: '/settings/integrations', label: 'Integrations',  icon: Plug },
-      { href: '/settings/secrets',      label: 'Secrets',       icon: KeyRound },
+      // Admin-only (minRole: 'admin')
+      { href: '/settings/tenant',       label: 'Tenant',        icon: Building2  },
+      { href: '/settings/team',         label: 'Team',          icon: Users      },
+      { href: '/settings/providers',    label: 'AI Providers',  icon: Cpu        },
+      { href: '/settings/integrations', label: 'Integrations',  icon: Plug       },
+      { href: '/settings/secrets',      label: 'Secrets',       icon: KeyRound   },
+      // Editor+ (minRole: 'editor')
+      { href: '/settings/presets',      label: 'Presets',       icon: BookOpen   },
+      // All roles
+      { href: '/settings/config',       label: 'Configuration', icon: SlidersHorizontal },
       { href: '/settings/ai-history',   label: 'AI History',    icon: MessageSquare },
     ],
   },
@@ -86,8 +100,19 @@ const nav: NavItem[] = [
 ```
 
 - Top-level items highlight in **indigo** when active.
-- Sub-items show indented with a left border accent, highlighted in **violet** when active, and are only visible when their parent (or a sibling child) is active.
-- To add sub-items to any nav entry, add a `children` array — no other changes needed.
+- Sub-items are **filtered by role** (via `AuthContext`) — admins see all settings; editors see a subset; viewers see only Configuration and AI History.
+- Sub-items show indented with a left border accent, highlighted in **violet** when active.
+
+### Role Badge
+
+The sidebar footer displays the authenticated user's display name alongside a role badge:
+
+| Role | Color |
+|------|-------|
+| Admin | Violet |
+| Editor | Indigo |
+| Approver | Amber |
+| Viewer | Slate |
 
 ---
 
@@ -177,19 +202,26 @@ The approval detail page (`/approvals/[id]`) behaves differently depending on th
 All badges use `statusLabel()` — `WaitingForApproval` displays as amber "Waiting for Approval", `Succeeded` as green, `Failed` as red, etc.
 
 ### Settings Hub (`/settings`)
-Cards linking to sub-sections:
+Cards linking to sub-sections. Cards are **filtered by role** — admins see all; editors see a subset; viewers see only Configuration and AI History.
 
-**AI Providers** (`/settings/providers`):
+**Team** (`/settings/team`) _(Admin only)_:
+- **Invite form** — email + role picker (Admin/Editor/Approver/Viewer) + "Send invite" button. Sends an invitation email; shows "✓ email sent" confirmation. Errors (duplicate member, duplicate invite, invalid role) shown inline.
+- **Members list** — all users in the tenant. Click a role badge to edit it inline (dropdown + Save/Cancel). Trash icon to remove a member. Both actions are disabled for the caller's own account.
+- **Pending invites list** — invites not yet accepted. Shows email, role badge, expiry date. X button to revoke.
+
+**AI Providers** (`/settings/providers`) _(Admin only)_:
 - Dropdown selector + config panel per provider (OpenAI, Anthropic, Azure OpenAI, Ollama)
-- **Active provider banner** ? shown at top, reads `llm.defaultProvider` + `llm.defaultModel` from settings
-- **"Default" badge** ? shown in provider dropdown next to the active provider
-- **"Set as default provider" button** ? in each provider panel; calls `PUT /api/settings` with `llm.defaultProvider`; takes effect immediately (no restart)
+- **Active provider banner** — reads `llm.defaultProvider` + `llm.defaultModel` from settings
+- **"Set as default provider" button** — calls `PUT /api/settings`; takes effect immediately (no restart)
 - Adding a new provider = one entry in the `PROVIDERS` array + one panel component
 
-Original list:
-- **AI Providers** (`/settings/providers`) — dropdown selector + config panel per provider (OpenAI, Anthropic, Azure OpenAI, Ollama). Adding a new provider = one entry in the `PROVIDERS` array + one panel component.
-- **Integrations** (`/settings/integrations`) — external service credentials (Gmail OAuth2). Same dropdown pattern.
-- **Secrets** (`/settings/secrets`) — encrypted named vault; reference as `{{secret:name}}` in any node config.
+- **Tenant** (`/settings/tenant`) _(Admin only)_ — workspace name, logo URL, execution limits, timezone, guest form fill flag.
+- **Integrations** (`/settings/integrations`) _(Admin only)_ — external service credentials (Gmail OAuth2). Same dropdown pattern.
+- **Secrets** (`/settings/secrets`) _(Admin only)_ — encrypted named vault; reference as `{{secret:name}}` in any node config.
+- **Node Presets** (`/settings/presets`) _(Editor+)_ — reusable named node config sets.
+- **Configuration** (`/settings/config`) _(All roles)_ — persistent workflow key-value store.
+
+All admin-only settings pages are wrapped with `<AdminPageGuard>` — non-admins are redirected to `/settings`.
 
 ### AI History (`/settings/ai-history`)
 Read-only view of all AI chat sessions for the tenant.
@@ -222,9 +254,66 @@ Read-only view of all AI chat sessions for the tenant.
 ### Form Fill Page (`/forms/[id]/fill`)
 Public (no auth). Renders form + submits values to resume the paused execution.
 
+### Invite Accept Page (`/invite/[tenantId]?token=...`)
+Public (no auth). Allows an invitee to set a password and join the workspace.
+
+1. On mount: calls `GET /api/tenants/{id}/invite/preview?token=` — shows workspace name, invited email, assigned role in a highlighted banner.
+2. If preview returns 404/error: shows "Invite not found" error state — no password form.
+3. On password submit: calls `POST /api/tenants/{id}/invite/accept` → receives JWT → stores token via `setToken()` → redirects to `/workflows`.
+4. "Already have an account?" link to `/login`.
+
+### Onboarding (`/onboarding`)
+Multi-step flow for new users:
+
+1. **Step 1** — Name your workspace (`POST /api/tenants`)
+2. **Step 2** — Invite team members (`POST /api/tenants/{id}/invite`); shows "✓ email sent" confirmations per invite
+3. **Step 3** — Done; link to dashboard
+
 ---
 
-## 5. `statusLabel()` and `statusVariant()`
+## 5. Authentication & RBAC
+
+### `AuthContext` (`src/contexts/AuthContext.tsx`)
+
+React Context providing the authenticated user's state, derived from the JWT in `localStorage`. Hydrated client-side on mount.
+
+```ts
+interface AuthState {
+  role: 'Admin' | 'Editor' | 'Approver' | 'Viewer' | null;
+  displayName: string;
+  email: string;
+  canEdit: boolean;    // true for Editor and Admin
+  isAdmin: boolean;    // true for Admin only
+  isApprover: boolean; // true for Approver (and Admin)
+}
+```
+
+Usage in any component:
+
+```tsx
+const { isAdmin, canEdit, isApprover, role, displayName } = useAuth();
+```
+
+`AuthProvider` is registered in `components/providers.tsx` and wraps the entire app.
+
+### Role-Gated UI
+
+| Guard | How |
+|-------|-----|
+| Admin-only pages | Wrapped with `<AdminPageGuard>` — redirects to `/settings` if not admin |
+| Sidebar nav filtering | `SETTINGS_CHILDREN` filtered in `layout.tsx` via `useMemo` |
+| Mutation buttons | Conditional render based on `canEdit` / `isAdmin` / `isApprover` |
+| Settings hub cards | Conditional render based on `isAdmin` / `canEdit` |
+
+### `AdminPageGuard` (`src/components/AdminPageGuard.tsx`)
+
+Wraps a page's content; redirects to `/settings` if `!isAdmin`. Shows a brief "Admin access required" message during the redirect.
+
+Applied to: `/settings/tenant`, `/settings/team`, `/settings/providers`, `/settings/integrations`, `/settings/secrets`.
+
+---
+
+## 6. `statusLabel()` and `statusVariant()`
 
 Both exported from `@/components/ui`:
 

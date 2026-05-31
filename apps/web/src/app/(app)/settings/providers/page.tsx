@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/ui';
+import { AdminPageGuard } from '@/components/AdminPageGuard';
 import { api } from '@/lib/api';
 import {
   CheckCircle, XCircle, Loader2, Eye, EyeOff,
@@ -477,6 +478,7 @@ export default function ProvidersPage() {
   const activeProviderLabel = PROVIDERS.find(p => p.id === activeProvider)?.label ?? 'OpenAI';
 
   return (
+    <AdminPageGuard>
     <div>
       <PageHeader title="AI Providers" subtitle="Configure credentials and options for each LLM provider" />
 
@@ -558,5 +560,6 @@ export default function ProvidersPage() {
         </div>
       </div>
     </div>
+    </AdminPageGuard>
   );
 }

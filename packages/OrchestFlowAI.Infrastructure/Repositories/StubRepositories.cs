@@ -173,6 +173,15 @@ public sealed class StubUserRepository : IUserRepository
     public Task<User?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default)
         => Task.FromResult(_store.Values.FirstOrDefault(u => u.Id == id && u.TenantId == tenantId));
     public Task<User> CreateAsync(User user, CancellationToken ct = default) { _store[user.Id] = user; return Task.FromResult(user); }
+    public Task<IReadOnlyList<User>> ListByTenantAsync(Guid tenantId, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<User>>(_store.Values.Where(u => u.TenantId == tenantId).OrderBy(u => u.DisplayName).ToList());
+    public Task UpdateRoleAsync(Guid userId, Guid tenantId, UserRole role, CancellationToken ct = default)
+    {
+        if (_store.TryGetValue(userId, out var u) && u.TenantId == tenantId) u.SetRole(role);
+        return Task.CompletedTask;
+    }
+    public Task DeleteAsync(Guid userId, Guid tenantId, CancellationToken ct = default)
+    { _store.TryRemove(userId, out _); return Task.CompletedTask; }
 }
 
 /// <summary>In-memory stub for <see cref="OrchestFlowAI.Engine.IEngineExecutionRepository"/>.</summary>
@@ -237,8 +246,14 @@ public sealed class StubTenantInviteRepository : ITenantInviteRepository
     private static readonly ConcurrentDictionary<Guid, TenantInvite> _store = new();
     public Task<TenantInvite?> GetByTokenAsync(string token, CancellationToken ct = default)
         => Task.FromResult(_store.Values.FirstOrDefault(i => i.Token == token));
+    public Task<TenantInvite?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default)
+        => Task.FromResult(_store.Values.FirstOrDefault(i => i.Id == id && i.TenantId == tenantId));
     public Task<TenantInvite> CreateAsync(TenantInvite invite, CancellationToken ct = default) { _store[invite.Id] = invite; return Task.FromResult(invite); }
     public Task UpdateAsync(TenantInvite invite, CancellationToken ct = default) { _store[invite.Id] = invite; return Task.CompletedTask; }
+    public Task<IReadOnlyList<TenantInvite>> ListByTenantAsync(Guid tenantId, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<TenantInvite>>(_store.Values.Where(i => i.TenantId == tenantId && i.AcceptedAt == null).OrderByDescending(i => i.CreatedAt).ToList());
+    public Task DeleteAsync(Guid id, Guid tenantId, CancellationToken ct = default)
+    { _store.TryRemove(id, out _); return Task.CompletedTask; }
 }
 
 /// <summary>In-memory stub implementation of <see cref="IGmailCredentialRepository"/>.</summary>

@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatDate } from '@/lib/utils';
 import { CheckCircle, XCircle, ClipboardList, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
@@ -13,6 +14,7 @@ import { PageHeader, Badge, EmptyState, statusLabel } from '@/components/ui';
  * - Human-approval nodes: inline Approve/Reject with optional comment.
  */
 export default function ApprovalsPage() {
+  const { isApprover } = useAuth();
   const qc = useQueryClient();
   const [comment, setComment] = useState<Record<string, string>>({});
   const { data, isLoading } = useQuery({ queryKey: ['approvals', 'Pending'], queryFn: () => api.approvals.list('Pending'), refetchInterval: 10_000 });
@@ -93,25 +95,31 @@ export default function ApprovalsPage() {
                         ))}
                       </div>
                     )}
-                    <textarea
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                      placeholder="Add a comment (optional)…"
-                      rows={2}
-                      value={comment[a.id] ?? ''}
-                      onChange={e => setComment(c => ({ ...c, [a.id]: e.target.value }))}
-                    />
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => approve.mutate({ id: a.id, c: comment[a.id] })}
-                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
-                        <CheckCircle size={14} />Approve
-                      </button>
-                      <button
-                        onClick={() => reject.mutate({ id: a.id, c: comment[a.id] })}
-                        className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
-                        <XCircle size={14} />Reject
-                      </button>
-                    </div>
+                    {isApprover ? (
+                      <>
+                        <textarea
+                          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                          placeholder="Add a comment (optional)…"
+                          rows={2}
+                          value={comment[a.id] ?? ''}
+                          onChange={e => setComment(c => ({ ...c, [a.id]: e.target.value }))}
+                        />
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => approve.mutate({ id: a.id, c: comment[a.id] })}
+                            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
+                            <CheckCircle size={14} />Approve
+                          </button>
+                          <button
+                            onClick={() => reject.mutate({ id: a.id, c: comment[a.id] })}
+                            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
+                            <XCircle size={14} />Reject
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-xs text-slate-400 italic">You need the Approver or Admin role to act on this request.</p>
+                    )}
                   </>
                 )}
 

@@ -1,13 +1,16 @@
 'use client';
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { api } from '@/lib/api';
+import { api, InvitePreviewResponse } from '@/lib/api';
+import { setToken } from '@/lib/auth';
+import { CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 
 /**
- * AcceptInvitePage — allows an invitee to set their password and complete registration.
+ * AcceptInvitePage — allows an invitee to set their password and join the workspace.
  *
  * URL: /invite/[tenantId]?token=<invite_token>
- * On success, redirects to /login.
+ * On success, auto-logs in and redirects to the dashboard.
  */
 export default function AcceptInvitePage() {
   const params = useParams<{ token: string }>();
@@ -18,26 +21,44 @@ export default function AcceptInvitePage() {
   const tenantId = params.token;
   const inviteToken = searchParams.get('token') ?? '';
 
-  const [password, setPassword] = useState('');
+  const [preview, setPreview]           = useState<InvitePreviewResponse | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(true);
+
+  const [password, setPassword]             = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError]   = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  /** Submits the password to accept the invite and create the user account. */
+  // Fetch invite preview on mount — shows workspace name, email, role
+  useEffect(() => {
+    if (!tenantId || !inviteToken) {
+      setPreviewError('Invalid invite link.');
+      setPreviewLoading(false);
+      return;
+    }
+    api.tenants.invitePreview(tenantId, inviteToken)
+      .then(data => setPreview(data))
+      .catch(() => setPreviewError('This invite link is invalid, expired, or has already been used.'))
+      .finally(() => setPreviewLoading(false));
+  }, [tenantId, inviteToken]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
-    if (!password) { setError('Password is required.'); return; }
-    if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
-    if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    if (!password)                           { setError('Password is required.');                     return; }
+    if (password !== confirmPassword)        { setError('Passwords do not match.');                   return; }
+    if (password.length < 8)                 { setError('Password must be at least 8 characters.');   return; }
 
     setLoading(true);
     try {
-      await api.tenants.acceptInvite(tenantId, inviteToken, password);
+      const result = await api.tenants.acceptInvite(tenantId, inviteToken, password);
+      // Auto-login with the returned JWT
+      setToken(result.token);
       setSuccess(true);
-      setTimeout(() => router.push('/login'), 2000);
+      setTimeout(() => router.push('/workflows'), 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to accept invite.');
     } finally {
@@ -45,31 +66,61 @@ export default function AcceptInvitePage() {
     }
   }
 
+  if (previewLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
+      </div>
+    );
+  }
+
+  if (previewError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
+        <div className="max-w-sm rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <AlertTriangle className="mx-auto mb-4 h-10 w-10 text-amber-400" />
+          <h2 className="text-lg font-semibold text-slate-900">Invite not found</h2>
+          <p className="mt-2 text-sm text-slate-500">{previewError}</p>
+        </div>
+      </div>
+    );
+  }
+
   if (success) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6">
-        <div className="max-w-sm mx-auto bg-white border border-slate-200 rounded-xl p-8 shadow-sm text-center space-y-4">
-          <div className="text-5xl">✅</div>
-          <h2 className="text-2xl font-bold text-slate-900">Account created!</h2>
-          <p className="text-slate-500 text-sm">Redirecting you to login…</p>
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
+        <div className="max-w-sm rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm space-y-4">
+          <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
+          <h2 className="text-xl font-bold text-slate-900">Welcome to {preview?.tenantName}!</h2>
+          <p className="text-sm text-slate-500">Taking you to the dashboard…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6">
-      <div className="max-w-sm mx-auto bg-white border border-slate-200 rounded-xl p-8 shadow-sm space-y-6">
-        {/* Logo mark */}
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
+      <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-8 shadow-sm space-y-6">
+        {/* Logo */}
         <div className="flex items-center justify-center">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
-            <span className="text-white font-bold text-lg">O</span>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600">
+            <span className="text-lg font-bold text-white">O</span>
           </div>
         </div>
 
+        {/* Invite summary */}
+        <div className="rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm">
+          <p className="font-medium text-indigo-800">
+            You&apos;re joining <strong>{preview?.tenantName}</strong>
+          </p>
+          <p className="mt-0.5 text-indigo-600">
+            as <strong>{preview?.role}</strong> · {preview?.email}
+          </p>
+        </div>
+
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Join your team on OrchestFlowAI</h2>
-          <p className="text-slate-500 text-sm mt-1">Set a password to complete your registration.</p>
+          <h2 className="text-xl font-bold text-slate-900">Create your account</h2>
+          <p className="mt-1 text-sm text-slate-500">Set a password to complete your registration.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -100,12 +151,17 @@ export default function AcceptInvitePage() {
           {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
           <button
             type="submit"
-            className="w-full bg-indigo-600 text-white rounded-lg py-2 font-medium hover:bg-indigo-700 disabled:opacity-50"
+            className="w-full rounded-lg bg-indigo-600 py-2 font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
             disabled={loading}
           >
-            {loading ? 'Creating account…' : 'Create account'}
+            {loading ? 'Creating account…' : 'Create account & join'}
           </button>
         </form>
+
+        <p className="text-center text-xs text-slate-400">
+          Already have an account?{' '}
+          <a href="/login" className="text-indigo-600 hover:underline">Sign in</a>
+        </p>
       </div>
     </div>
   );

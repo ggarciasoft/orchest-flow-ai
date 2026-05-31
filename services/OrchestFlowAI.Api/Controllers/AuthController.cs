@@ -6,6 +6,8 @@ using OrchestFlowAI.Contracts.Responses;
 using OrchestFlowAI.Domain.Entities;
 using OrchestFlowAI.Domain.Enums;
 using OrchestFlowAI.Infrastructure.Auth;
+using OrchestFlowAI.Infrastructure.Email;
+
 namespace OrchestFlowAI.Api.Controllers;
 
 [ApiController, Route("api/auth")]
@@ -15,9 +17,10 @@ public sealed class AuthController : ControllerBase
     private readonly ITenantRepository _tenants;
     private readonly JwtTokenService _jwt;
     private readonly IConfiguration _config;
+    private readonly IEmailService _email;
 
-    public AuthController(IUserRepository users, ITenantRepository tenants, JwtTokenService jwt, IConfiguration config)
-    { _users = users; _tenants = tenants; _jwt = jwt; _config = config; }
+    public AuthController(IUserRepository users, ITenantRepository tenants, JwtTokenService jwt, IConfiguration config, IEmailService email)
+    { _users = users; _tenants = tenants; _jwt = jwt; _config = config; _email = email; }
 
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest req, CancellationToken ct)
@@ -64,6 +67,22 @@ public sealed class AuthController : ControllerBase
 
         var key = _config["Auth:JwtSigningKey"] ?? "dev-signing-key-change-in-production-32chars";
         var token = _jwt.GenerateToken(user, key, _config["Auth:JwtIssuer"] ?? "OrchestFlowAI", _config["Auth:JwtAudience"] ?? "OrchestFlowAI-web");
+
+        // Send welcome email (fire-and-forget; do not fail registration if email fails)
+        var webBase = _config["App:WebBaseUrl"]?.TrimEnd('/') ?? "http://localhost:3000";
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _email.SendAsync(
+                    user.Email,
+                    EmailTemplates.WelcomeSubject(),
+                    EmailTemplates.WelcomeHtml(user.DisplayName, webBase),
+                    EmailTemplates.WelcomeText(user.DisplayName, webBase));
+            }
+            catch { /* swallow — welcome email is best-effort */ }
+        });
+
         return StatusCode(201, new AuthResponse(token, new UserDto(user.Id, user.Email, user.DisplayName, user.Role.ToString())));
     }
 

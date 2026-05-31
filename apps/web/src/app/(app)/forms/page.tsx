@@ -7,6 +7,7 @@ import { formatDate } from '@/lib/utils';
 import { ClipboardList, Plus, Pencil, Trash2, Copy } from 'lucide-react';
 import { PageHeader, EmptyState, Badge, Pagination, SearchInput } from '@/components/ui';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useAuth } from '@/contexts/AuthContext';
 
 const PAGE_SIZE = 20;
 
@@ -14,6 +15,7 @@ const PAGE_SIZE = 20;
  * FormsPage — lists custom forms with search and pagination.
  */
 export default function FormsPage() {
+  const { canEdit } = useAuth();
   const router = useRouter();
   const qc = useQueryClient();
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -52,13 +54,15 @@ export default function FormsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <PageHeader title="Forms" subtitle="Custom data-collection forms for workflow pauses" />
-        <button
-          onClick={() => router.push('/forms/new')}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-        >
-          <Plus size={16} />
-          New Form
-        </button>
+        {canEdit && (
+          <button
+            onClick={() => router.push('/forms/new')}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          >
+            <Plus size={16} />
+            New Form
+          </button>
+        )}
       </div>
 
       <SearchInput
@@ -102,18 +106,22 @@ export default function FormsPage() {
                 </div>
                 <div className="flex items-center gap-3 shrink-0 ml-4">
                   <span className="text-xs text-slate-400">{formatDate(form.createdAt)}</span>
-                  <button
-                    onClick={() => router.push(`/forms/${form.id}`)}
-                    className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors"
-                  >
-                    <Pencil size={13} /> Edit
-                  </button>
-                  <button
-                    onClick={() => setConfirmDelete(form.id)}
-                    className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
-                  >
-                    <Trash2 size={13} /> Delete
-                  </button>
+                  {canEdit && (
+                    <button
+                      onClick={() => router.push(`/forms/${form.id}`)}
+                      className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors"
+                    >
+                      <Pencil size={13} /> Edit
+                    </button>
+                  )}
+                  {canEdit && (
+                    <button
+                      onClick={() => setConfirmDelete(form.id)}
+                      className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                    >
+                      <Trash2 size={13} /> Delete
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, SecretSummary } from '@/lib/api';
 import { Plus, Trash2, Eye, EyeOff, KeyRound, AlertCircle } from 'lucide-react';
 import { PageHeader } from '@/components/ui';
+import { AdminPageGuard } from '@/components/AdminPageGuard';
 
 /**
  * SecretsPage — manage encrypted named secrets for use in workflow node config.
@@ -64,6 +65,7 @@ export default function SecretsPage() {
   };
 
   return (
+    <AdminPageGuard>
     <div className="space-y-6">
       <PageHeader
         title="Secrets Vault"
@@ -220,5 +222,6 @@ export default function SecretsPage() {
         </div>
       </div>
     </div>
+    </AdminPageGuard>
   );
 }

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, TenantConfig } from '@/lib/api';
 import { getTenantId } from '@/lib/auth';
 import { PageHeader } from '@/components/ui';
+import { AdminPageGuard } from '@/components/AdminPageGuard';
 import Link from 'next/link';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 
@@ -48,6 +49,7 @@ export default function TenantSettingsPage() {
   );
 
   return (
+    <AdminPageGuard>
     <div className="max-w-2xl space-y-6">
       <Link href="/settings" className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700">
         <ArrowLeft size={14} /> Back to Settings
@@ -164,6 +166,7 @@ export default function TenantSettingsPage() {
         {saved && <span className="text-sm text-emerald-600">✓ Saved</span>}
       </div>
     </div>
+    </AdminPageGuard>
   );
 }
 
