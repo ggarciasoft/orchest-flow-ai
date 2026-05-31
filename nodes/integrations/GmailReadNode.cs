@@ -41,7 +41,8 @@ public sealed class GmailReadNode : IWorkflowNode
         if (string.IsNullOrEmpty(clientId)) throw new InvalidOperationException("clientId config is required");
         if (string.IsNullOrEmpty(clientSecret)) throw new InvalidOperationException("clientSecret config is required");
         if (string.IsNullOrEmpty(refreshToken)) throw new InvalidOperationException("refreshToken config is required");
-        var query = ctx.GetConfig<string>("query") ?? "is:unread";
+        // query: prefer wired node input (from upstream e.g. Read Config) over literal config
+        var query = ctx.GetInput<string>("query") ?? ctx.GetConfig<string>("query") ?? "is:unread";
         var maxResults = (int)(ctx.GetConfig<double?>("maxResults") ?? 10.0);
         if (maxResults < 1) maxResults = 1;
         if (maxResults > 50) maxResults = 50;
@@ -235,7 +236,10 @@ public sealed class GmailReadNodeDescriptor : IWorkflowNodeDescriptor
     /// <inheritdoc />
     public string? IconKey => "mail";
     /// <inheritdoc />
-    public IReadOnlyCollection<NodeInputDefinition> Inputs => Array.Empty<NodeInputDefinition>();
+    public IReadOnlyCollection<NodeInputDefinition> Inputs => new[]
+    {
+        new NodeInputDefinition("query", "Query", "Override the query config at runtime — wire from a Read Config or Set Variable node.", DataType.String, Required: false),
+    };
     /// <inheritdoc />
     public IReadOnlyCollection<NodeOutputDefinition> Outputs => new[]
     {
@@ -249,7 +253,7 @@ public sealed class GmailReadNodeDescriptor : IWorkflowNodeDescriptor
         new NodeConfigDefinition("clientId", "Client ID", "OAuth2 client ID from Google Cloud Console.", DataType.String, Required: false),
         new NodeConfigDefinition("clientSecret", "Client Secret", "OAuth2 client secret from Google Cloud Console.", DataType.String, Required: false, IsSensitive: true),
         new NodeConfigDefinition("refreshToken", "Refresh Token", "OAuth2 refresh token with Gmail read scope.", DataType.String, Required: false, IsSensitive: true),
-        new NodeConfigDefinition("query", "Query", "Gmail search query (e.g. is:unread, from:someone@example.com).", DataType.String, Required: false, DefaultValue: "is:unread"),
+        new NodeConfigDefinition("query", "Query", "Gmail search query (e.g. is:unread, after:2026-05-01). Can be overridden by wiring the 'query' input from Read Config or Set Variable.", DataType.String, Required: false, DefaultValue: "is:unread"),
         new NodeConfigDefinition("maxResults", "Max Results", "Maximum emails to retrieve (1-50, default: 10).", DataType.Number, Required: false, DefaultValue: 10)
     };
 }
