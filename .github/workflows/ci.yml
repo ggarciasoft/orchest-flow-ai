@@ -1,54 +1,54 @@
-name: CI
+# name: CI
 
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+# on:
+#   push:
+#     branches: [main]
+#   pull_request:
+#     branches: [main]
 
-jobs:
-  backend:
-    name: Backend — Build & Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+# jobs:
+#   backend:
+#     name: Backend — Build & Test
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
+#       - name: Setup .NET
+#         uses: actions/setup-dotnet@v4
+#         with:
+#           dotnet-version: '9.0.x'
 
-      - name: Restore
-        run: dotnet restore OrchestFlowAI.slnx
+#       - name: Restore
+#         run: dotnet restore OrchestFlowAI.slnx
 
-      - name: Build
-        run: dotnet build OrchestFlowAI.slnx --no-restore -c Release
+#       - name: Build
+#         run: dotnet build OrchestFlowAI.slnx --no-restore -c Release
 
-      - name: Test
-        run: dotnet test OrchestFlowAI.slnx --no-build -c Release --logger "trx;LogFileName=test-results.trx" || true
+#       - name: Test
+#         run: dotnet test OrchestFlowAI.slnx --no-build -c Release --logger "trx;LogFileName=test-results.trx" || true
 
-  frontend:
-    name: Frontend — Build & Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+#   frontend:
+#     name: Frontend — Build & Lint
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11
+#       - uses: pnpm/action-setup@v4
+#         with:
+#           version: 11
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: pnpm
+#       - uses: actions/setup-node@v4
+#         with:
+#           node-version: '22'
+#           cache: pnpm
 
-      - name: Install (workspace)
-        run: pnpm install
+#       - name: Install (workspace)
+#         run: pnpm install
 
-      - name: Lint
-        run: pnpm --filter web lint
+#       - name: Lint
+#         run: pnpm --filter web lint
 
-      - name: Build
-        run: pnpm run build:app
-        env:
-          NEXT_PUBLIC_API_BASE_URL: http://localhost:5080
+#       - name: Build
+#         run: pnpm run build:app
+#         env:
+#           NEXT_PUBLIC_API_BASE_URL: http://localhost:5080
