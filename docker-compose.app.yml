@@ -1,12 +1,12 @@
 # docker-compose.app.yml — Application layer
 # Starts the API, Worker, and Web frontend.
-# Requires the infrastructure layer to be running first.
+# Requires the infrastructure layer (postgres, redis).
 #
-# Run with:
-#   docker compose -f docker-compose.yml -f docker-compose.app.yml up -d
-#
-# Build and run:
+# Run with infra:
 #   docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
+#
+# Or use the full stack file:
+#   docker compose -f docker-compose.full.yml up -d --build
 
 services:
   api:
@@ -24,7 +24,7 @@ services:
       - LLM__DefaultProvider=${LLM_PROVIDER:-fake}
       - LLM__DefaultModel=${OPENAI_DEFAULT_MODEL:-gpt-4o-mini}
       - LLM__OpenAI__ApiKey=${OPENAI_API_KEY:-}
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis:6379,abortConnect=false
       - ASPNETCORE_ENVIRONMENT=Development
     volumes:
       - uploads:/app/uploads
@@ -38,7 +38,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8080/swagger/v1/swagger.json"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 60s
 
   worker:
     build:
@@ -50,7 +51,7 @@ services:
       - LLM__DefaultProvider=${LLM_PROVIDER:-fake}
       - LLM__DefaultModel=${OPENAI_DEFAULT_MODEL:-gpt-4o-mini}
       - LLM__OpenAI__ApiKey=${OPENAI_API_KEY:-}
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis:6379,abortConnect=false
     volumes:
       - uploads:/app/uploads
     depends_on:
@@ -60,8 +61,10 @@ services:
 
   web:
     build:
-      context: apps/web
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        - DOCKER_BUILD=1
     ports:
       - "3000:3000"
     environment:

@@ -136,7 +136,7 @@ export default function FormBuilderPage({ params }: { params: Promise<{ id: stri
     });
   };
 
-  const TYPE_COLORS: Record<string, 'default' | 'info' | 'warning' | 'success' | 'error'> = {
+  const TYPE_COLORS: Record<string, 'default' | 'info' | 'warning' | 'success' | 'danger'> = {
     text: 'default', number: 'info', select: 'warning', date: 'default', email: 'info', boolean: 'success',
   };
 

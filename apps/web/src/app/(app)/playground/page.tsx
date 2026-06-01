@@ -257,7 +257,7 @@ export default function PlaygroundPage() {
         </div>
       )}
 
-      {phase === 'filling' && form && (
+      {(phase === 'filling' || phase === 'submitting') && form && (
         <div className="bg-white border border-slate-200 rounded-xl p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
             <FormRenderer

@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OrchestFlowAI — Web App
 
-## Getting Started
+The full authenticated web application: workflow designer, dashboard, forms, executions, approvals, settings, and all administrative screens.
 
-First, run the development server:
+> This is one of two frontend apps. See also [`apps/marketing/`](../marketing/) (static marketing site).
+
+## Quick Start
+
+From the **repo root**:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm run dev:app
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app starts at **http://localhost:3000**.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+> The backend API must be running at `http://localhost:5080` (the default). See the [root README](../../README.md) for full setup instructions.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Tech Stack
 
-## Learn More
+| What | Detail |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript 5 |
+| Styling | Tailwind CSS v4 |
+| State | React Query, React Context |
+| Designer | React Flow (`@xyflow/react`) |
+| Real-time | SignalR (`@microsoft/signalr`) |
+| Tests | Jest + React Testing Library |
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/
+│   ├── (app)/              # Authenticated routes (sidebar layout)
+│   │   ├── dashboard/
+│   │   ├── workflows/
+│   │   ├── executions/
+│   │   ├── forms/
+│   │   ├── approvals/
+│   │   ├── documents/
+│   │   ├── playground/
+│   │   ├── settings/
+│   │   └── onboarding/
+│   ├── docs/               # Public docs pages (re-exported from @orchest-flow-ai/web-public)
+│   ├── login/
+│   ├── signup/
+│   ├── terms/              # Re-exported from @orchest-flow-ai/web-public
+│   ├── privacy/            # Re-exported from @orchest-flow-ai/web-public
+│   ├── feedback/           # Re-exported from @orchest-flow-ai/web-public
+│   ├── page.tsx            # Home page (re-exported from @orchest-flow-ai/web-public)
+│   ├── layout.tsx          # Root layout (providers, cookie banner)
+│   └── globals.css
+├── components/
+│   ├── designer/           # Workflow designer (canvas, nodes, drawers)
+│   ├── providers.tsx       # React Query + Auth providers
+│   └── ...
+├── contexts/               # AuthContext
+├── hooks/                  # useExecutionStream, etc.
+├── lib/
+│   ├── api.ts              # Backend API client
+│   └── auth.ts             # JWT utilities
+└── content/docs/           # Docs index (shared via @orchest-flow-ai/web-public)
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Shared Pages
 
-## Deploy on Vercel
+Public pages (home, docs, terms, privacy, feedback) are defined once in [`ui/web-public/`](../../ui/web-public/) and re-exported here as thin wrappers. This keeps them in sync with `apps/marketing/`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Auth & RBAC
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Client-side auth via JWT in `localStorage`
+- `AuthContext` provides `isAdmin`, `canEdit`, `isApprover` flags
+- All write actions (save, run, delete, approve, etc.) are gated by role
+- Roles: `Admin`, `Editor`, `Approver`, `Viewer` (PascalCase, matching backend)
+
+## Scripts
+
+| Script | Description |
+|---|---|
+| `pnpm run dev:app` | Start dev server on port 3000 (from repo root) |
+| `pnpm run build:app` | Production build |
+| `pnpm --filter web test` | Run Jest tests |
+| `pnpm --filter web lint` | Run ESLint |
+
+## Build
+
+```bash
+pnpm run build:app
+```
+
+Produces a standard Next.js build in `.next/`. Deploy as a Node.js server or Docker container.
+
+## Related
+
+- [Root README](../../README.md) — full project overview and setup
+- [Marketing site](../marketing/) — static export for GitHub Pages
+- [Shared UI package](../../ui/web-public/) — shared pages and components
+- [Frontend docs](../../docs/FRONTEND.md) — screens, RBAC, and architecture details

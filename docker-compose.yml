@@ -1,11 +1,14 @@
 # docker-compose.yml — Infrastructure layer
 # Starts PostgreSQL and Redis.
-# Run with: docker compose up -d
 #
-# To also start the application:
+# Run infra only:
+#   docker compose up -d
+#
+# Run everything (recommended):
+#   docker compose -f docker-compose.full.yml up -d --build
+#
+# Or combine files manually:
 #   docker compose -f docker-compose.yml -f docker-compose.app.yml up -d
-#
-# To also start observability (Prometheus / Grafana / OTEL):
 #   docker compose -f docker-compose.yml -f docker-compose.app.yml -f docker-compose.observability.yml up -d
 
 services:
@@ -39,4 +42,3 @@ services:
 
 volumes:
   postgres_data:
-  uploads:

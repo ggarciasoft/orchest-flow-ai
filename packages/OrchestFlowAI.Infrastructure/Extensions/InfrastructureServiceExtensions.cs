@@ -29,7 +29,8 @@ public static class InfrastructureServiceExtensions
     public static IServiceCollection AddOrchestFlowAIInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         // Queue — Redis when REDIS_URL is set, otherwise in-memory
-        var redisUrl = configuration["Redis:Url"] ?? Environment.GetEnvironmentVariable("REDIS_URL");
+        var redisUrl = Environment.GetEnvironmentVariable("REDIS_URL") ?? 
+        configuration["Redis:Url"] ?? throw new InvalidOperationException("REDIS_URL is not set");
         if (!string.IsNullOrEmpty(redisUrl))
         {
             services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisUrl));
@@ -53,8 +54,8 @@ public static class InfrastructureServiceExtensions
         // Persistent queue — PostgreSQL when CONNECTION_STRING is set, otherwise in-memory stub
         // (registered after the DB section so PostgresExecutionQueue can depend on the scoped DbContext)
 
-        var connectionString = configuration.GetConnectionString("Default")
-            ?? Environment.GetEnvironmentVariable("CONNECTION_STRING");
+        var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") ??
+        configuration.GetConnectionString("Default") ?? throw new InvalidOperationException("CONNECTION_STRING is not set");
 
         if (!string.IsNullOrWhiteSpace(connectionString))
         {

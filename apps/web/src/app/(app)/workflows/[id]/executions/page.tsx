@@ -142,8 +142,8 @@ export default function WorkflowExecutionsPage({ params }: { params: Promise<{ i
 
       {cancelTarget && (
         <CancelExecutionModal
-          execution={cancelTarget}
-          onCancel={() => handleCancel(cancelTarget.id)}
+          executionId={cancelTarget.id}
+          onConfirm={() => handleCancel(cancelTarget.id)}
           onClose={() => setCancelTarget(null)}
         />
       )}

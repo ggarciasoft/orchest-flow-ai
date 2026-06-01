@@ -17,11 +17,10 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-green?style=flat-square)](./LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/ggarciasoft/orchest-flow-ai?style=flat-square)](https://github.com/ggarciasoft/orchest-flow-ai/stargazers)
 
-<!-- TODO: replace static test badges with dynamic CI badges once GitHub Actions is configured -->
-
 > Open-source, self-hosted enterprise AI workflow platform for orchestrating agents, tools, human approvals, documents, and business automation.
 
 **GitHub:** https://github.com/ggarciasoft/orchest-flow-ai
+**Marketing site:** https://ggarciasoft.github.io/orchest-flow-ai/
 
 OrchestFlowAI is a modular platform that lets teams build AI-driven business workflows using reusable nodes. Workflows are stored as **data**, executed by a backend **engine**, and surfaced through a **visual designer**. You deploy it yourself — no vendor lock-in, no subscription, no data leaving your infrastructure.
 
@@ -35,12 +34,14 @@ OrchestFlowAI is a modular platform that lets teams build AI-driven business wor
 |---|---|
 | Backend API (.NET 9) | ✅ Running — all endpoints implemented |
 | Frontend (Next.js) | ✅ Running — designer, pages, auth |
+| Marketing site | ✅ Static export → GitHub Pages |
 | Workflow Engine | ✅ Implemented — graph execution, retries, approvals |
 | Node Library | ✅ **21 nodes** across 6 categories |
 | Unit Tests | ✅ **299/299 backend** · **59/59 frontend** passing |
 | Database | ⚠️ In-memory stubs (PostgreSQL not yet wired) |
 | Auth guard (frontend) | ✅ Complete — RBAC enforced across all pages and actions |
 | Role-gated UI | ✅ Viewers/Approvers cannot trigger write actions anywhere in the UI |
+| CI/CD | ✅ GitHub Actions — backend tests, frontend build, Pages deploy |
 
 > See [`BACKLOG.md`](./BACKLOG.md) for the full list of known gaps and next steps.
 
@@ -75,7 +76,7 @@ See [`docs/sample-workflows/contract-review.md`](./docs/sample-workflows/contrac
 
 ---
 
-## 🧩 Node Library (19 nodes)
+## 🧩 Node Library (21 nodes)
 
 ### System
 | Type | Purpose |
@@ -134,20 +135,25 @@ Full catalog with inputs/outputs/config: [`docs/NODES.md`](./docs/NODES.md)
 |---|---|
 | Backend | .NET 9 (C#) — xUnit, Moq, FluentAssertions |
 | Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS, React Flow |
+| Marketing | Next.js 16 static export → GitHub Pages |
+| Package manager | pnpm (workspace) |
 | Database | PostgreSQL *(planned — currently in-memory stubs)* |
 | Queue | In-memory .NET Channels *(Redis/Service Bus planned)* |
-| AI | Provider abstraction — OpenAI, FakeLLMProvider (tests) |
+| AI | Provider abstraction — OpenAI, Anthropic, Azure, Ollama |
 | Testing | xUnit + Jest + React Testing Library |
+| CI/CD | GitHub Actions |
 
 ---
 
 ## 📂 Repository Layout
 
 ```
-OrchestFlowAI/
+orchest-flow-ai/
 ├── apps/
-│   ├── web/                    # Next.js full app (designer, pages, auth)
-│   └── marketing/              # Static marketing site (Next.js, output: export)
+│   ├── web/                        # Next.js full app (designer, pages, auth)
+│   └── marketing/                  # Static marketing site (Next.js, output: export)
+├── ui/
+│   └── web-public/                 # Shared frontend library (pages, components, content)
 ├── services/
 │   ├── OrchestFlowAI.Api/          # REST API (.NET 9)
 │   ├── OrchestFlowAI.Worker/       # Background workflow executor
@@ -161,19 +167,24 @@ OrchestFlowAI/
 │   ├── OrchestFlowAI.SDK/          # Node authoring SDK + test helpers
 │   └── OrchestFlowAI.Observability/ # Middleware, logging
 ├── nodes/
-│   ├── ai/                     # AI nodes
-│   ├── data/                   # Data transformation nodes
-│   ├── documents/              # Document processing nodes
-│   ├── human/                  # Human-in-the-loop nodes
-│   ├── integrations/           # External service nodes
-│   ├── logic/                  # Control flow nodes
-│   └── system/                 # Start/End nodes
+│   ├── ai/                         # AI nodes
+│   ├── data/                       # Data transformation nodes
+│   ├── documents/                  # Document processing nodes
+│   ├── human/                      # Human-in-the-loop nodes
+│   ├── integrations/               # External service nodes
+│   ├── logic/                      # Control flow nodes
+│   └── system/                     # Start/End nodes
 ├── tests/
 │   └── OrchestFlowAI.Tests/        # xUnit test project (316 tests)
-├── docs/                       # Architecture, API, nodes, setup docs
-├── rules/                      # Coding rules by domain
-├── AGENTS.md                   # AI agent roles and rules
-├── BACKLOG.md                  # Known gaps and next steps
+├── docs/                           # Architecture, API, nodes, setup docs
+├── .github/workflows/              # CI + GitHub Pages deploy
+├── docker-compose.yml              # Infra (PostgreSQL, Redis)
+├── docker-compose.app.yml          # App (API, Worker, Web)
+├── docker-compose.observability.yml # Prometheus, Grafana, OTEL
+├── docker-compose.full.yml         # All of the above (single command)
+├── pnpm-workspace.yaml             # pnpm workspace (apps/* + ui/*)
+├── AGENTS.md                       # AI agent roles and rules
+├── BACKLOG.md                      # Known gaps and next steps
 └── README.md
 ```
 
@@ -203,16 +214,24 @@ OrchestFlowAI/
 
 ## ⚡ Quick Start
 
+### Prerequisites
+
+- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [Node.js 22+](https://nodejs.org/)
+- [pnpm](https://pnpm.io/installation) (`npm install -g pnpm`)
+
 ### Option A — Local dev (no Docker, in-memory DB)
 ```bash
 git clone https://github.com/ggarciasoft/orchest-flow-ai.git
-cd OrchestFlowAI
+cd orchest-flow-ai
 
 # Backend API (runs at http://localhost:5080 — Swagger at /swagger)
 cd services/OrchestFlowAI.Api && dotnet run
 
 # Frontend (runs at http://localhost:3000)
-cd apps/web && npm install && npm run dev
+# (from repo root, in a separate terminal)
+pnpm install
+pnpm run dev:app
 ```
 
 ### Option B — Docker with PostgreSQL
@@ -224,14 +243,23 @@ docker compose up -d
 CONNECTION_STRING="Host=localhost;Database=OrchestFlowAI;Username=OrchestFlowAI;Password=OrchestFlowAI" dotnet run --project services/OrchestFlowAI.Api
 ```
 
-### Option C — Full Docker stack
+### Option C — Full Docker stack (infra + app + observability)
 ```bash
 # Copy and configure env vars
 cp .env.example .env
 
-# Start infra + app
-docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
+# Start everything (postgres, redis, api, worker, web, prometheus, grafana, otel)
+docker compose -f docker-compose.full.yml up -d --build
 ```
+
+| Service | URL |
+|---|---|
+| Web app | http://localhost:3000 |
+| API / Swagger | http://localhost:5080/swagger |
+| Prometheus | http://localhost:9090 |
+| Grafana | http://localhost:3001 |
+
+For infra + app only (no observability): `docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build`
 
 ### Run tests
 ```bash
@@ -239,10 +267,27 @@ docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
 cd tests/OrchestFlowAI.Tests && dotnet test --configuration Release
 
 # Frontend (62 tests)
-cd apps/web && npm test
+pnpm --filter web test
+```
+
+### Marketing site (local dev)
+```bash
+pnpm run dev:marketing    # http://localhost:3001
+pnpm run build:marketing  # static output → apps/marketing/out/
 ```
 
 > Tables are created automatically on first startup when PostgreSQL is configured — no manual migration step needed.
+
+---
+
+## 🌐 Deployments
+
+| Target | Build command | Output | Hosting |
+|---|---|---|---|
+| Full app | `pnpm run build:app` | `apps/web/.next/` | Node.js server / Docker |
+| Marketing site | `pnpm run build:marketing` | `apps/marketing/out/` | GitHub Pages (auto-deployed on push to `main`) |
+
+The marketing site is live at **https://ggarciasoft.github.io/orchest-flow-ai/**
 
 ---
 
@@ -255,5 +300,3 @@ Contributions are welcome. Please open an issue or pull request on [GitHub](http
 ## 📜 License
 
 [Apache 2.0](./LICENSE) — free to use, modify, and distribute, including commercially.
-
-

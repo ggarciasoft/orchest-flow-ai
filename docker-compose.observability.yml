@@ -3,6 +3,9 @@
 # Optional — only needed when monitoring metrics and traces.
 #
 # Run with:
+#   docker compose -f docker-compose.full.yml up -d
+#
+# Or manually:
 #   docker compose -f docker-compose.yml -f docker-compose.app.yml -f docker-compose.observability.yml up -d
 #
 # Access:
@@ -13,7 +16,7 @@
 
 services:
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
+    image: otel/opentelemetry-collector-contrib:0.123.0
     volumes:
       - ./deploy/otel/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
     ports:
@@ -23,7 +26,7 @@ services:
     restart: unless-stopped
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.4.0
     volumes:
       - ./deploy/otel/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
@@ -36,7 +39,7 @@ services:
     restart: unless-stopped
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:12.0.1
     ports:
       - "3001:3000"
     environment:

@@ -191,10 +191,10 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
       }
 
       if (def.edges?.length) {
-        setEdges(def.edges.map(e => ({ id: e.id ?? `edge-${e.source}-${e.target}`, ...e, type: 'default' })));
+        setEdges(def.edges.map(e => ({ ...e, id: e.id ?? `edge-${e.source}-${e.target}`, type: 'default' as const })));
       }
       // Push initial snapshot so undo doesn't go past the loaded state
-      const restoredEdgesForSnapshot = def.edges?.map(e => ({ id: e.id ?? `edge-${e.source}-${e.target}`, ...e, type: 'default' })) ?? [];
+      const restoredEdgesForSnapshot = def.edges?.map(e => ({ ...e, id: e.id ?? `edge-${e.source}-${e.target}`, type: 'default' as const })) ?? [];
       pushSnapshot({ nodes: restoredNodes ?? [], edges: restoredEdgesForSnapshot });
     } catch {
       // Malformed definition JSON — start with empty canvas
@@ -372,7 +372,7 @@ export function WorkflowDesigner({ workflow, nodeCatalog, initialDefinitionJson,
         };
       });
       setNodes(restoredNodes);
-      const restoredEdges = (def.edges ?? []).map(e => ({ id: e.id ?? `edge-${e.source}-${e.target}`, ...e, type: 'default' as const }));
+      const restoredEdges = (def.edges ?? []).map(e => ({ ...e, id: e.id ?? `edge-${e.source}-${e.target}`, type: 'default' as const }));
       setEdges(restoredEdges);
       pushSnapshot({ nodes: restoredNodes, edges: restoredEdges });
     }
