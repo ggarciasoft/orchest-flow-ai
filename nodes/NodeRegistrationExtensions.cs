@@ -31,6 +31,7 @@ RegisterNode<DataExtractorNode, DataExtractorNodeDescriptor>(services);
 RegisterNode<TranslationNode, TranslationNodeDescriptor>(services);
         RegisterNode<ExecutiveSummaryNode, ExecutiveSummaryNodeDescriptor>(services);
         RegisterNode<ExtractPdfTextNode, ExtractPdfTextNodeDescriptor>(services);
+        RegisterNode<SelectDocumentNode, SelectDocumentNodeDescriptor>(services);
         RegisterNode<SetVariableNode, SetVariableNodeDescriptor>(services);
         RegisterNode<JsonTransformNode, JsonTransformNodeDescriptor>(services);
         RegisterNode<DatabaseQueryNode, DatabaseQueryNodeDescriptor>(services);
