@@ -21,6 +21,9 @@ public sealed class WorkflowExecutionContext
     {
         if (NodeInputs.TryGetValue(key, out var val) && val is T typed) return typed;
         if (val is System.Text.Json.JsonElement je) return System.Text.Json.JsonSerializer.Deserialize<T>(je.GetRawText());
+        // Handle string → Guid (Convert.ChangeType does not support this conversion)
+        if (typeof(T) == typeof(Guid) && val is string strVal && Guid.TryParse(strVal, out var guid))
+            return (T)(object)guid;
         try { return (T?)Convert.ChangeType(val, typeof(T)); } catch { return default; }
     }
 
