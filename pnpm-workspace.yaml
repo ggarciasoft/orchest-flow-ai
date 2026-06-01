@@ -1,11 +1,11 @@
 packages:
   - 'apps/*'
-  - 'packages/*'
+  - 'ui/*'
 
 # Prevent native addons from running build scripts in this repo
 neverBuiltDependencies:
   - sharp
   - unrs-resolver
 allowBuilds:
-  sharp: set this to true or false
-  unrs-resolver: set this to true or false
+  sharp: false
+  unrs-resolver: false

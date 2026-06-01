@@ -12,7 +12,7 @@ importers:
     dependencies:
       '@orchest-flow-ai/web-public':
         specifier: workspace:*
-        version: link:../../packages/web-public
+        version: link:../../ui/web-public
       lucide-react:
         specifier: ^1.16.0
         version: 1.17.0(react@19.2.4)
@@ -67,7 +67,7 @@ importers:
         version: 10.0.0
       '@orchest-flow-ai/web-public':
         specifier: workspace:*
-        version: link:../../packages/web-public
+        version: link:../../ui/web-public
       '@tailwindcss/typography':
         specifier: ^0.5.19
         version: 0.5.19(tailwindcss@4.3.0)
@@ -163,7 +163,7 @@ importers:
         specifier: ^4.1.7
         version: 4.1.7(@types/node@20.19.41)(jsdom@29.1.1)(vite@8.0.14(@types/node@20.19.41)(jiti@2.7.0))
 
-  packages/web-public:
+  ui/web-public:
     dependencies:
       lucide-react:
         specifier: '>=1'
