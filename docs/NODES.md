@@ -149,6 +149,13 @@ Workflow pauses at Customer checkpoint. External system POSTs `{ "name": "Jane",
 - **Outputs:** `text` (`String`), `pageCount` (`Number`)
 - **Config:** `ocrFallback` (`Boolean`, default `false`)
 
+### `document.select`  ✅ Shipped
+
+- **Purpose:** Pauses the workflow and prompts a human to select a document from the document library.
+- **Inputs:** none
+- **Outputs:** `documentId` (`String`), `filename` (`String`), `mimeType` (`String`), `sizeBytes` (`Number`), `sha256` (`String`)
+- **Config:** `title` (`String`, optional, default "Select a Document"), `prompt` (`String`, optional)
+
 ### `document.ocr`  · Phase 11
 
 - **Purpose:** OCR scanned documents/images.

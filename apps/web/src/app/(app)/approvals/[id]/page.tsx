@@ -1,9 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api, FormFieldDefinition } from '@/lib/api';
-import { CheckCircle, XCircle, ArrowLeft, Clock, ClipboardList } from 'lucide-react';
+import { api, FormFieldDefinition, DocumentMeta, PagedResponse } from '@/lib/api';
+import { CheckCircle, XCircle, ArrowLeft, Clock, ClipboardList, Search, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import { PageHeader, Badge, statusVariant, statusLabel } from '@/components/ui';
@@ -25,6 +25,13 @@ export default function ApprovalDetailPage() {
   const [formValues, setFormValues] = useState<Record<string, unknown>>({});
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [docSearch, setDocSearch] = useState('');
+  const [docPage, setDocPage] = useState(1);
+  const [docList, setDocList] = useState<DocumentMeta[]>([]);
+  const [docTotal, setDocTotal] = useState(0);
+  const [docLoading, setDocLoading] = useState(false);
+  const [selectingDocId, setSelectingDocId] = useState<string | null>(null);
+  const DOC_PAGE_SIZE = 10;
 
   const { data: approval, isLoading } = useQuery({
     queryKey: ['approval', id],
@@ -50,6 +57,9 @@ export default function ApprovalDetailPage() {
   const correlationToken = payload._correlationToken as string | undefined;
   const checkpointName = payload._checkpointName as string | undefined;
 
+  const isDocumentSelection = payload._approvalKind === 'DocumentSelection';
+  const docPrompt = payload._prompt as string | undefined;
+
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:5080';
   // _formFields can be a string (double-encoded JSON) or already a parsed array
   const formFields: FormFieldDefinition[] = (() => {
@@ -63,6 +73,15 @@ export default function ApprovalDetailPage() {
     : String(payload._approvalTitle ?? payload.title ?? 'Approval Required');
 
   const visibleFields = Object.entries(payload).filter(([k]) => !k.startsWith('_'));
+
+  useEffect(() => {
+    if (!isDocumentSelection || approval?.status?.toLowerCase() !== 'pending') return;
+    setDocLoading(true);
+    api.documents.list({ search: docSearch || undefined, page: docPage, pageSize: DOC_PAGE_SIZE })
+      .then(res => { setDocList(res.items); setDocTotal(res.total); })
+      .catch(() => {})
+      .finally(() => setDocLoading(false));
+  }, [isDocumentSelection, approval?.status, docSearch, docPage]);
 
   // Standard approve/reject
   const approve = useMutation({
@@ -226,8 +245,87 @@ export default function ApprovalDetailPage() {
         </div>
       )}
 
+      {/* ── Document Selection ── */}
+      {isDocumentSelection && approval.status?.toLowerCase() === 'pending' && (
+        <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
+          {docPrompt && (
+            <p className="text-sm text-slate-600">{docPrompt}</p>
+          )}
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search documents..."
+              value={docSearch}
+              onChange={e => { setDocSearch(e.target.value); setDocPage(1); }}
+              className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              suppressHydrationWarning
+            />
+          </div>
+          {docLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 size={24} className="text-gray-400 animate-spin" />
+            </div>
+          ) : docList.length === 0 ? (
+            <p className="text-center text-sm text-slate-400 py-8">
+              {docSearch ? 'No documents match your search.' : 'No documents available.'}
+            </p>
+          ) : (
+            <div className="border border-slate-200 rounded-xl divide-y divide-slate-100">
+              {docList.map(doc => (
+                <button
+                  key={doc.id}
+                  disabled={selectingDocId !== null}
+                  onClick={async () => {
+                    setSelectingDocId(doc.id);
+                    try {
+                      await api.approvals.selectDocument(id, {
+                        documentId: doc.id,
+                        filename: doc.filename,
+                        mimeType: doc.mimeType,
+                        sizeBytes: doc.sizeBytes,
+                        sha256: doc.sha256,
+                      });
+                      qc.invalidateQueries({ queryKey: ['approvals'] });
+                      router.push('/approvals');
+                    } catch {
+                      setSelectingDocId(null);
+                    }
+                  }}
+                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 disabled:opacity-50 text-left transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-red-500 shrink-0">
+                      {selectingDocId === doc.id ? <Loader2 size={18} className="animate-spin" /> : <span>📄</span>}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-900 truncate">{doc.filename}</p>
+                      <p className="text-xs text-slate-400">{(doc.sizeBytes / 1024).toFixed(1)} KB · {new Date(doc.createdAt).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-indigo-600 font-medium shrink-0 ml-4">Select</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {Math.ceil(docTotal / DOC_PAGE_SIZE) > 1 && (
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-xs text-slate-500">Page {docPage} of {Math.ceil(docTotal / DOC_PAGE_SIZE)}</span>
+              <div className="flex gap-2">
+                <button onClick={() => setDocPage(p => Math.max(1, p - 1))} disabled={docPage === 1} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30">
+                  <ChevronLeft size={16} />
+                </button>
+                <button onClick={() => setDocPage(p => Math.min(Math.ceil(docTotal / DOC_PAGE_SIZE), p + 1))} disabled={docPage === Math.ceil(docTotal / DOC_PAGE_SIZE)} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30">
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Human approval node: context fields + approve/reject ── */}
-      {!isFormApproval && !isDataCheckpoint && (
+      {!isFormApproval && !isDataCheckpoint && !isDocumentSelection && (
         <>
           {visibleFields.length > 0 && (
             <div className="bg-white border border-slate-200 rounded-xl p-6">

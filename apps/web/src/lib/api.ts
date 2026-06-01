@@ -251,6 +251,9 @@ export const api = {
     /** Posts a comment on an approval request. */
     addComment: (id: string, text: string) =>
       apiFetch<ApprovalComment>(`/api/approvals/${id}/comments`, { method: 'POST', body: JSON.stringify({ text }) }),
+    /** Selects a document for an approval request. */
+    selectDocument: (id: string, doc: { documentId: string; filename: string; mimeType: string; sizeBytes: number; sha256: string }) =>
+      apiFetch<ApprovalRequest>(`/api/approvals/${id}/select-document`, { method: 'POST', body: JSON.stringify(doc) }),
   },
   /** Document upload and retrieval endpoints. */
   documents: {

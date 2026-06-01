@@ -188,6 +188,13 @@ Body: `{ "comment": "string" }`
 
 Both endpoints persist the decision and enqueue resume so the workflow continues.
 
+### `POST /api/approvals/{approvalId}/select-document`
+Body: `{ "documentId": "guid", "filename": "string", "mimeType": "string", "sizeBytes": number, "sha256": "string" }`
+
+Response: `ApprovalRequestResponse`
+
+Selects a document for a document selection approval request, approves it, and resumes the workflow with the document metadata as outputs.
+
 ---
 
 ## 4. Documents
