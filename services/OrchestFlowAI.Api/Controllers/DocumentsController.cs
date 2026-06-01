@@ -31,6 +31,14 @@ public sealed class DocumentsController : ControllerBase
         return Ok(new DocumentResponse(doc.Id, doc.Filename, doc.MimeType, doc.SizeBytes, doc.Sha256, doc.CreatedAt));
     }
 
+    [HttpGet]
+    public async Task<ActionResult<PagedResponse<DocumentResponse>>> List([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+    {
+        var (items, total) = await _documents.ListAsync(TenantId, search, page, pageSize, ct);
+        var result = items.Select(d => new DocumentResponse(d.Id, d.Filename, d.MimeType, d.SizeBytes, d.Sha256, d.CreatedAt)).ToList();
+        return Ok(new PagedResponse<DocumentResponse>(result, page, pageSize, total));
+    }
+
     [HttpGet("{id}")]
     public async Task<ActionResult<DocumentResponse>> Get(Guid id, CancellationToken ct)
     {

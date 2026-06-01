@@ -5,4 +5,5 @@ public interface IDocumentRepository
     Task<Document?> GetAsync(Guid id, Guid tenantId, CancellationToken ct = default);
     Task<Document> CreateAsync(Document document, CancellationToken ct = default);
     Task<IReadOnlyList<Document>> ListByOwnerAsync(Guid ownerId, Guid tenantId, CancellationToken ct = default);
+    Task<(IReadOnlyList<Document> Items, int Total)> ListAsync(Guid tenantId, string? search, int page, int pageSize, CancellationToken ct = default);
 }

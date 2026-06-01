@@ -213,6 +213,16 @@ public sealed class EfDocumentRepository : IDocumentRepository
 
     public async Task<IReadOnlyList<Document>> ListByOwnerAsync(Guid ownerId, Guid tenantId, CancellationToken ct = default)
         => await _db.Documents.Where(d => d.OwnerId == ownerId && d.TenantId == tenantId).ToListAsync(ct);
+
+    public async Task<(IReadOnlyList<Document> Items, int Total)> ListAsync(Guid tenantId, string? search, int page, int pageSize, CancellationToken ct = default)
+    {
+        var query = _db.Documents.AsNoTracking().Where(d => d.TenantId == tenantId);
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(d => d.Filename.ToLower().Contains(search.ToLower()));
+        var total = await query.CountAsync(ct);
+        var items = await query.OrderByDescending(d => d.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+        return (items, total);
+    }
 }
 
 /// <summary>EF Core implementation of <see cref="IAIUsageRepository"/>.</summary>

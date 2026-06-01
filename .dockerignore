@@ -1,0 +1,33 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Next.js build output
+.next
+apps/web/.next
+apps/marketing/.next
+apps/marketing/out
+
+# Git
+.git
+.gitignore
+
+# Docker
+.dockerignore
+docker-compose*.yml
+Dockerfile*
+
+# Development
+*.log
+.env
+.env.local
+.env.*.local
+
+# IDE
+.cursor
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db

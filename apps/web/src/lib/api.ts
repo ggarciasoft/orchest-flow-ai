@@ -258,15 +258,33 @@ export const api = {
      * Uploads a file using multipart/form-data.
      * Uses a raw fetch (not apiFetch) because Content-Type must not be set manually for FormData.
      */
-    upload: (file: File) => {
+    upload: async (file: File): Promise<DocumentMeta> => {
       const form = new FormData();
       form.append('file', file);
       const token = typeof window !== 'undefined' ? localStorage.getItem('OrchestFlowAI_token') : null;
-      return fetch(`${API_BASE}/api/documents/upload`, {
+      const res = await fetch(`${API_BASE}/api/documents/upload`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: form,
-      }).then(r => r.json()) as Promise<DocumentMeta>;
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        let errJson: Record<string, unknown> = {};
+        try { errJson = JSON.parse(errText); } catch { /* plain-text response */ }
+        const detail = (errJson.detail ?? errJson.title ?? errJson.error) as string | undefined;
+        if (detail) throw new Error(detail);
+        if (errText && errText.trim()) throw new Error(errText.trim());
+        throw new Error(`HTTP ${res.status}`);
+      }
+      return res.json() as Promise<DocumentMeta>;
+    },
+    /** Lists documents with optional search and pagination. */
+    list: (params?: { search?: string; page?: number; pageSize?: number }) => {
+      const q = new URLSearchParams();
+      if (params?.search) q.set('search', params.search);
+      if (params?.page) q.set('page', String(params.page));
+      if (params?.pageSize) q.set('pageSize', String(params.pageSize));
+      return apiFetch<PagedResponse<DocumentMeta>>(`/api/documents?${q}`);
     },
     /** Fetches document metadata by id. */
     get: (id: string) => apiFetch<DocumentMeta>(`/api/documents/${id}`),

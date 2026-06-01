@@ -146,6 +146,16 @@ public sealed class StubDocumentRepository : IDocumentRepository
         IReadOnlyList<Document> list = _store.Values.Where(d => d.OwnerId == ownerId && d.TenantId == tenantId).ToList();
         return Task.FromResult(list);
     }
+
+    public Task<(IReadOnlyList<Document> Items, int Total)> ListAsync(Guid tenantId, string? search, int page, int pageSize, CancellationToken ct = default)
+    {
+        var query = _store.Values.Where(d => d.TenantId == tenantId).AsEnumerable();
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(d => d.Filename.Contains(search, StringComparison.OrdinalIgnoreCase));
+        var total = query.Count();
+        var items = query.OrderByDescending(d => d.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        return Task.FromResult<(IReadOnlyList<Document>, int)>((items, total));
+    }
 }
 
 /// <summary>In-memory stub implementation of <see cref="IAIUsageRepository"/>.</summary>
