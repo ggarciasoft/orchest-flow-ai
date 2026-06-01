@@ -19,8 +19,20 @@ jest.mock("../NodeConfigDrawer", () => ({
   NodeConfigDrawer: () => <div data-testid="node-config-drawer">NodeConfigDrawer</div>,
 }));
 
-jest.mock("../TriggerSettingsPanel", () => ({
-  TriggerSettingsPanel: () => <div data-testid="trigger-settings-panel">TriggerSettingsPanel</div>,
+jest.mock("../VersionHistoryPanel", () => ({
+  VersionHistoryPanel: () => <div data-testid="version-history-panel">VersionHistoryPanel</div>,
+}));
+
+jest.mock("../AiAssistPanel", () => ({
+  AiAssistPanel: () => <div data-testid="ai-assist-panel">AiAssistPanel</div>,
+}));
+
+jest.mock("../../RunWorkflowModal", () => ({
+  RunWorkflowModal: () => <div data-testid="run-workflow-modal">RunWorkflowModal</div>,
+}));
+
+jest.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({ canEdit: true }),
 }));
 
 jest.mock("@xyflow/react", () => ({
@@ -57,6 +69,28 @@ jest.mock("lucide-react", () => ({
   Pencil: () => <span>Pencil</span>,
   Send: () => <span>Send</span>,
   Loader2: () => <span>Loader2</span>,
+  PlayCircle: () => <span>PlayCircle</span>,
+  StopCircle: () => <span>StopCircle</span>,
+  GitBranch: () => <span>GitBranch</span>,
+  Timer: () => <span>Timer</span>,
+  GitMerge: () => <span>GitMerge</span>,
+  Shuffle: () => <span>Shuffle</span>,
+  UserCheck: () => <span>UserCheck</span>,
+  Brain: () => <span>Brain</span>,
+  FileText: () => <span>FileText</span>,
+  Globe: () => <span>Globe</span>,
+  Mail: () => <span>Mail</span>,
+  Webhook: () => <span>Webhook</span>,
+  Clock: () => <span>Clock</span>,
+  Repeat: () => <span>Repeat</span>,
+  Database: () => <span>Database</span>,
+  Code2: () => <span>Code2</span>,
+  RefreshCw: () => <span>RefreshCw</span>,
+  FileSearch: () => <span>FileSearch</span>,
+  Download: () => <span>Download</span>,
+  CheckSquare: () => <span>CheckSquare</span>,
+  Cpu: () => <span>Cpu</span>,
+  Layers: () => <span>Layers</span>,
 }));
 
 const mockWorkflow = {
