@@ -159,29 +159,6 @@ public sealed class ApprovalsController : ControllerBase
         return Ok(await EnrichAsync(a, ct));
     }
 
-    /// <summary>Selects a document for an approval request and resumes execution with the document metadata.</summary>
-    [HttpPost("{id}/select-document"), Authorize(Policy = "EditorOrAbove")]
-    public async Task<ActionResult<ApprovalRequestResponse>> SelectDocument(Guid id, [FromBody] SelectDocumentRequest req, CancellationToken ct)
-    {
-        var a = await _approvals.GetAsync(id, TenantId, ct);
-        if (a == null) return NotFound();
-        if (a.Status != ApprovalStatus.Pending) return BadRequest("Approval is not pending.");
-        a.Approve(UserId, null);
-        await _approvals.UpdateAsync(a, ct);
-        var resumeOutputs = new Dictionary<string, object?>
-        {
-            ["documentId"] = req.DocumentId.ToString(),
-            ["filename"] = req.Filename,
-            ["mimeType"] = req.MimeType,
-            ["sizeBytes"] = (object?)req.SizeBytes,
-            ["sha256"] = req.Sha256,
-            ["selectedBy"] = UserId.ToString(),
-            ["selectedAt"] = DateTime.UtcNow.ToString("O"),
-        };
-        await _queue.EnqueueResumeAsync(new ExecutionResumeMessage(a.WorkflowExecutionId, a.Id, a.NodeExecutionId, resumeOutputs), ct);
-        return Ok(await EnrichAsync(a, ct));
-    }
-
     /// <summary>Lists all comments on an approval request, oldest first.</summary>
     [HttpGet("{id}/comments"), Authorize(Policy = "ViewerOrAbove")]
     public async Task<ActionResult> ListComments(Guid id, CancellationToken ct)
