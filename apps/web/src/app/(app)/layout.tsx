@@ -160,6 +160,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <button
             onClick={() => { clearToken(); window.location.href = '/login'; }}
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-700 w-full transition-colors"
+            suppressHydrationWarning
           >
             <LogOut size={16} />
             Sign out

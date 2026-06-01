@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'OrchestFlowAI', description: 'Enterp
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         <Providers>{children}</Providers>
         <CookieBanner />
       </body>
