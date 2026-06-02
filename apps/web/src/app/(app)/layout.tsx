@@ -26,7 +26,7 @@ const NAV_BASE: NavItem[] = [
   { href: '/workflows',  label: 'Workflows',   icon: GitBranch },
   { href: '/forms',      label: 'Forms',       icon: ClipboardList },
   { href: '/executions', label: 'Executions',  icon: Play },
-  { href: '/approvals',  label: 'Approvals',   icon: CheckSquare },
+  { href: '/approvals',  label: 'Task Inbox',  icon: CheckSquare },
   { href: '/documents',  label: 'Documents',   icon: FileText },
   {
     href: '/playground',

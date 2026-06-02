@@ -38,7 +38,7 @@ export default function ApprovalsPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <PageHeader title="Approval Inbox" subtitle="Review and act on pending workflow approvals" />
+      <PageHeader title="Task Inbox" subtitle="Review and act on pending workflow tasks" />
 
       {isLoading ? (
         <div className="space-y-3">{[1, 2].map(i => <div key={i} className="h-40 bg-gray-200 rounded-xl animate-pulse" />)}</div>

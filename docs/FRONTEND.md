@@ -1,6 +1,6 @@
 # Frontend (Web App)
 
-The web app is a Next.js 15+ application. It hosts the workflow designer, dashboard, approval inbox, execution timeline, and admin screens.
+The web app is a Next.js 15+ application. It hosts the workflow designer, dashboard, task inbox, execution timeline, and admin screens.
 
 ---
 
@@ -56,7 +56,7 @@ apps/web/
 │   ├── AdminPageGuard.tsx                # redirects non-admins away from admin pages
 │   └── RunWorkflowModal.tsx
 ├── contexts/
-│   └── AuthContext.tsx                   # AuthProvider + useAuth() — role, canEdit, isAdmin, isApprover
+│   └── AuthContext.tsx                   # AuthProvider + useAuth() - role, canEdit, isAdmin, isApprover
 ├── lib/
 │   ├── api.ts                            # typed API client (all apiFetch calls)
 │   ├── auth.ts                           # JWT helpers: getToken, setToken, getRoleFromToken, getTenantId
@@ -76,7 +76,7 @@ const nav: NavItem[] = [
   { href: '/workflows',  label: 'Workflows',  icon: GitBranch },
   { href: '/forms',      label: 'Forms',      icon: ClipboardList },
   { href: '/executions', label: 'Executions', icon: Play },
-  { href: '/approvals',  label: 'Approvals',  icon: CheckSquare },
+  { href: '/approvals',  label: 'Task Inbox',  icon: CheckSquare },
   { href: '/documents',  label: 'Documents',  icon: FileText },
   {
     href: '/settings',
@@ -102,7 +102,7 @@ const nav: NavItem[] = [
 The `minRole` property uses the same PascalCase values as the `UserRole` type (`'Admin' | 'Editor' | 'Approver' | 'Viewer'`). The filter maps `'Admin'` → `auth.isAdmin` and `'Editor'` → `auth.canEdit`.
 
 - Top-level items highlight in **indigo** when active.
-- Sub-items are **filtered by role** (via `AuthContext`) — admins see all settings; editors see a subset; viewers see only Configuration and AI History.
+- Sub-items are **filtered by role** (via `AuthContext`) - admins see all settings; editors see a subset; viewers see only Configuration and AI History.
 - Sub-items show indented with a left border accent, highlighted in **violet** when active.
 
 ### Role Badge
@@ -123,25 +123,25 @@ The sidebar footer displays the authenticated user's display name alongside a ro
 ### Home Page (`/`)
 Public marketing landing page. Not authenticated.
 
-- **Nav** — logo, Docs link, Sign in, Get started (→ /onboarding)
-- **Hero** — headline, subtitle, CTA buttons (Start for free → /onboarding, Sign in → /login)
+- **Nav** - logo, Docs link, Sign in, Get started (→ /onboarding)
+- **Hero** - headline, subtitle, CTA buttons (Start for free → /onboarding, Sign in → /login)
 - **Feature grid** (6 cards, 3-column on large screens):
-  - Visual Workflow Designer — canvas with 20+ node types, icons, AI assistant
-  - Multi-Provider AI — OpenAI / Anthropic / Azure / Ollama, switchable without restart
-  - Custom Forms & Approvals — AI-assisted form builder, pause-for-human-input
-  - External Data Intake — `system.data-checkpoint` node, field validation, retry on failure
-  - Enterprise Security — JWT, RBAC, tenant isolation, encrypted secrets
-  - Real-Time Monitoring — execution timeline, AI chat history, token usage
-- **CTA section** — "Create your workspace" → /onboarding
-- **Footer** — `PublicFooter` component
+  - Visual Workflow Designer - canvas with 20+ node types, icons, AI assistant
+  - Multi-Provider AI - OpenAI / Anthropic / Azure / Ollama, switchable without restart
+  - Custom Forms & Approvals - AI-assisted form builder, pause-for-human-input
+  - External Data Intake - `system.data-checkpoint` node, field validation, retry on failure
+  - Enterprise Security - JWT, RBAC, tenant isolation, encrypted secrets
+  - Real-Time Monitoring - execution timeline, AI chat history, token usage
+- **CTA section** - "Create your workspace" → /onboarding
+- **Footer** - `PublicFooter` component
 
 ### Dashboard
-Total workflows, recent executions, pending approvals, failed executions.
+Total workflows, recent executions, pending tasks, failed executions.
 
 ### Workflows List
 - Name, active version tag, last updated, Run button, **Duplicate** button, Designer link.
-- **Search** — debounced name search (350 ms); resets to page 1 on change.
-- **Pagination** — prev/next controls; 20 per page; total count from API.
+- **Search** - debounced name search (350 ms); resets to page 1 on change.
+- **Pagination** - prev/next controls; 20 per page; total count from API.
 - **Duplicate** calls `POST /api/workflows/{id}/clone` → opens the copy in the designer immediately.
 - Duplicate is disabled when the source has no active version.
 
@@ -149,16 +149,16 @@ Total workflows, recent executions, pending approvals, failed executions.
 
 Three regions:
 
-1. **Left sidebar** — node palette with categories. Drag to canvas.
-2. **Main canvas** — React Flow. Click node to open config drawer.
-3. **Right drawer** — config rendered dynamically from `/api/nodes/catalog`.
+1. **Left sidebar** - node palette with categories. Drag to canvas.
+2. **Main canvas** - React Flow. Click node to open config drawer.
+3. **Right drawer** - config rendered dynamically from `/api/nodes/catalog`.
 
 Top bar:
-- **Workflow name** — click the pencil icon (✏️) next to the name to edit name + description inline. Enter to save, Escape to cancel. Calls `PUT /api/workflows/{id}`.
-- **Undo / Redo** — 50-step history. `Ctrl+Z` / `Ctrl+Y`.
-- **Save** — creates new version + activates via `POST /api/workflows/{id}/versions`.
-- **History** — Version History panel. Load (preview) or Activate any saved version.
-- **Run** — input dialog → `POST /api/workflows/{id}/execute`.
+- **Workflow name** - click the pencil icon (✏️) next to the name to edit name + description inline. Enter to save, Escape to cancel. Calls `PUT /api/workflows/{id}`.
+- **Undo / Redo** - 50-step history. `Ctrl+Z` / `Ctrl+Y`.
+- **Save** - creates new version + activates via `POST /api/workflows/{id}/versions`.
+- **History** - Version History panel. Load (preview) or Activate any saved version.
+- **Run** - input dialog → `POST /api/workflows/{id}/execute`.
 
 **AI Assistant:**
 - **ActiveProviderBadge** ? shown below panel subtitle; reads `/api/settings/ai-status` on mount and displays provider + model badges
@@ -184,11 +184,19 @@ Each palette item shows:
 ### Execution Timeline
 - Per-node status, timestamps, input/output JSON, retry count.
 - Status badges use `statusLabel()` for human-readable text (e.g. `WaitingForApproval` → `"Waiting for Approval"`).
-- **Cancel Execution** button appears in the header when status is `Queued`, `Running`, or `Paused` — visible to `canEdit` users only. Opens `CancelExecutionModal` — an amber warning dialog showing workflow name/version and execution ID. Calls `POST /api/executions/{id}/cancel`.
-- **Re-run** button appears for terminal executions (Completed/Failed/Cancelled) — visible to `canEdit` users only.
-- **Waiting for Approval banner** — when the execution is `Paused`, the detail page fetches the pending approval via `GET /api/approvals/by-execution/{id}`. If one exists, an amber clickable banner links directly to `/approvals/{id}`. The `WaitingForApproval` node row in the timeline also shows an inline "Review" link.
+- **Cancel Execution** button appears in the header when status is `Queued`, `Running`, or `Paused` - visible to `canEdit` users only. Opens `CancelExecutionModal` - an amber warning dialog showing workflow name/version and execution ID. Calls `POST /api/executions/{id}/cancel`.
+- **Re-run** button appears for terminal executions (Completed/Failed/Cancelled) - visible to `canEdit` users only.
+- **Waiting for Approval banner** - when the execution is `Paused`, the detail page fetches the pending approval via `GET /api/approvals/by-execution/{id}`. If one exists, an amber clickable banner links directly to `/approvals/{id}`. The `WaitingForApproval` node row in the timeline also shows an inline "Review" link.
 
-### Approval Inbox / Detail
+### Task Inbox / Detail
+
+The **Task Inbox** (`/approvals`) is the central hub for all human tasks that pause a workflow execution. It handles three kinds of tasks:
+
+#### Document-selection tasks (`_approvalKind === 'DocumentSelection'`)
+- Shows the node's configured title and prompt.
+- Renders a searchable list of uploaded documents.
+- Clicking a document calls `POST /api/approvals/{id}/select-document` and resumes the workflow.
+- No Approve/Reject buttons - document selection is the action.
 
 The approval detail page (`/approvals/[id]`) behaves differently depending on the node type that triggered the pause:
 
@@ -201,31 +209,31 @@ The approval detail page (`/approvals/[id]`) behaves differently depending on th
 
 #### Human-approval nodes (no `_formId`)
 - Shows context payload fields (non-`_` keys).
-- **Approve** / **Reject** with optional comment textarea — only rendered for `isApprover` users; others see a role notice.
+- **Approve** / **Reject** with optional comment textarea - only rendered for `isApprover` users; others see a role notice.
 
-All badges use `statusLabel()` — `WaitingForApproval` displays as amber "Waiting for Approval", `Succeeded` as green, `Failed` as red, etc.
+All badges use `statusLabel()` - `WaitingForApproval` displays as amber "Waiting for Approval", `Succeeded` as green, `Failed` as red, etc.
 
 ### Settings Hub (`/settings`)
-Cards linking to sub-sections. Cards are **filtered by role** — admins see all; editors see a subset; viewers see only Configuration and AI History.
+Cards linking to sub-sections. Cards are **filtered by role** - admins see all; editors see a subset; viewers see only Configuration and AI History.
 
 **Team** (`/settings/team`) _(Admin only)_:
-- **Invite form** — email + role picker (Admin/Editor/Approver/Viewer) + "Send invite" button. Sends an invitation email; shows "✓ email sent" confirmation. Errors (duplicate member, duplicate invite, invalid role) shown inline.
-- **Members list** — all users in the tenant. Click a role badge to edit it inline (dropdown + Save/Cancel). Trash icon to remove a member. Both actions are disabled for the caller's own account.
-- **Pending invites list** — invites not yet accepted. Shows email, role badge, expiry date. X button to revoke.
+- **Invite form** - email + role picker (Admin/Editor/Approver/Viewer) + "Send invite" button. Sends an invitation email; shows "✓ email sent" confirmation. Errors (duplicate member, duplicate invite, invalid role) shown inline.
+- **Members list** - all users in the tenant. Click a role badge to edit it inline (dropdown + Save/Cancel). Trash icon to remove a member. Both actions are disabled for the caller's own account.
+- **Pending invites list** - invites not yet accepted. Shows email, role badge, expiry date. X button to revoke.
 
 **AI Providers** (`/settings/providers`) _(Admin only)_:
 - Dropdown selector + config panel per provider (OpenAI, Anthropic, Azure OpenAI, Ollama)
-- **Active provider banner** — reads `llm.defaultProvider` + `llm.defaultModel` from settings
-- **"Set as default provider" button** — calls `PUT /api/settings`; takes effect immediately (no restart)
+- **Active provider banner** - reads `llm.defaultProvider` + `llm.defaultModel` from settings
+- **"Set as default provider" button** - calls `PUT /api/settings`; takes effect immediately (no restart)
 - Adding a new provider = one entry in the `PROVIDERS` array + one panel component
 
-- **Tenant** (`/settings/tenant`) _(Admin only)_ — workspace name, logo URL, execution limits, timezone, guest form fill flag.
-- **Integrations** (`/settings/integrations`) _(Admin only)_ — external service credentials (Gmail OAuth2). Same dropdown pattern.
-- **Secrets** (`/settings/secrets`) _(Admin only)_ — encrypted named vault; reference as `{{secret:name}}` in any node config.
-- **Node Presets** (`/settings/presets`) _(Editor+)_ — reusable named node config sets.
-- **Configuration** (`/settings/config`) _(All roles, read; Editor+ to add/edit/delete)_ — persistent workflow key-value store. Viewers see entries but the Add Entry form and Edit/Delete buttons are hidden.
+- **Tenant** (`/settings/tenant`) _(Admin only)_ - workspace name, logo URL, execution limits, timezone, guest form fill flag.
+- **Integrations** (`/settings/integrations`) _(Admin only)_ - external service credentials (Gmail OAuth2). Same dropdown pattern.
+- **Secrets** (`/settings/secrets`) _(Admin only)_ - encrypted named vault; reference as `{{secret:name}}` in any node config.
+- **Node Presets** (`/settings/presets`) _(Editor+)_ - reusable named node config sets.
+- **Configuration** (`/settings/config`) _(All roles, read; Editor+ to add/edit/delete)_ - persistent workflow key-value store. Viewers see entries but the Add Entry form and Edit/Delete buttons are hidden.
 
-All admin-only settings pages are wrapped with `<AdminPageGuard>` — non-admins are redirected to `/settings`.
+All admin-only settings pages are wrapped with `<AdminPageGuard>` - non-admins are redirected to `/settings`.
 
 ### AI History (`/settings/ai-history`)
 Read-only view of all AI chat sessions for the tenant.
@@ -237,22 +245,22 @@ Read-only view of all AI chat sessions for the tenant.
 - Calls `GET /api/ai/sessions`, `GET /api/ai/sessions/{id}/messages`, `GET /api/ai/usage-summary`
 
 ### Executions List (`/executions`)
-- **Status filter pills** — All / Running / Queued / Paused / Completed / Failed / Cancelled. Resets to page 1.
-- **Search** — debounced (350 ms) match against Correlation ID.
-- **Pagination** — 20 per page with accurate total.
-- **Cancel** icon on active rows (Queued/Running/Paused) — opens `CancelExecutionModal`. Only visible to `canEdit` users.
+- **Status filter pills** - All / Running / Queued / Paused / Completed / Failed / Cancelled. Resets to page 1.
+- **Search** - debounced (350 ms) match against Correlation ID.
+- **Pagination** - 20 per page with accurate total.
+- **Cancel** icon on active rows (Queued/Running/Paused) - opens `CancelExecutionModal`. Only visible to `canEdit` users.
 - Auto-refreshes every 10 s.
 
 ### Forms Builder
-- `/forms` — list layout (not card grid); **search** by name or description; **pagination** (20 per page).
+- `/forms` - list layout (not card grid); **search** by name or description; **pagination** (20 per page).
 - Copy node type (`form.<slug>`) to clipboard inline.
-- `/forms/[id]` — builder with Name, Slug (auto-generated from name, manually overridable), Description, field list (reorder, add/edit/delete), Preview modal, **AI assistant panel** (generate/modify fields via LLM prompt).
+- `/forms/[id]` - builder with Name, Slug (auto-generated from name, manually overridable), Description, field list (reorder, add/edit/delete), Preview modal, **AI assistant panel** (generate/modify fields via LLM prompt).
 - `slug` is **required** and determines the node type. Must be unique per tenant.
 - **Field types**: `text`, `number`, `select`, `date`, `email`, `boolean`, **`file`**.
   - `file` fields render a styled upload zone on the fill page. On file selection the file is uploaded via `POST /api/documents/upload`; the field value becomes `{ id, filename, mimeType }`. Optional **Accepted file types** config (e.g. `.pdf,.png`) restricts choosable files.
-- **Version History panel** (existing forms only) — collapsible panel in the left column showing all saved versions. Each entry shows version number, date, field count, and active badge.
+- **Version History panel** (existing forms only) - collapsible panel in the left column showing all saved versions. Each entry shows version number, date, field count, and active badge.
   - **Activate** button on any past version rolls back the form's active definition. The builder immediately reflects the rolled-back fields. The engine picks up the change within 30 s (worker polling).
-  - Saving the form always creates a new version — previous versions are never overwritten.
+  - Saving the form always creates a new version - previous versions are never overwritten.
 - Every save (create or update) automatically creates a `FormVersion` snapshot and activates it.
 
 ### Form Fill Page (`/forms/[id]/fill`)
@@ -261,17 +269,17 @@ Public (no auth). Renders form + submits values to resume the paused execution.
 ### Invite Accept Page (`/invite/[tenantId]?token=...`)
 Public (no auth). Allows an invitee to set a password and join the workspace.
 
-1. On mount: calls `GET /api/tenants/{id}/invite/preview?token=` — shows workspace name, invited email, assigned role in a highlighted banner.
-2. If preview returns 404/error: shows "Invite not found" error state — no password form.
+1. On mount: calls `GET /api/tenants/{id}/invite/preview?token=` - shows workspace name, invited email, assigned role in a highlighted banner.
+2. If preview returns 404/error: shows "Invite not found" error state - no password form.
 3. On password submit: calls `POST /api/tenants/{id}/invite/accept` → receives JWT → stores token via `setToken()` → redirects to `/workflows`.
 4. "Already have an account?" link to `/login`.
 
 ### Onboarding (`/onboarding`)
 Multi-step flow for new users:
 
-1. **Step 1** — Name your workspace (`POST /api/tenants`)
-2. **Step 2** — Invite team members (`POST /api/tenants/{id}/invite`); shows "✓ email sent" confirmations per invite
-3. **Step 3** — Done; link to dashboard
+1. **Step 1** - Name your workspace (`POST /api/tenants`)
+2. **Step 2** - Invite team members (`POST /api/tenants/{id}/invite`); shows "✓ email sent" confirmations per invite
+3. **Step 3** - Done; link to dashboard
 
 ---
 
@@ -298,7 +306,7 @@ Usage in any component:
 const { isAdmin, canEdit, isApprover, role, displayName } = useAuth();
 ```
 
-`AuthProvider` is registered in `components/providers.tsx` and wraps the entire app (root layout). Because it is mounted once for the whole session, `setToken` and `clearToken` in `lib/auth.ts` dispatch a custom `orchest:auth-changed` window event after writing to `localStorage`. `AuthProvider` listens for this event and calls `readAuthState()` immediately — so the sidebar role badge and all permission flags update the moment the user logs in or out, without a page refresh.
+`AuthProvider` is registered in `components/providers.tsx` and wraps the entire app (root layout). Because it is mounted once for the whole session, `setToken` and `clearToken` in `lib/auth.ts` dispatch a custom `orchest:auth-changed` window event after writing to `localStorage`. `AuthProvider` listens for this event and calls `readAuthState()` immediately - so the sidebar role badge and all permission flags update the moment the user logs in or out, without a page refresh.
 
 ### Role-Gated UI
 
@@ -309,15 +317,15 @@ The frontend mirrors the backend authorization policies so that Viewers and non-
 | Admin-only settings pages | `<AdminPageGuard>` (redirect to `/settings`) | `isAdmin` |
 | Sidebar settings sub-items | `SETTINGS_CHILDREN` filtered in `layout.tsx` | `isAdmin` / `canEdit` |
 | Settings hub cards | Conditional render | `isAdmin` / `canEdit` |
-| **Workflow Designer** — AI, Trigger, Save, Run, Undo/Redo, rename pencil, NodePalette | Conditional render | `canEdit` |
-| **Workflow Designer** — Node delete (keyboard, right-click, drawer button) | Guard + conditional render | `canEdit` |
-| **Version History** — Activate button | Conditional render | `canEdit` |
-| **Workflow Configuration** (`/settings/config`) — Add Entry form, Edit/Delete per row | Conditional render | `canEdit` |
-| **Executions list** — Cancel icon per active row | Conditional render | `canEdit` |
-| **Execution detail** — Cancel Execution, Re-run buttons | Conditional render | `canEdit` |
-| **Approval detail** — Submit Form (form approvals) | Conditional render / role notice | `isApprover` |
-| **Approval detail** — Approve / Reject (human approvals) | Conditional render / role notice | `isApprover` |
-| **Playground** (`/playground`, `/playground/external`) — entire interactive area | Permission notice shown instead | `canEdit` |
+| **Workflow Designer** - AI, Trigger, Save, Run, Undo/Redo, rename pencil, NodePalette | Conditional render | `canEdit` |
+| **Workflow Designer** - Node delete (keyboard, right-click, drawer button) | Guard + conditional render | `canEdit` |
+| **Version History** - Activate button | Conditional render | `canEdit` |
+| **Workflow Configuration** (`/settings/config`) - Add Entry form, Edit/Delete per row | Conditional render | `canEdit` |
+| **Executions list** - Cancel icon per active row | Conditional render | `canEdit` |
+| **Execution detail** - Cancel Execution, Re-run buttons | Conditional render | `canEdit` |
+| **Task Inbox detail** - Submit Form (form tasks) | Conditional render / role notice | `isApprover` |
+| **Task Inbox detail** - Approve / Reject (human approvals) | Conditional render / role notice | `isApprover` |
+| **Playground** (`/playground`, `/playground/external`) - entire interactive area | Permission notice shown instead | `canEdit` |
 
 ### `AdminPageGuard` (`src/components/AdminPageGuard.tsx`)
 
@@ -364,16 +372,16 @@ This means backend `BadRequest("...")` plain-text responses reach the user corre
 
 ## 7. Data Layer
 
-All server state flows through TanStack Query keyed on `[entity, params]`. The API client in `lib/api.ts` is the single source of truth for all HTTP calls — no bare `fetch()` calls anywhere.
+All server state flows through TanStack Query keyed on `[entity, params]`. The API client in `lib/api.ts` is the single source of truth for all HTTP calls - no bare `fetch()` calls anywhere.
 
 ---
 
 ## 8. Front-End Rules
 
-1. **No hardcoded node forms** — render config forms dynamically from `/api/nodes/catalog`.
-2. **No bare `fetch` calls** — use `apiFetch` from `api.ts`.
+1. **No hardcoded node forms** - render config forms dynamically from `/api/nodes/catalog`.
+2. **No bare `fetch` calls** - use `apiFetch` from `api.ts`.
 3. **No `any` in TypeScript**.
-4. `apiFetch` uses `res.text()` then attempts JSON parse — supports empty body responses; test mocks need `text()` too.
+4. `apiFetch` uses `res.text()` then attempts JSON parse - supports empty body responses; test mocks need `text()` too.
 5. Show validation errors before save; required field errors surface immediately.
 6. Execution and timeline views are **read-only**.
 
@@ -398,7 +406,7 @@ Demo/testing page for the full form-node execution flow. Viewers and Approvers s
 - **Completion screen** � shows all collected data from every step in a summary view once the workflow reaches system.end.
 - **Run Again** resets all state and allows restarting from scratch.
 ### External Data Playground (/playground/external) _(Editor+ only)_
-Demo/testing page for the `system.data-checkpoint` node — purely API-driven, no form rendering. Viewers and Approvers see a permission notice instead of the interactive playground.
+Demo/testing page for the `system.data-checkpoint` node - purely API-driven, no form rendering. Viewers and Approvers see a permission notice instead of the interactive playground.
 
 - **Setup screen** ? shown on first load; lets the user configure the two database nodes (Customer DB + Order DB) with connection string and SQL statement. Each section includes a copyable `CREATE TABLE` SQL snippet. "Skip DB setup" skips DB config entirely; "Save & Continue" validates and persists config for the seed call.
 - **Start** button calls POST /api/playground/seed-external with optional `{ customer: { connectionString, statement }, order: { connectionString, statement } }` body to seed a workflow with 2 data checkpoints and 2 DB-execute nodes, then starts execution.
