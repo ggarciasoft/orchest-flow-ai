@@ -1,23 +1,31 @@
 'use client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { api, DocumentMeta } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDate } from '@/lib/utils';
-import { CheckCircle, XCircle, ClipboardList, ArrowRight } from 'lucide-react';
+import { CheckCircle, XCircle, ClipboardList, ArrowRight, FileText, Search, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { PageHeader, Badge, EmptyState, statusLabel } from '@/components/ui';
 
 /**
  * ApprovalsPage — inbox for pending approval requests.
- * - Form-node approvals: shows a “Fill Form →” link to the detail page.
+ * - Form-node approvals: shows a "Fill Form →" link to the detail page.
+ * - DocumentSelection approvals: shows a searchable document picker.
  * - Human-approval nodes: inline Approve/Reject with optional comment.
  */
 export default function ApprovalsPage() {
   const { isApprover } = useAuth();
   const qc = useQueryClient();
   const [comment, setComment] = useState<Record<string, string>>({});
-  const { data, isLoading } = useQuery({ queryKey: ['approvals', 'Pending'], queryFn: () => api.approvals.list('Pending'), refetchInterval: 10_000 });
+  const [docSearch, setDocSearch] = useState<Record<string, string>>({});
+  const [selectingDoc, setSelectingDoc] = useState<string | null>(null);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['approvals', 'Pending'],
+    queryFn: () => api.approvals.list('Pending'),
+    refetchInterval: 10_000,
+  });
 
   const approve = useMutation({
     mutationFn: ({ id, c }: { id: string; c?: string }) => api.approvals.approve(id, c),
@@ -33,7 +41,7 @@ export default function ApprovalsPage() {
       <PageHeader title="Approval Inbox" subtitle="Review and act on pending workflow approvals" />
 
       {isLoading ? (
-        <div className="space-y-3">{[1,2].map(i => <div key={i} className="h-40 bg-gray-200 rounded-xl animate-pulse" />)}</div>
+        <div className="space-y-3">{[1, 2].map(i => <div key={i} className="h-40 bg-gray-200 rounded-xl animate-pulse" />)}</div>
       ) : data?.items.length === 0 ? (
         <EmptyState icon={CheckCircle} title="All clear!" subtitle="No pending approvals" />
       ) : (
@@ -41,7 +49,9 @@ export default function ApprovalsPage() {
           {data?.items.map(a => {
             let payload: Record<string, unknown> = {};
             try { payload = JSON.parse(a.payloadJson); } catch { /* ignore */ }
+
             const isFormApproval = !!payload._formId;
+            const isDocSelection = payload._approvalKind === 'DocumentSelection';
             const approvalTitle = isFormApproval
               ? String(payload._formName ?? 'Form Submission Required')
               : String(payload._approvalTitle ?? payload.title ?? 'Approval Required');
@@ -49,6 +59,7 @@ export default function ApprovalsPage() {
 
             return (
               <div key={a.id} className="p-6 space-y-4">
+                {/* Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-lg">
@@ -59,6 +70,11 @@ export default function ApprovalsPage() {
                     {isFormApproval && (
                       <span className="flex items-center gap-1 text-xs text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-full px-2 py-0.5">
                         <ClipboardList size={11} /> Form
+                      </span>
+                    )}
+                    {isDocSelection && (
+                      <span className="flex items-center gap-1 text-xs text-violet-600 bg-violet-50 border border-violet-200 rounded-full px-2 py-0.5">
+                        <FileText size={11} /> Document
                       </span>
                     )}
                   </div>
@@ -72,7 +88,7 @@ export default function ApprovalsPage() {
                   <Badge variant="warning">{statusLabel(a.status)}</Badge>
                 </div>
 
-                {/* Form approval — direct to fill form */}
+                {/* Form approval */}
                 {isFormApproval ? (
                   <Link
                     href={`/approvals/${a.id}`}
@@ -82,8 +98,34 @@ export default function ApprovalsPage() {
                     Fill in the form to continue this workflow
                     <ArrowRight size={14} className="ml-auto" />
                   </Link>
+
+                /* Document selection */
+                ) : isDocSelection ? (
+                  <DocumentPicker
+                    approvalId={a.id}
+                    prompt={String(payload._prompt ?? 'Please select a document to continue.')}
+                    search={docSearch[a.id] ?? ''}
+                    onSearchChange={s => setDocSearch(prev => ({ ...prev, [a.id]: s }))}
+                    selecting={selectingDoc === a.id}
+                    onSelect={async (doc) => {
+                      setSelectingDoc(a.id);
+                      try {
+                        await api.approvals.selectDocument(a.id, {
+                          documentId: doc.id,
+                          filename: doc.filename,
+                          mimeType: doc.mimeType,
+                          sizeBytes: doc.sizeBytes,
+                          sha256: doc.sha256,
+                        });
+                        qc.invalidateQueries({ queryKey: ['approvals'] });
+                      } finally {
+                        setSelectingDoc(null);
+                      }
+                    }}
+                  />
+
+                /* Human approval */
                 ) : (
-                  // Human approval — inline approve/reject
                   <>
                     {visibleFields.length > 0 && (
                       <div className="bg-gray-50 rounded-lg p-4 text-sm space-y-1.5">
@@ -133,3 +175,77 @@ export default function ApprovalsPage() {
   );
 }
 
+// ── Document picker sub-component ────────────────────────────────────────────
+
+function DocumentPicker({
+  approvalId,
+  prompt,
+  search,
+  onSearchChange,
+  selecting,
+  onSelect,
+}: {
+  approvalId: string;
+  prompt: string;
+  search: string;
+  onSearchChange: (s: string) => void;
+  selecting: boolean;
+  onSelect: (doc: DocumentMeta) => Promise<void>;
+}) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['documents', 'picker', search],
+    queryFn: () => api.documents.list({ page: 1, pageSize: 50, search: search || undefined }),
+    staleTime: 30_000,
+  });
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-slate-600">{prompt}</p>
+
+      {/* Search */}
+      <div className="relative">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        <input
+          type="text"
+          placeholder="Search documents…"
+          value={search}
+          onChange={e => onSearchChange(e.target.value)}
+          className="w-full border rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+        />
+      </div>
+
+      {/* List */}
+      <div className="border rounded-lg divide-y max-h-64 overflow-y-auto">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8 text-slate-400 text-sm gap-2">
+            <Loader2 size={14} className="animate-spin" /> Loading documents…
+          </div>
+        ) : !data?.items.length ? (
+          <div className="py-8 text-center text-slate-400 text-sm">No documents found</div>
+        ) : (
+          data.items.map(doc => (
+            <button
+              key={doc.id}
+              disabled={selecting}
+              onClick={() => onSelect(doc)}
+              className="w-full text-left px-4 py-3 hover:bg-violet-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FileText size={16} className="text-violet-500 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-slate-800 truncate">{doc.filename}</p>
+                <p className="text-xs text-slate-400">{doc.mimeType} · {formatBytes(doc.sizeBytes)} · {formatDate(doc.createdAt)}</p>
+              </div>
+              {selecting && <Loader2 size={14} className="animate-spin text-violet-500 shrink-0" />}
+            </button>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
