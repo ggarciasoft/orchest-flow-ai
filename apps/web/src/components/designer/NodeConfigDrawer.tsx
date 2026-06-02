@@ -4,6 +4,7 @@ import type { NodeDescriptor, GmailCredentialSummary } from '@/lib/api';
 import { X, Trash2, Plus, ExternalLink } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { api, PresetResponse } from '@/lib/api';
+import { getTenantId } from '@/lib/auth';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Props { node: Node; catalog: NodeDescriptor[]; onClose: () => void; onDelete: () => void; onConfigChange: (config: Record<string, unknown>) => void; }
@@ -201,7 +202,7 @@ export function NodeConfigDrawer({ node, catalog, onClose, onDelete, onConfigCha
                                 e.preventDefault();
                                 const name = window.prompt('Credential name (e.g. my-gmail):');
                                 if (!name) return;
-                                window.open(api.gmail.authStartUrl({ name }), '_blank');
+                                window.open(api.gmail.authStartUrl({ name, tenantId: getTenantId() }), '_blank');
                               }}
                             >
                               <ExternalLink size={11} /> Connect Gmail account

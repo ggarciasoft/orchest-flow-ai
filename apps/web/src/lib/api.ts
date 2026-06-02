@@ -394,8 +394,9 @@ export const api = {
   gmail: {
     /** Starts the Gmail OAuth2 flow. Returns a URL to redirect the browser to.
      * clientId and clientSecret are read from Settings on the backend. */
-    authStartUrl: (params: { name: string }) => {
+    authStartUrl: (params: { name: string; tenantId?: string | null }) => {
       const q = new URLSearchParams({ name: params.name });
+      if (params.tenantId) q.set('tenantId', params.tenantId);
       return `${API_BASE}/api/gmail/auth/start?${q}`;
     },
     /** Lists saved Gmail credentials for the tenant (names + emails only). */
