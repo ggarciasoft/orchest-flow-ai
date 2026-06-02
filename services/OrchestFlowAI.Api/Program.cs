@@ -37,7 +37,8 @@ builder.Services.AddScoped<OrchestFlowAI.Api.Services.WorkflowGenerationService>
 builder.Services.AddScoped<OrchestFlowAI.Api.Services.FormGenerationService>();
 builder.Services.AddSingleton<OrchestFlowAI.Api.Services.FormNodeRegistrar>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<OrchestFlowAI.Api.Services.FormNodeRegistrar>());
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
 
 // Swagger / OpenAPI — available in all environments for ease of development
