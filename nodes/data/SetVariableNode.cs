@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using OrchestFlowAI.SDK.Context;
+using OrchestFlowAI.SDK.Helpers;
 using OrchestFlowAI.SDK.Interfaces;
 using OrchestFlowAI.SDK.Models;
 
@@ -37,16 +38,9 @@ public sealed class SetVariableNode : IWorkflowNode
 
         var outputs = new Dictionary<string, object?>();
         foreach (var (key, template) in variables)
-            outputs[key] = ReplacePlaceholders(template, ctx.NodeInputs);
+            outputs[key] = PlaceholderResolver.Resolve(template, ctx.NodeInputs);
 
         return await Task.FromResult(NodeExecutionResult.Succeeded(outputs));
-    }
-
-    private static string ReplacePlaceholders(string input, IReadOnlyDictionary<string, object?> nodeInputs)
-    {
-        foreach (var (key, value) in nodeInputs)
-            input = input.Replace($"{{{{{key}}}}}", value?.ToString() ?? string.Empty);
-        return input;
     }
 }
 

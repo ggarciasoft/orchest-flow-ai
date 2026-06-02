@@ -1,5 +1,6 @@
 using System.Net.Mail;
 using OrchestFlowAI.SDK.Context;
+using OrchestFlowAI.SDK.Helpers;
 using OrchestFlowAI.SDK.Interfaces;
 using OrchestFlowAI.SDK.Models;
 
@@ -18,10 +19,10 @@ public sealed class SendEmailNode : IWorkflowNode
     public async Task<NodeExecutionResult> ExecuteAsync(WorkflowExecutionContext ctx, CancellationToken ct)
     {
         var to       = ctx.GetConfig<string>("to")      ?? throw new InvalidOperationException("'to' config is required");
-        var subject  = ResolvePlaceholders(ctx.GetConfig<string>("subject") ?? throw new InvalidOperationException("'subject' config is required"), ctx.NodeInputs);
-        var body     = ResolvePlaceholders(ctx.GetConfig<string>("body")    ?? throw new InvalidOperationException("'body' config is required"),    ctx.NodeInputs);
+        var subject  = PlaceholderResolver.Resolve(ctx.GetConfig<string>("subject") ?? throw new InvalidOperationException("'subject' config is required"), ctx.NodeInputs);
+        var body     = PlaceholderResolver.Resolve(ctx.GetConfig<string>("body")    ?? throw new InvalidOperationException("'body' config is required"),    ctx.NodeInputs);
         // Resolve placeholders in 'to' then split by comma for multiple recipients
-        var toResolved = ResolvePlaceholders(to, ctx.NodeInputs);
+        var toResolved = PlaceholderResolver.Resolve(to, ctx.NodeInputs);
         var recipients = toResolved.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var host     = ctx.GetConfig<string>("smtpHost")     ?? "localhost";
         var port     = (int)(ctx.GetConfig<double?>("smtpPort") ?? 587.0);
@@ -57,12 +58,6 @@ public sealed class SendEmailNode : IWorkflowNode
         }
     }
 
-    private static string ResolvePlaceholders(string template, IReadOnlyDictionary<string, object?> vars)
-    {
-        foreach (var kv in vars)
-            template = template.Replace($"{{{{{kv.Key}}}}}", kv.Value?.ToString() ?? string.Empty);
-        return template;
-    }
 }
 
 /// <summary>Descriptor for <see cref="SendEmailNode"/>.</summary>

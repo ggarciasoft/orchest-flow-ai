@@ -3,6 +3,7 @@ using global::System.Text;
 using global::System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using OrchestFlowAI.SDK.Context;
+using OrchestFlowAI.SDK.Helpers;
 using OrchestFlowAI.SDK.Interfaces;
 using OrchestFlowAI.SDK.Models;
 
@@ -23,10 +24,10 @@ public sealed class HttpRequestNode : IWorkflowNode
     {
         var client = ctx.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
 
-        var url = ctx.GetConfig<string>("url") ?? throw new InvalidOperationException("url config is required");
+        var url = PlaceholderResolver.Resolve(ctx.GetConfig<string>("url") ?? throw new InvalidOperationException("url config is required"), ctx.NodeInputs);
         var method = ctx.GetConfig<string>("method")?.ToUpperInvariant() ?? "GET";
-        var headersJson = ctx.GetConfig<string>("headers");
-        var body = ctx.GetConfig<string>("body");
+        var headersJson = PlaceholderResolver.Resolve(ctx.GetConfig<string>("headers"), ctx.NodeInputs);
+        var body = PlaceholderResolver.Resolve(ctx.GetConfig<string>("body"), ctx.NodeInputs);
         var timeoutSeconds = (int)(ctx.GetConfig<double?>("timeoutSeconds") ?? 30.0);
         var authType = ctx.GetConfig<string>("authType") ?? "none";
 
@@ -65,14 +66,7 @@ public sealed class HttpRequestNode : IWorkflowNode
     private async Task ApplyAuth(HttpRequestMessage request, string authType, WorkflowExecutionContext ctx, HttpClient client, CancellationToken ct)
     {
         string Resolve(string? template, IReadOnlyDictionary<string, object?> inputs)
-        {
-            if (string.IsNullOrWhiteSpace(template)) return string.Empty;
-            return global::System.Text.RegularExpressions.Regex.Replace(template, @"{{(\w+)}}", match =>
-            {
-                var key = match.Groups[1].Value;
-                return inputs.TryGetValue(key, out var value) ? value?.ToString() ?? string.Empty : string.Empty;
-            });
-        }
+            => PlaceholderResolver.Resolve(template, inputs);
 
         switch (authType)
         {

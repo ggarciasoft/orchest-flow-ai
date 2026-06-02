@@ -2,6 +2,7 @@ using System.Net.Http;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using OrchestFlowAI.SDK.Context;
+using OrchestFlowAI.SDK.Helpers;
 using OrchestFlowAI.SDK.Interfaces;
 using OrchestFlowAI.SDK.Models;
 
@@ -25,7 +26,7 @@ public sealed class SlackNotifyNode : IWorkflowNode
         var rawMessage = ctx.GetConfig<string>("message") ?? throw new ArgumentException("message config is required");
         var channel = ctx.GetConfig<string>("channel");
 
-        var resolvedMessage = ResolvePlaceholders(rawMessage, ctx.NodeInputs);
+        var resolvedMessage = PlaceholderResolver.Resolve(rawMessage, ctx.NodeInputs);
 
         var payload = new Dictionary<string, object?>
         {
@@ -60,14 +61,6 @@ public sealed class SlackNotifyNode : IWorkflowNode
         }
     }
 
-    private static string ResolvePlaceholders(string template, IReadOnlyDictionary<string, object?> variables)
-    {
-        foreach (var key in variables.Keys)
-        {
-            template = template.Replace($"{{{{{key}}}}}", variables[key]?.ToString() ?? string.Empty);
-        }
-        return template;
-    }
 }
 
 /// <summary>Descriptor for the <see cref="SlackNotifyNode"/>.</summary>
