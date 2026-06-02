@@ -35,7 +35,7 @@ export function useExecutionStream(executionId: string): { events: ExecutionEven
   useEffect(() => {
     if (!executionId) return;
 
-    const hubUrl = `${process.env.NEXT_PUBLIC_API_URL ?? ''}/hubs/execution`;
+    const hubUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:5080'}/hubs/execution`;
 
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(hubUrl, { withCredentials: false })
