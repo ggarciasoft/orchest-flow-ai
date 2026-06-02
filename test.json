@@ -1,0 +1,394 @@
+{
+    "id": "a7fbf3a8-d9b9-412d-94d4-1a0fb95c3ab0",
+    "name": "Get email finance",
+    "version": 1,
+    "nodes": [
+        {
+            "id": "system.start-1",
+            "type": "system.start",
+            "position": {
+                "x": 350,
+                "y": 0
+            },
+            "data": {
+                "label": "Start",
+                "config": {},
+                "descriptor": {
+                    "type": "system.start",
+                    "displayName": "Start",
+                    "description": "Entry point of the workflow. Surfaces workflow inputs.",
+                    "category": "system",
+                    "version": "1.0.0",
+                    "iconKey": "play",
+                    "inputs": [],
+                    "outputs": [],
+                    "configuration": []
+                }
+            },
+            "config": {}
+        },
+        {
+            "id": "document.select-1697048220000",
+            "type": "document.select",
+            "position": {
+                "x": 350,
+                "y": 150
+            },
+            "data": {
+                "label": "Select Document",
+                "config": {
+                    "title": "Select PDF for extraction",
+                    "prompt": "Please choose a document"
+                },
+                "descriptor": {
+                    "type": "document.select",
+                    "displayName": "Select Document",
+                    "description": "Pauses the workflow and prompts a human to select a document from the document library.",
+                    "category": "documents",
+                    "version": "1.0.0",
+                    "iconKey": "file-search",
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "key": "documentId",
+                            "displayName": "Document ID",
+                            "description": "ID of the selected document",
+                            "type": "String",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        },
+                        {
+                            "key": "filename",
+                            "displayName": "Filename",
+                            "description": "Name of the selected file",
+                            "type": "String",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        },
+                        {
+                            "key": "mimeType",
+                            "displayName": "MIME Type",
+                            "description": "MIME type of the selected file",
+                            "type": "String",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        },
+                        {
+                            "key": "sizeBytes",
+                            "displayName": "Size (bytes)",
+                            "description": "File size in bytes",
+                            "type": "Number",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        },
+                        {
+                            "key": "sha256",
+                            "displayName": "SHA-256",
+                            "description": "SHA-256 hash of the file",
+                            "type": "String",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        }
+                    ],
+                    "configuration": [
+                        {
+                            "key": "title",
+                            "displayName": "Title",
+                            "description": "Title shown to the user in the inbox.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": "Select a Document",
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        },
+                        {
+                            "key": "prompt",
+                            "displayName": "Prompt",
+                            "description": "Instructions shown above the document list.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        }
+                    ]
+                }
+            },
+            "config": {
+                "title": "Select PDF for extraction",
+                "prompt": "Please choose a document"
+            }
+        },
+        {
+            "id": "document.extract-pdf-text-1697048220150",
+            "type": "document.extract-pdf-text",
+            "position": {
+                "x": 350,
+                "y": 300
+            },
+            "data": {
+                "label": "Extract PDF Text",
+                "config": {
+                    "ocrFallback": false
+                },
+                "descriptor": {
+                    "type": "document.extract-pdf-text",
+                    "displayName": "Extract PDF Text",
+                    "description": "Extracts plain text from a PDF document.",
+                    "category": "documents",
+                    "version": "1.0.0",
+                    "iconKey": "file-pdf",
+                    "inputs": [
+                        {
+                            "key": "documentId",
+                            "displayName": "Document ID",
+                            "description": "ID of the uploaded PDF document.",
+                            "type": "DocumentRef",
+                            "required": true,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "key": "text",
+                            "displayName": "Text",
+                            "description": "Extracted plain text.",
+                            "type": "String",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        },
+                        {
+                            "key": "pageCount",
+                            "displayName": "Page Count",
+                            "description": "Number of pages.",
+                            "type": "Number",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        }
+                    ],
+                    "configuration": [
+                        {
+                            "key": "ocrFallback",
+                            "displayName": "OCR Fallback",
+                            "description": "Use OCR if text extraction fails.",
+                            "type": "Boolean",
+                            "required": false,
+                            "defaultValue": false,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        }
+                    ]
+                }
+            },
+            "config": {
+                "ocrFallback": false
+            }
+        },
+        {
+            "id": "integrations.email-1697048220300",
+            "type": "integrations.email",
+            "position": {
+                "x": 350,
+                "y": 450
+            },
+            "data": {
+                "label": "Send Email",
+                "config": {
+                    "to": "ggarciasoft@gmail.com",
+                    "subject": "Extracted PDF Text",
+                    "body": "{{text}}",
+                    "smtpHost": "smtp.gmail.com",
+                    "smtpPort": 587
+                },
+                "descriptor": {
+                    "type": "integrations.email",
+                    "displayName": "Send Email",
+                    "description": "Sends an email via SMTP. Subject and body support {{placeholder}} substitution.",
+                    "category": "integrations",
+                    "version": "1.0.0",
+                    "iconKey": "mail",
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "key": "sent",
+                            "displayName": "Sent",
+                            "description": "True if email was sent successfully.",
+                            "type": "Boolean",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        },
+                        {
+                            "key": "to",
+                            "displayName": "Recipient",
+                            "description": "The recipient address.",
+                            "type": "String",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        }
+                    ],
+                    "configuration": [
+                        {
+                            "key": "to",
+                            "displayName": "To",
+                            "description": "Recipient email address.",
+                            "type": "String",
+                            "required": true,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        },
+                        {
+                            "key": "subject",
+                            "displayName": "Subject",
+                            "description": "Email subject (supports {{placeholders}}).",
+                            "type": "String",
+                            "required": true,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        },
+                        {
+                            "key": "body",
+                            "displayName": "Body",
+                            "description": "Email body (supports {{placeholders}}).",
+                            "type": "String",
+                            "required": true,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        },
+                        {
+                            "key": "smtpHost",
+                            "displayName": "SMTP Host",
+                            "description": "SMTP server hostname.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": "localhost",
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        },
+                        {
+                            "key": "smtpPort",
+                            "displayName": "SMTP Port",
+                            "description": "SMTP port number.",
+                            "type": "Number",
+                            "required": false,
+                            "defaultValue": 25,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false
+                        }
+                    ]
+                }
+            },
+            "config": {
+                "to": "ggarciasoft@gmail.com",
+                "subject": "Extracted PDF Text",
+                "body": "{{text}}",
+                "smtpHost": "smtp.gmail.com",
+                "smtpPort": 587
+            }
+        },
+        {
+            "id": "system.end-999",
+            "type": "system.end",
+            "position": {
+                "x": 350,
+                "y": 600
+            },
+            "data": {
+                "label": "End",
+                "config": {},
+                "descriptor": {
+                    "type": "system.end",
+                    "displayName": "End",
+                    "description": "Terminal node. Marks workflow completion.",
+                    "category": "system",
+                    "version": "1.0.0",
+                    "iconKey": "stop",
+                    "inputs": [],
+                    "outputs": [],
+                    "configuration": []
+                }
+            },
+            "config": {}
+        }
+    ],
+    "edges": [
+        {
+            "id": "edge-start-document.select",
+            "source": "system.start-1",
+            "target": "document.select-1697048220000"
+        },
+        {
+            "id": "edge-document.select-extract",
+            "source": "document.select-1697048220000",
+            "target": "document.extract-pdf-text-1697048220150"
+        },
+        {
+            "id": "edge-extract-email",
+            "source": "document.extract-pdf-text-1697048220150",
+            "target": "integrations.email-1697048220300"
+        },
+        {
+            "id": "edge-email-end",
+            "source": "integrations.email-1697048220300",
+            "target": "system.end-999"
+        }
+    ]
+}

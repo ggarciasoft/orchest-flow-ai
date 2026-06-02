@@ -463,10 +463,6 @@ public async Task ResumeAsync(Guid executionId, ResumeSignal signal, Cancellatio
             if (outputs != null) nodeOutputs[ne.NodeId] = outputs;
         }
         nodeOutputs[nodeExec.NodeId] = signal.ResumeOutputs;
-        _logger.LogInformation("Resume: nodeOutputs keys after setting resume outputs: [{Keys}]", string.Join(", ", nodeOutputs.Keys));
-        _logger.LogInformation("Resume: signal.ResumeOutputs keys: [{Keys}]", string.Join(", ", signal.ResumeOutputs.Keys));
-        foreach (var kv in signal.ResumeOutputs)
-            _logger.LogInformation("Resume: ResumeOutputs[{Key}] = {Value} (type={Type})", kv.Key, kv.Value, kv.Value?.GetType().Name ?? "null");
 
         var inputs = JsonSerializer.Deserialize<Dictionary<string, object?>>(execution.InputJson ?? "{}", _jsonOpts) ?? new();
         var resumeOutputsDict = signal.ResumeOutputs.ToDictionary(kv => kv.Key, kv => kv.Value);
@@ -757,7 +753,7 @@ public async Task CancelAsync(Guid executionId, CancellationToken ct = default)
             }
             _logger.LogDebug("  Edge from {Source}: {Count} output keys: [{Keys}]",
                 edge.Source, sourceOutputs.Count, string.Join(", ", sourceOutputs.Keys));
-            if (edge.Map != null)
+            if (edge.Map != null && edge.Map.Count > 0)
                 foreach (var (targetKey, sourceKey) in edge.Map)
                     if (sourceOutputs.TryGetValue(sourceKey, out var mappedVal)) inputs[targetKey] = mappedVal;
             else
