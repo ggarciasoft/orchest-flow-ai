@@ -10,12 +10,12 @@
     <ProjectReference Include="..\packages\OrchestFlowAI.Engine\OrchestFlowAI.Engine.csproj" />
     <ProjectReference Include="..\packages\OrchestFlowAI.Application\OrchestFlowAI.Application.csproj" />
     <ProjectReference Include="..\services\OrchestFlowAI.AI\OrchestFlowAI.AI.csproj" />
-    <PackageReference Include="UglyToad.PdfPig" Version="0.1.9-alpha001-patch1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.5" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.5" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.5" />
     <PackageReference Include="Npgsql" Version="9.0.4" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.2" />
     <PackageReference Include="MySqlConnector" Version="2.4.0" />
+    <PackageReference Include="PdfPig" Version="0.1.15-alpha-20260530-bb406" />
   </ItemGroup>
 </Project>

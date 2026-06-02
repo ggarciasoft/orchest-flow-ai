@@ -42,7 +42,8 @@ public static class AIServiceExtensions
         services.AddSingleton(holder);
         services.AddSingleton<OpenAILLMProvider>(sp =>
             new OpenAILLMProvider(holder, sp.GetRequiredService<ILogger<OpenAILLMProvider>>(),
-                sp.GetService<OrchestFlowAI.Application.Abstractions.IPlatformSettingsService>()));
+                sp.GetService<OrchestFlowAI.Application.Abstractions.IPlatformSettingsService>(),
+                sp.GetService<OrchestFlowAI.Application.Abstractions.ISecretService>()));
         services.AddSingleton<ILLMProvider>(sp => sp.GetRequiredService<OpenAILLMProvider>());
 
         // Anthropic
@@ -50,7 +51,8 @@ public static class AIServiceExtensions
             new AnthropicLLMProvider(
                 sp.GetRequiredService<IHttpClientFactory>(),
                 sp.GetRequiredService<ILogger<AnthropicLLMProvider>>(),
-                sp.GetService<OrchestFlowAI.Application.Abstractions.IPlatformSettingsService>()));
+                sp.GetService<OrchestFlowAI.Application.Abstractions.IPlatformSettingsService>(),
+                sp.GetService<OrchestFlowAI.Application.Abstractions.ISecretService>()));
         services.AddSingleton<ILLMProvider>(sp => sp.GetRequiredService<AnthropicLLMProvider>());
 
         // Azure OpenAI
@@ -58,7 +60,8 @@ public static class AIServiceExtensions
             new AzureOpenAILLMProvider(
                 sp.GetRequiredService<IHttpClientFactory>(),
                 sp.GetRequiredService<ILogger<AzureOpenAILLMProvider>>(),
-                sp.GetService<OrchestFlowAI.Application.Abstractions.IPlatformSettingsService>()));
+                sp.GetService<OrchestFlowAI.Application.Abstractions.IPlatformSettingsService>(),
+                sp.GetService<OrchestFlowAI.Application.Abstractions.ISecretService>()));
         services.AddSingleton<ILLMProvider>(sp => sp.GetRequiredService<AzureOpenAILLMProvider>());
 
         // Ollama
