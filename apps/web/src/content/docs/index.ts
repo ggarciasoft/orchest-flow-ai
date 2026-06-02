@@ -21,7 +21,7 @@ export const docs: DocEntry[] = [
   // Core Concepts
   { slug: 'architecture',         title: 'Architecture',                 category: 'Core Concepts',   filename: 'ARCHITECTURE.md',        description: 'System overview, domain model, and design decisions.' },
   { slug: 'workflow-engine',      title: 'Workflow Engine',              category: 'Core Concepts',   filename: 'WORKFLOW-ENGINE.md',     description: 'Execution runtime, state machine, retries, and loops.' },
-  { slug: 'nodes',                title: 'Nodes Reference',              category: 'Core Concepts',   filename: 'NODES.md',               description: 'All built-in node types and their configuration.' },
+  { slug: 'nodes',                title: 'Nodes Reference',              category: 'Core Concepts',   filename: 'NODES.md',               description: 'All built-in node types, secret references, and placeholder filters.' },
 
   // Developers
   { slug: 'node-sdk',             title: 'Node SDK',                     category: 'Developers',      filename: 'NODE-SDK.md',            description: 'Build custom nodes with the INode interface.' },

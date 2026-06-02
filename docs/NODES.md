@@ -394,10 +394,11 @@ With `inheritOutputs=true`, `integrations.http` receives `Amount`, `Currency`, e
 
 ### `data.set`  ✅ Shipped
 
-- **Purpose:** Sets workflow variables with optional `{{placeholder}}` substitution from node inputs.
+- **Purpose:** Sets workflow variables with `{{placeholder}}` substitution (including format filters) from node inputs.
 - **Inputs:** none
 - **Outputs:** dynamic — all keys from the `variables` config
-- **Config:** `variables` (JSON key→value map, required)
+- **Config:** `variables` (JSON key→value map, required — unquoted keys accepted, e.g. `{query: "value"}`)  
+  Supports filter syntax: `{{key|filter:arg}}` — see **Placeholder Filters** section below.
 
 ### `data.json-transform`  ✅ Shipped
 
@@ -575,6 +576,38 @@ Example: set piKey to {{secret:openai-key}} and the engine will substitute the 
 
 ---
 
+
+## Placeholder Filters
+
+Any `{{placeholder}}` in a node config value (in `data.set`, `integrations.email`, `integrations.http`, `integrations.slack`, and others) supports optional format filters:
+
+```
+{{key|filter}}
+{{key|filter:arg}}
+```
+
+### Supported Filters
+
+| Filter | Example | Description |
+|--------|---------|-------------|
+| `date:FORMAT` | `{{startDate\|date:yyyy/MM/dd}}` | Parse ISO datetime and reformat. Uses .NET date format strings. |
+| `upper` | `{{name\|upper}}` | Convert to UPPER CASE |
+| `lower` | `{{name\|lower}}` | Convert to lower case |
+| `trim` | `{{value\|trim}}` | Remove leading/trailing whitespace |
+| `default:VALUE` | `{{amount\|default:0}}` | Use VALUE when key is missing or empty |
+
+### Date Format Examples
+
+| Input value | Filter | Output |
+|-------------|--------|--------|
+| `2026-05-30T00:00:01.0000000` | `date:dd/MM/yyyy` | `30/05/2026` |
+| `2026-05-30T00:00:01.0000000` | `date:yyyy/MM/dd` | `2026/05/30` |
+| `2026-05-30T14:30:00` | `date:dd/MM/yyyy HH:mm` | `30/05/2026 14:30` |
+| `2026-05-30T00:00:01.0000000` | `date:MMMM d, yyyy` | `May 30, 2026` |
+
+Date parsing handles ISO 8601 (`2026-05-30T00:00:01.0000000`) automatically. If the value cannot be parsed as a date, it is returned unchanged.
+
+---
 ## Forms
 
 Form nodes are dynamically registered at runtime � one node type per form you create in the **Forms** builder (`/forms`). They appear in the designer palette under the **Forms** category.
