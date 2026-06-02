@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { ArrowLeft, XCircle, ClipboardCheck, RotateCcw } from 'lucide-react';
 import { PageHeader, Badge, statusVariant, statusLabel } from '@/components/ui';
 import { useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { CancelExecutionModal } from '@/components/CancelExecutionModal';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -22,6 +23,7 @@ export default function ExecutionDetailPage() {
   const [cancelling, setCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [rerunning, setRerunning] = useState(false);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const { data: exec } = useQuery({
     queryKey: ['execution', id],
     queryFn: () => api.executions.get(id),
@@ -153,34 +155,51 @@ export default function ExecutionDetailPage() {
           <h3 className="text-sm font-semibold text-slate-900">Node Timeline</h3>
         </div>
         <div className="divide-y divide-slate-100">
-          {timeline?.nodes.map((n, i) => (
-            <div key={n.id} className="flex items-start gap-4 p-4">
-              <div className="shrink-0 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-500">{i+1}</div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-medium text-sm text-slate-900">{n.nodeId}</span>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={statusVariant(n.status)}>{statusLabel(n.status)}</Badge>
-                    {n.status === 'WaitingForApproval' && pendingApproval && (
-                      <Link
-                        href={`/approvals/${pendingApproval.id}`}
-                        className="flex items-center gap-1 text-xs text-amber-700 hover:underline font-medium"
-                      >
-                        <ClipboardCheck size={12} /> Review
-                      </Link>
-                    )}
+          {timeline?.nodes.map((n, i) => {
+            const isSelected = selectedNodeId === n.id;
+            return (
+              <div key={n.id}>
+                <button
+                  className="w-full flex items-start gap-4 p-4 hover:bg-slate-50 transition-colors text-left"
+                  onClick={() => setSelectedNodeId(isSelected ? null : n.id)}
+                >
+                  <div className="shrink-0 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-500">{i+1}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-sm text-slate-900">{n.nodeId}</span>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={statusVariant(n.status)}>{statusLabel(n.status)}</Badge>
+                        {n.status === 'WaitingForApproval' && pendingApproval && (
+                          <Link
+                            href={`/approvals/${pendingApproval.id}`}
+                            className="flex items-center gap-1 text-xs text-amber-700 hover:underline font-medium"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            <ClipboardCheck size={12} /> Review
+                          </Link>
+                        )}
+                        {isSelected ? <ChevronDown size={14} className="text-slate-400" /> : <ChevronRight size={14} className="text-slate-400" />}
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-400 font-mono mt-0.5">{n.nodeType}</p>
+                    <div className="flex gap-4 mt-1 text-xs text-slate-400">
+                      <span>Start: {formatDate(n.startedAt)}</span>
+                      {n.completedAt && <span>End: {formatDate(n.completedAt)}</span>}
+                      {n.retryCount > 0 && <span className="text-orange-500">Retries: {n.retryCount}</span>}
+                    </div>
+                    {n.errorMessage && <p className="mt-1 text-xs text-red-500">{n.errorMessage}</p>}
                   </div>
-                </div>
-                <p className="text-xs text-slate-400 font-mono mt-0.5">{n.nodeType}</p>
-                <div className="flex gap-4 mt-1 text-xs text-slate-400">
-                  <span>Start: {formatDate(n.startedAt)}</span>
-                  {n.completedAt && <span>End: {formatDate(n.completedAt)}</span>}
-                  {n.retryCount > 0 && <span className="text-orange-500">Retries: {n.retryCount}</span>}
-                </div>
-                {n.errorMessage && <p className="mt-1 text-xs text-red-500">{n.errorMessage}</p>}
+                </button>
+
+                {isSelected && (
+                  <div className="border-t border-slate-100 bg-slate-50 px-4 py-3 space-y-3">
+                    <JsonPanel label="Input" json={n.inputJson} />
+                    <JsonPanel label="Output" json={n.outputJson} />
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
           {!timeline?.nodes.length && (
             <p className="text-sm text-slate-400 text-center py-6">No node executions yet - refreshing every 3s...</p>
           )}
@@ -221,5 +240,24 @@ export default function ExecutionDetailPage() {
         />
       )}
     </>
+  );
+}
+
+function JsonPanel({ label, json }: { label: string; json?: string | null }) {
+  if (!json) return (
+    <div>
+      <p className="text-xs font-semibold text-slate-500 mb-1">{label}</p>
+      <p className="text-xs text-slate-400 italic">—</p>
+    </div>
+  );
+
+  let pretty = json;
+  try { pretty = JSON.stringify(JSON.parse(json), null, 2); } catch { /* keep raw */ }
+
+  return (
+    <div>
+      <p className="text-xs font-semibold text-slate-500 mb-1">{label}</p>
+      <pre className="text-xs bg-white border border-slate-200 rounded-lg p-3 overflow-x-auto font-mono whitespace-pre-wrap max-h-64 overflow-y-auto leading-relaxed">{pretty}</pre>
+    </div>
   );
 }
