@@ -70,7 +70,8 @@ function GmailPanel({ initialClientId }: { initialClientId: string }) {
         </div>
       </div>
       <p className="text-xs text-slate-400">
-        Once saved, click <strong>Connect Gmail account</strong> in any GmailReadNode config drawer — no need to re-enter credentials each time.
+        Once saved, click <strong>Connect Gmail account</strong> in any GmailReadNode config drawer — no need to re-enter credentials each time.<br/>
+        You can store values as <code className="bg-slate-100 px-1 rounded font-mono">{'{{'+'secret:name'+'}}'}</code> and they will be resolved automatically.
       </p>
       <div className="flex items-center justify-between pt-2 border-t border-slate-100">
         {saved ? <p className="text-sm text-green-600 flex items-center gap-1"><CheckCircle size={14} /> Saved</p> : <span />}

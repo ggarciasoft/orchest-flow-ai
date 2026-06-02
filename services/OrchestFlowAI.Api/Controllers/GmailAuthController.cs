@@ -13,11 +13,12 @@ public sealed class GmailAuthController : ControllerBase
     private readonly IGmailCredentialRepository _repo;
     private readonly IHttpClientFactory _http;
     private readonly IPlatformSettingsService _settings;
+    private readonly ISecretService _secrets;
 
     private static readonly JsonSerializerOptions _jsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public GmailAuthController(IGmailCredentialRepository repo, IHttpClientFactory http, IPlatformSettingsService settings)
-    { _repo = repo; _http = http; _settings = settings; }
+    public GmailAuthController(IGmailCredentialRepository repo, IHttpClientFactory http, IPlatformSettingsService settings, ISecretService secrets)
+    { _repo = repo; _http = http; _settings = settings; _secrets = secrets; }
 
     /// <summary>
     /// Starts the OAuth2 flow. Redirects to Google consent screen.
@@ -43,6 +44,10 @@ public sealed class GmailAuthController : ControllerBase
         var settingsTenantId = Guid.TryParse(tenantId, out var tid) ? tid : Guid.Parse("00000000-0000-0000-0000-000000000001");
         var clientId = await _settings.GetAsync(settingsTenantId, "gmail.clientId", ct);
         var clientSecret = await _settings.GetAsync(settingsTenantId, "gmail.clientSecret", ct);
+
+        // Resolve {{secret:name}} placeholders so users can store credentials via Secrets instead of plain text
+        clientId = await _secrets.ResolveAsync(clientId, settingsTenantId, ct);
+        clientSecret = await _secrets.ResolveAsync(clientSecret, settingsTenantId, ct);
 
         if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
             return BadRequest(new { detail = "Gmail app credentials not configured. Go to Settings \u2192 Gmail to add your OAuth2 client ID and secret." });
