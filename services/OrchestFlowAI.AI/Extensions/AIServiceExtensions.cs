@@ -69,6 +69,14 @@ public static class AIServiceExtensions
                 sp.GetService<OrchestFlowAI.Application.Abstractions.IPlatformSettingsService>()));
         services.AddSingleton<ILLMProvider>(sp => sp.GetRequiredService<OllamaLLMProvider>());
 
+        // DeepSeek (OpenAI-compatible)
+        services.AddSingleton<DeepSeekLLMProvider>(sp =>
+            new DeepSeekLLMProvider(
+                sp.GetRequiredService<ILogger<DeepSeekLLMProvider>>(),
+                sp.GetService<OrchestFlowAI.Application.Abstractions.IPlatformSettingsService>(),
+                sp.GetService<OrchestFlowAI.Application.Abstractions.ISecretService>()));
+        services.AddSingleton<ILLMProvider>(sp => sp.GetRequiredService<DeepSeekLLMProvider>());
+
         // Router resolves the correct provider based on the model string or default
         services.AddSingleton(sp =>
             new LLMProviderRouter(

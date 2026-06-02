@@ -17,6 +17,7 @@ const PROVIDERS = [
   { id: 'anthropic', label: 'Anthropic',    description: 'Claude 3.5 Sonnet, Claude 3 Haiku, Claude 3 Opus',  iconBg: 'bg-amber-700' },
   { id: 'azure',     label: 'Azure OpenAI', description: 'Hosted GPT models via Azure deployment',            iconBg: 'bg-blue-600'  },
   { id: 'ollama',    label: 'Ollama',       description: 'Local models — Llama 3, Mistral, Phi-3, Gemma 2',  iconBg: 'bg-green-700' },
+  { id: 'deepseek',  label: 'DeepSeek',     description: 'deepseek-chat, deepseek-reasoner',                  iconBg: 'bg-cyan-700'  },
 ] as const;
 
 type ProviderId = typeof PROVIDERS[number]['id'];
@@ -30,6 +31,7 @@ function ProviderIcon({ id }: { id: ProviderId }) {
   if (id === 'openai')    return <div className={base}><span className="text-white text-xs font-bold">AI</span></div>;
   if (id === 'anthropic') return <div className={base}><Cpu size={16} className="text-white" /></div>;
   if (id === 'azure')     return <div className={base}><Cloud size={16} className="text-white" /></div>;
+  if (id === 'deepseek')  return <div className={base}><span className="text-white text-xs font-bold">DS</span></div>;
   return                         <div className={base}><Server size={16} className="text-white" /></div>;
 }
 
@@ -453,6 +455,72 @@ function OllamaPanel({
   );
 }
 
+function DeepSeekPanel({ isDefault, onSetDefault }: { isDefault: boolean; onSetDefault: () => void }) {
+  const [apiKey, setApiKey] = useState('');
+  const [showKey, setShowKey] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true); setSaved(false);
+    try {
+      if (apiKey) await api.settings.update({ 'llm.deepseek.apiKey': apiKey });
+      setSaved(true); setApiKey('');
+      setTimeout(() => setSaved(false), 3000);
+    } finally { setSaving(false); }
+  };
+
+  const handleSetDefault = async () => {
+    setSaving(true);
+    try {
+      await api.settings.update({ 'llm.defaultProvider': 'deepseek', 'llm.defaultModel': 'deepseek-chat' });
+      onSetDefault();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Provider status</span>
+        {isDefault ? (
+          <span className="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-md flex items-center gap-1">
+            <CheckCircle size={12} /> Active default
+          </span>
+        ) : (
+          <button onClick={handleSetDefault} disabled={saving}
+            className="px-3 py-1 border border-cyan-200 text-cyan-700 text-xs font-medium rounded-md hover:bg-cyan-50 disabled:opacity-50">
+            Set as default provider
+          </button>
+        )}
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">API Key</label>
+        <div className="relative">
+          <input type={showKey ? 'text' : 'password'}
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 pr-10"
+            placeholder="sk-... (leave blank to keep existing). Use {{secret:name}} to reference a vault secret."
+            value={apiKey} onChange={e => setApiKey(e.target.value)} />
+          <button type="button" onClick={() => setShowKey(v => !v)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+            {showKey ? <EyeOff size={15} /> : <Eye size={15} />}
+          </button>
+        </div>
+        <p className="text-xs text-slate-400 mt-1">Get your key at <a href="https://platform.deepseek.com" target="_blank" rel="noreferrer" className="underline">platform.deepseek.com</a>. Models: deepseek-chat, deepseek-reasoner.</p>
+      </div>
+      <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+        {saved ? <p className="text-sm text-green-600 flex items-center gap-1"><CheckCircle size={14} /> Saved</p> : <span />}
+        <button onClick={handleSave} disabled={saving}
+          className="bg-cyan-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-cyan-800 disabled:opacity-50 flex items-center gap-2">
+          {saving && <Loader2 size={14} className="animate-spin" />}
+          Save changes
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function ProvidersPage() {
   const [selected, setSelected] = useState<ProviderId>('openai');
@@ -556,6 +624,7 @@ export default function ProvidersPage() {
             {selected === 'anthropic' && <AnthropicPanel isDefault={activeProvider === 'anthropic'} onSetDefault={() => setActiveProvider('anthropic')} />}
             {selected === 'azure'     && <AzurePanel     initialEndpoint={azureEndpoint} initialDeployment={azureDeployment} isDefault={activeProvider === 'azure'} onSetDefault={() => setActiveProvider('azure')} />}
             {selected === 'ollama'    && <OllamaPanel    initialUrl={ollamaBaseUrl} isDefault={activeProvider === 'ollama'} onSetDefault={() => setActiveProvider('ollama')} />}
+            {selected === 'deepseek'  && <DeepSeekPanel  isDefault={activeProvider === 'deepseek'} onSetDefault={() => setActiveProvider('deepseek')} />}
           </div>
         </div>
       </div>

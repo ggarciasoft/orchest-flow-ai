@@ -42,6 +42,7 @@ public sealed class SettingsController : ControllerBase
         result.TryAdd("llm.azure.apiKey", null);
         result.TryAdd("llm.azure.deploymentName", all.GetValueOrDefault("llm.azure.deploymentName") ?? "");
         result.TryAdd("llm.ollama.baseUrl", all.GetValueOrDefault("llm.ollama.baseUrl") ?? "http://localhost:11434");
+        result.TryAdd("llm.deepseek.apiKey", null);
 
         return Ok(result);
     }
@@ -217,12 +218,14 @@ public sealed class SettingsController : ControllerBase
         var defaultProvider = await _settings.GetAsync(tenantId, "llm.defaultProvider", ct) ?? "openai";
         var defaultModel    = await _settings.GetAsync(tenantId, "llm.defaultModel",    ct) ?? "gpt-4o-mini";
 
+        var deepSeekKey = await _settings.GetAsync(tenantId, "llm.deepseek.apiKey",   ct);
         var configured = new Dictionary<string, bool>
         {
             ["openai"]    = !string.IsNullOrWhiteSpace(openAiKey),
             ["anthropic"] = !string.IsNullOrWhiteSpace(anthropicKey),
             ["azure"]     = !string.IsNullOrWhiteSpace(azureKey) && !string.IsNullOrWhiteSpace(azureEndpoint),
             ["ollama"]    = true,
+            ["deepseek"]  = !string.IsNullOrWhiteSpace(deepSeekKey),
         };
 
         return Ok(new
