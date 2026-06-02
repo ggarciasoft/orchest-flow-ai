@@ -40,7 +40,10 @@ public sealed class AnthropicLLMProvider : ILLMProvider
         {
             var dbKey = await _platformSettings.GetAsync(tenantId.Value, "llm.anthropic.apiKey", ct);
             if (!string.IsNullOrWhiteSpace(dbKey))
-                return await _secretService?.ResolveAsync(dbKey, tenantId.Value, ct) ?? dbKey;
+            {
+                var resolved = _secretService != null ? await _secretService.ResolveAsync(dbKey, tenantId.Value, ct) : null;
+                return resolved ?? dbKey;
+            }
         }
         return Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY") ?? "";
     }

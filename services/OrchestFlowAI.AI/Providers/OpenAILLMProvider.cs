@@ -29,7 +29,10 @@ public sealed class OpenAILLMProvider : ILLMProvider
         {
             var dbKey = await _platformSettings.GetAsync(tenantId.Value, "llm.openai.apiKey", ct);
             if (!string.IsNullOrWhiteSpace(dbKey))
-                return await _secretService?.ResolveAsync(dbKey, tenantId.Value, ct) ?? dbKey;
+            {
+                var resolved = _secretService != null ? await _secretService.ResolveAsync(dbKey, tenantId.Value, ct) : null;
+                return resolved ?? dbKey;
+            }
         }
         // Fall back to in-memory holder (env var or hot-reload from API process)
         return _keyHolder.ApiKey;

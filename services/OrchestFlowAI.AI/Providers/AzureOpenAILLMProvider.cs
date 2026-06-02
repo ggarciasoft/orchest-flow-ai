@@ -37,9 +37,9 @@ public sealed class AzureOpenAILLMProvider : ILLMProvider
             var rawEndpoint = await _platformSettings.GetAsync(tenantId.Value, "llm.azure.endpoint", ct);
             var rawApiKey = await _platformSettings.GetAsync(tenantId.Value, "llm.azure.apiKey", ct);
             var rawDeploymentName = await _platformSettings.GetAsync(tenantId.Value, "llm.azure.deploymentName", ct);
-            endpoint = await _secretService?.ResolveAsync(rawEndpoint, tenantId.Value, ct) ?? rawEndpoint;
-            apiKey = await _secretService?.ResolveAsync(rawApiKey, tenantId.Value, ct) ?? rawApiKey;
-            deploymentName = await _secretService?.ResolveAsync(rawDeploymentName, tenantId.Value, ct) ?? rawDeploymentName;
+            endpoint = _secretService != null ? await _secretService.ResolveAsync(rawEndpoint, tenantId.Value, ct) ?? rawEndpoint : rawEndpoint;
+            apiKey = _secretService != null ? await _secretService.ResolveAsync(rawApiKey, tenantId.Value, ct) ?? rawApiKey : rawApiKey;
+            deploymentName = _secretService != null ? await _secretService.ResolveAsync(rawDeploymentName, tenantId.Value, ct) ?? rawDeploymentName : rawDeploymentName;
         }
         endpoint ??= Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT") ?? "";
         apiKey ??= Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY") ?? "";
