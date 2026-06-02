@@ -20,6 +20,9 @@ public sealed class SendEmailNode : IWorkflowNode
         var to       = ctx.GetConfig<string>("to")      ?? throw new InvalidOperationException("'to' config is required");
         var subject  = ResolvePlaceholders(ctx.GetConfig<string>("subject") ?? throw new InvalidOperationException("'subject' config is required"), ctx.NodeInputs);
         var body     = ResolvePlaceholders(ctx.GetConfig<string>("body")    ?? throw new InvalidOperationException("'body' config is required"),    ctx.NodeInputs);
+        // Resolve placeholders in 'to' then split by comma for multiple recipients
+        var toResolved = ResolvePlaceholders(to, ctx.NodeInputs);
+        var recipients = toResolved.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var host     = ctx.GetConfig<string>("smtpHost")     ?? "localhost";
         var port     = (int)(ctx.GetConfig<double?>("smtpPort") ?? 587.0);
         var username = ctx.GetConfig<string>("smtpUsername") ?? "";
@@ -42,11 +45,11 @@ public sealed class SendEmailNode : IWorkflowNode
                 Body    = body,
                 From    = string.IsNullOrEmpty(username) ? new MailAddress("noreply@orchestflowai.com") : new MailAddress(username),
             };
-            mail.To.Add(to);
+            foreach (var recipient in recipients) mail.To.Add(recipient);
             await smtp.SendMailAsync(mail, ct);
 #pragma warning restore SYSLIB0006
 
-            return NodeExecutionResult.Succeeded(new Dictionary<string, object?> { ["sent"] = true, ["to"] = to });
+            return NodeExecutionResult.Succeeded(new Dictionary<string, object?> { ["sent"] = true, ["to"] = string.Join(", ", recipients) });
         }
         catch (Exception ex)
         {
@@ -80,7 +83,7 @@ public sealed class SendEmailNodeDescriptor : IWorkflowNodeDescriptor
     };
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
-        new NodeConfigDefinition("to",           "To",            "Recipient email address.",                      DataType.String,  Required: true),
+        new NodeConfigDefinition("to",           "To",            "Recipient(s). Comma-separated. Supports {{placeholders}}.", DataType.String,  Required: true),
         new NodeConfigDefinition("subject",       "Subject",       "Email subject (supports {{placeholders}}).",    DataType.String,  Required: true),
         new NodeConfigDefinition("body",          "Body",          "Email body (supports {{placeholders}}).",       DataType.String,  Required: true,  IsMultiline: true),
         new NodeConfigDefinition("smtpHost",      "SMTP Host",     "SMTP server hostname.",                         DataType.String,  Required: true,  DefaultValue: "smtp.gmail.com"),
