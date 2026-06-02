@@ -28,7 +28,7 @@ public sealed class NodesController : ControllerBase
             d.IconKey,
             d.Inputs.Select(i => new NodePortResponse(i.Key, i.DisplayName, i.Description, i.Type.ToString(), i.Required, i.DefaultValue, null)).ToList(),
             d.Outputs.Select(o => new NodePortResponse(o.Key, o.DisplayName, o.Description, o.Type.ToString(), null, null, null)).ToList(),
-            d.Configuration.Select(c => new NodePortResponse(c.Key, c.DisplayName, c.Description, c.Type.ToString(), c.Required, c.DefaultValue, c.AllowedValues, c.OptionsSource, c.OptionDescriptions, c.IsSensitive)).ToList()
+            d.Configuration.Select(c => new NodePortResponse(c.Key, c.DisplayName, c.Description, c.Type.ToString(), c.Required, c.DefaultValue, c.AllowedValues, c.OptionsSource, c.OptionDescriptions, c.IsSensitive, c.IsMultiline)).ToList()
         )).ToList();
         return Ok(new { nodes = descriptors });
     }
