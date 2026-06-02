@@ -757,7 +757,10 @@ public async Task CancelAsync(Guid executionId, CancellationToken ct = default)
                 foreach (var (targetKey, sourceKey) in edge.Map)
                     if (sourceOutputs.TryGetValue(sourceKey, out var mappedVal)) inputs[targetKey] = mappedVal;
             else
-                foreach (var (k, v) in sourceOutputs) inputs[k] = v;
+            {
+                _logger.LogInformation("ResolveInputs: pass-all from {Source}, copying {Count} keys", edge.Source, sourceOutputs.Count);
+                foreach (var (k, v) in sourceOutputs) { inputs[k] = v; _logger.LogInformation("  Copied {Key}", k); }
+            }
         }
         _logger.LogInformation("ResolveInputs result for {NodeId}: keys=[{Keys}]", nodeId, string.Join(", ", inputs.Keys));
         return inputs;
