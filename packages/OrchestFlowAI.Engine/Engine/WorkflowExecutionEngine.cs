@@ -463,6 +463,10 @@ public async Task ResumeAsync(Guid executionId, ResumeSignal signal, Cancellatio
             if (outputs != null) nodeOutputs[ne.NodeId] = outputs;
         }
         nodeOutputs[nodeExec.NodeId] = signal.ResumeOutputs;
+        _logger.LogInformation("Resume: nodeOutputs keys after setting resume outputs: [{Keys}]", string.Join(", ", nodeOutputs.Keys));
+        _logger.LogInformation("Resume: signal.ResumeOutputs keys: [{Keys}]", string.Join(", ", signal.ResumeOutputs.Keys));
+        foreach (var kv in signal.ResumeOutputs)
+            _logger.LogInformation("Resume: ResumeOutputs[{Key}] = {Value} (type={Type})", kv.Key, kv.Value, kv.Value?.GetType().Name ?? "null");
 
         var inputs = JsonSerializer.Deserialize<Dictionary<string, object?>>(execution.InputJson ?? "{}", _jsonOpts) ?? new();
         var resumeOutputsDict = signal.ResumeOutputs.ToDictionary(kv => kv.Key, kv => kv.Value);
@@ -759,6 +763,7 @@ public async Task CancelAsync(Guid executionId, CancellationToken ct = default)
             else
                 foreach (var (k, v) in sourceOutputs) inputs[k] = v;
         }
+        _logger.LogInformation("ResolveInputs result for {NodeId}: keys=[{Keys}]", nodeId, string.Join(", ", inputs.Keys));
         return inputs;
     }
 }
