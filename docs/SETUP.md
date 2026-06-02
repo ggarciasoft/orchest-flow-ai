@@ -158,7 +158,7 @@ OrchestFlowAI_AUTH__JWT_AUDIENCE=OrchestFlowAI-web
 ENCRYPTION_MASTER_KEY=dev-encryption-key-change-in-production   # CHANGE IN PRODUCTION
 
 # Storage
-OrchestFlowAI_STORAGE__ROOT=./data/uploads
+OrchestFlowAI_STORAGE__ROOT=../../data/uploads  # shared path; both API + Worker must point here
 
 # Web
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5080
