@@ -10,6 +10,7 @@ public sealed class AzureOpenAILLMProvider : ILLMProvider
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IPlatformSettingsService? _platformSettings;
+    private readonly ISecretService? _secretService;
     private readonly ILogger<AzureOpenAILLMProvider> _logger;
 
     public string Id => "azure";
@@ -19,11 +20,13 @@ public sealed class AzureOpenAILLMProvider : ILLMProvider
     public AzureOpenAILLMProvider(
         IHttpClientFactory httpClientFactory,
         ILogger<AzureOpenAILLMProvider> logger,
-        IPlatformSettingsService? platformSettings = null)
+        IPlatformSettingsService? platformSettings = null,
+        ISecretService? secretService = null)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
         _platformSettings = platformSettings;
+        _secretService = secretService;
     }
 
     private async Task<(string Endpoint, string ApiKey, string DeploymentName)> ResolveSettingsAsync(Guid? tenantId, CancellationToken ct)
@@ -31,9 +34,12 @@ public sealed class AzureOpenAILLMProvider : ILLMProvider
         string? endpoint = null, apiKey = null, deploymentName = null;
         if (_platformSettings != null && tenantId.HasValue)
         {
-            endpoint = await _platformSettings.GetAsync(tenantId.Value, "llm.azure.endpoint", ct);
-            apiKey = await _platformSettings.GetAsync(tenantId.Value, "llm.azure.apiKey", ct);
-            deploymentName = await _platformSettings.GetAsync(tenantId.Value, "llm.azure.deploymentName", ct);
+            var rawEndpoint = await _platformSettings.GetAsync(tenantId.Value, "llm.azure.endpoint", ct);
+            var rawApiKey = await _platformSettings.GetAsync(tenantId.Value, "llm.azure.apiKey", ct);
+            var rawDeploymentName = await _platformSettings.GetAsync(tenantId.Value, "llm.azure.deploymentName", ct);
+            endpoint = await _secretService?.ResolveAsync(rawEndpoint, tenantId.Value, ct) ?? rawEndpoint;
+            apiKey = await _secretService?.ResolveAsync(rawApiKey, tenantId.Value, ct) ?? rawApiKey;
+            deploymentName = await _secretService?.ResolveAsync(rawDeploymentName, tenantId.Value, ct) ?? rawDeploymentName;
         }
         endpoint ??= Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT") ?? "";
         apiKey ??= Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY") ?? "";

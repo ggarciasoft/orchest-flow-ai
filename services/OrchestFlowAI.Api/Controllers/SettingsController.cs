@@ -11,9 +11,10 @@ public sealed class SettingsController : ControllerBase
     private readonly IPlatformSettingsService _settings;
     private readonly OpenAIApiKeyHolder _openAiKeyHolder;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ISecretService _secretService;
 
-    public SettingsController(IPlatformSettingsService settings, OpenAIApiKeyHolder openAiKeyHolder, IHttpClientFactory httpClientFactory)
-    { _settings = settings; _openAiKeyHolder = openAiKeyHolder; _httpClientFactory = httpClientFactory; }
+    public SettingsController(IPlatformSettingsService settings, OpenAIApiKeyHolder openAiKeyHolder, IHttpClientFactory httpClientFactory, ISecretService secretService)
+    { _settings = settings; _openAiKeyHolder = openAiKeyHolder; _httpClientFactory = httpClientFactory; _secretService = secretService; }
 
     /// <summary>Returns current platform settings. API keys are masked.</summary>
     [HttpGet]
@@ -57,9 +58,12 @@ public sealed class SettingsController : ControllerBase
 
             await _settings.SetAsync(tenantId, kv.Key, kv.Value, ct);
 
-            // Hot-reload OpenAI key immediately
+            // Hot-reload OpenAI key immediately, resolving any secret placeholder first
             if (kv.Key == "llm.openai.apiKey")
-                _openAiKeyHolder.Update(kv.Value);
+            {
+                var resolved = await _secretService.ResolveAsync(kv.Value, tenantId, ct) ?? kv.Value;
+                _openAiKeyHolder.Update(resolved);
+            }
         }
 
         return NoContent();

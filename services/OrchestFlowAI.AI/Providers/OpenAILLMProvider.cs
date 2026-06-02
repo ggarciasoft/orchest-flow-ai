@@ -9,15 +9,17 @@ public sealed class OpenAILLMProvider : ILLMProvider
 {
     private readonly OpenAIApiKeyHolder _keyHolder;
     private readonly IPlatformSettingsService? _platformSettings;
+    private readonly ISecretService? _secretService;
     private readonly ILogger<OpenAILLMProvider> _logger;
     public string Id => "openai";
     public IReadOnlyCollection<string> Models => new[] { "gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo" };
 
-    public OpenAILLMProvider(OpenAIApiKeyHolder keyHolder, ILogger<OpenAILLMProvider> logger, IPlatformSettingsService? platformSettings = null)
+    public OpenAILLMProvider(OpenAIApiKeyHolder keyHolder, ILogger<OpenAILLMProvider> logger, IPlatformSettingsService? platformSettings = null, ISecretService? secretService = null)
     {
         _keyHolder = keyHolder;
         _logger = logger;
         _platformSettings = platformSettings;
+        _secretService = secretService;
     }
 
     private async Task<string> ResolveApiKeyAsync(Guid? tenantId, CancellationToken ct)
@@ -26,7 +28,8 @@ public sealed class OpenAILLMProvider : ILLMProvider
         if (_platformSettings != null && tenantId.HasValue)
         {
             var dbKey = await _platformSettings.GetAsync(tenantId.Value, "llm.openai.apiKey", ct);
-            if (!string.IsNullOrWhiteSpace(dbKey)) return dbKey;
+            if (!string.IsNullOrWhiteSpace(dbKey))
+                return await _secretService?.ResolveAsync(dbKey, tenantId.Value, ct) ?? dbKey;
         }
         // Fall back to in-memory holder (env var or hot-reload from API process)
         return _keyHolder.ApiKey;

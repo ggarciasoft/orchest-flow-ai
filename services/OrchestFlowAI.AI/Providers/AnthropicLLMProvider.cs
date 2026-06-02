@@ -11,6 +11,7 @@ public sealed class AnthropicLLMProvider : ILLMProvider
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IPlatformSettingsService? _platformSettings;
+    private readonly ISecretService? _secretService;
     private readonly ILogger<AnthropicLLMProvider> _logger;
 
     public string Id => "anthropic";
@@ -24,11 +25,13 @@ public sealed class AnthropicLLMProvider : ILLMProvider
     public AnthropicLLMProvider(
         IHttpClientFactory httpClientFactory,
         ILogger<AnthropicLLMProvider> logger,
-        IPlatformSettingsService? platformSettings = null)
+        IPlatformSettingsService? platformSettings = null,
+        ISecretService? secretService = null)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
         _platformSettings = platformSettings;
+        _secretService = secretService;
     }
 
     private async Task<string> ResolveApiKeyAsync(Guid? tenantId, CancellationToken ct)
@@ -36,7 +39,8 @@ public sealed class AnthropicLLMProvider : ILLMProvider
         if (_platformSettings != null && tenantId.HasValue)
         {
             var dbKey = await _platformSettings.GetAsync(tenantId.Value, "llm.anthropic.apiKey", ct);
-            if (!string.IsNullOrWhiteSpace(dbKey)) return dbKey;
+            if (!string.IsNullOrWhiteSpace(dbKey))
+                return await _secretService?.ResolveAsync(dbKey, tenantId.Value, ct) ?? dbKey;
         }
         return Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY") ?? "";
     }
