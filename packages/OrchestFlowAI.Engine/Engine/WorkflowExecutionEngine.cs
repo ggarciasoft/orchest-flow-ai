@@ -155,6 +155,7 @@ public async Task RunAsync(Guid executionId, CancellationToken ct = default)
                     // Mark execution as failed — retries have already been exhausted by the while loop above
                     execution.Fail(result.ErrorMessage ?? "error");
                     await execRepo.UpdateExecutionAsync(execution, ct);
+                    await CancelPendingApprovalAsync(execRepo, executionId, ct);
                     await _notifier.NotifyExecutionCompleted(executionId, "Failed", ct);
                     return;
 
@@ -429,6 +430,7 @@ public async Task ResumeAsync(Guid executionId, ResumeSignal signal, Cancellatio
                 await execRepo.UpdateNodeExecutionAsync(nodeExec, ct);
                 execution.Fail(validationResult.ErrorMessage ?? "Validation failed");
                 await execRepo.UpdateExecutionAsync(execution, ct);
+                await CancelPendingApprovalAsync(execRepo, executionId, ct);
                 await _notifier.NotifyExecutionCompleted(executionId, "Failed", ct);
                 return;
             }
@@ -521,6 +523,7 @@ public async Task ResumeAsync(Guid executionId, ResumeSignal signal, Cancellatio
                     execution.Fail(result.ErrorMessage ?? "error");
                     await execRepo.UpdateNodeExecutionAsync(ne2, ct);
                     await execRepo.UpdateExecutionAsync(execution, ct);
+                    await CancelPendingApprovalAsync(execRepo, executionId, ct);
                     return;
             }
 
@@ -735,6 +738,16 @@ public async Task CancelAsync(Guid executionId, CancellationToken ct = default)
         }
 
         return (result, step);
+    }
+
+    private async Task CancelPendingApprovalAsync(IEngineExecutionRepository execRepo, Guid executionId, CancellationToken ct)
+    {
+        var pending = await execRepo.GetPendingApprovalByExecutionIdAsync(executionId, ct);
+        if (pending != null)
+        {
+            pending.Cancel();
+            await execRepo.UpdateApprovalAsync(pending, ct);
+        }
     }
 
     private Dictionary<string, object?> ResolveInputs(string nodeId, List<WorkflowEdgeDefinition> edges,
