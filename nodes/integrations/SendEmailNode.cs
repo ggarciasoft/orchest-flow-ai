@@ -32,7 +32,8 @@ public sealed class SendEmailNode : IWorkflowNode
         var smtpUser = ctx.GetConfig<string>("smtpUsername");
         var smtpPass = ctx.GetConfig<string>("smtpPassword");
         bool hasOverride = !string.IsNullOrEmpty(smtpHostOverride)
-            && smtpHostOverride != "localhost";
+            && smtpHostOverride != "localhost"
+            && !string.IsNullOrEmpty(smtpUser);
 
         try
         {
