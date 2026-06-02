@@ -168,7 +168,7 @@ public sealed class HttpRequestNodeDescriptor : IWorkflowNodeDescriptor
         new NodeConfigDefinition("timeoutSeconds", "Timeout (s)", "Request timeout in seconds.", DataType.Number, Required: false, DefaultValue: 30),
         new NodeConfigDefinition("authType", "Auth Type", "Authentication type.", DataType.Enum, Required: false, DefaultValue: "none", AllowedValues: new[] { "none", "bearer", "basic", "api-key", "oauth2-client-credentials" }),
         new NodeConfigDefinition("authToken", "Auth Token", "Bearer token.", DataType.String, Required: false, IsSensitive: true),
-        new NodeConfigDefinition("authUsername", "Auth Username", "Basic auth username.", DataType.String, Required: false),
+        new NodeConfigDefinition("authUsername", "Auth Username", "Basic auth username. Supports {{secret:name}}.", DataType.String, Required: false, IsSensitive: true),
         new NodeConfigDefinition("authPassword", "Auth Password", "Basic auth password.", DataType.String, Required: false, IsSensitive: true),
         new NodeConfigDefinition("authApiKeyName", "API Key Name", "API key name.", DataType.String, Required: false),
         new NodeConfigDefinition("authApiKeyValue", "API Key Value", "API key value.", DataType.String, Required: false, IsSensitive: true),
