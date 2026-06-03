@@ -9,9 +9,9 @@ import { PublicFooter } from '../components/PublicFooter';
 // ─── data ────────────────────────────────────────────────────────────────────
 
 const stats = [
-  { value: '21',   label: 'Built-in nodes' },
+  { value: '31',   label: 'Built-in nodes' },
   { value: '4',    label: 'AI providers' },
-  { value: '6',    label: 'Node categories' },
+  { value: '7',    label: 'Node categories' },
   { value: '100%', label: 'Open source' },
 ];
 
@@ -41,7 +41,7 @@ const steps = [
 ];
 
 const features = [
-  { icon: GitBranch,    title: 'Visual Workflow Designer', desc: 'Drag-and-drop canvas with 20+ node types, version history, and undo/redo.' },
+  { icon: GitBranch,    title: 'Visual Workflow Designer', desc: 'Drag-and-drop canvas with 30+ node types, version history, and undo/redo.' },
   { icon: Zap,          title: 'Multi-Provider AI',        desc: 'Route tasks across OpenAI, Anthropic, Azure, and Ollama — switch defaults without a restart.' },
   { icon: ClipboardList, title: 'Forms & Approvals',       desc: 'Build dynamic forms with AI assistance and pause workflows for human input.' },
   { icon: Database,     title: 'External Data Intake',     desc: 'Pause and wait for external systems to POST data, with field validation and type coercion.' },

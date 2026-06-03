@@ -2,8 +2,8 @@
 
 <!-- Status & Build -->
 [![Status](https://img.shields.io/badge/status-active%20development-yellow?style=flat-square)](https://github.com/ggarciasoft/orchest-flow-ai)
-[![Backend Tests](https://img.shields.io/badge/backend%20tests-538%20passing-brightgreen?style=flat-square&logo=dotnet)](./tests/OrchestFlowAI.Tests)
-[![Frontend Tests](https://img.shields.io/badge/frontend%20tests-76%20passing-brightgreen?style=flat-square&logo=jest)](./apps/web)
+[![Backend Tests](https://img.shields.io/badge/backend%20tests-537%20passing-brightgreen?style=flat-square&logo=dotnet)](./tests/OrchestFlowAI.Tests)
+[![Frontend Tests](https://img.shields.io/badge/frontend%20tests-80%20passing-brightgreen?style=flat-square&logo=jest)](./apps/web)
 [![Last Commit](https://img.shields.io/github/last-commit/ggarciasoft/orchest-flow-ai?style=flat-square)](https://github.com/ggarciasoft/orchest-flow-ai/commits/main)
 
 <!-- Stack -->
@@ -13,7 +13,7 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev)
 
 <!-- Project Stats -->
-[![Nodes](https://img.shields.io/badge/nodes-24%20built--in-blue?style=flat-square)](./docs/NODES.md)
+[![Nodes](https://img.shields.io/badge/nodes-31%20built--in-blue?style=flat-square)](./docs/NODES.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green?style=flat-square)](./LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/ggarciasoft/orchest-flow-ai?style=flat-square)](https://github.com/ggarciasoft/orchest-flow-ai/stargazers)
 
@@ -36,8 +36,8 @@ OrchestFlowAI is a modular platform that lets teams build AI-driven business wor
 | Frontend (Next.js) | ✅ Running - designer, pages, auth |
 | Marketing site | ✅ Static export → GitHub Pages |
 | Workflow Engine | ✅ Implemented - graph execution, retries, approvals |
-| Node Library | ✅ **24 nodes** across 6 categories |
-| Unit Tests | ✅ **538/538 backend** · **80/80 frontend** passing |
+| Node Library | ✅ **31 nodes** across 7 categories |
+| Unit Tests | ✅ **537/537 backend** · **80/80 frontend** passing |
 | Database | ✅ PostgreSQL (Docker) — EF Core, auto-migrations |
 | Auth guard (frontend) | ✅ Complete - RBAC enforced across all pages and actions |
 | Role-gated UI | ✅ Viewers/Approvers cannot trigger write actions anywhere in the UI |
@@ -51,7 +51,7 @@ OrchestFlowAI is a modular platform that lets teams build AI-driven business wor
 
 - **Visual workflow design** - drag-and-drop nodes on a canvas (React Flow). Connect, configure, and delete nodes.
 - **Async execution** - a worker service runs workflows, persists state, retries, and resumes after human decisions.
-- **24 built-in nodes** - logic, AI, integrations, data, documents, human, and system nodes.
+- **31 built-in nodes** - logic, AI, integrations, data, documents, human, and system nodes.
 - **AI nodes** - classify, extract, translate, summarize, and analyze using a provider-agnostic LLM abstraction.
 - **Human approvals** - first-class node type; workflows pause and resume after approve/reject decisions.
 - **Document processing** - PDF text extraction; OCR and classification planned.
@@ -76,13 +76,16 @@ See [`docs/sample-workflows/contract-review.md`](./docs/sample-workflows/contrac
 
 ---
 
-## 🧩 Node Library (21 nodes)
+## 🧩 Node Library (31 nodes)
 
 ### System
 | Type | Purpose |
 |---|---|
 | `system.start` | Entry point - surfaces workflow inputs |
 | `system.end` | Terminal node - marks completion |
+| `system.read-config` | Read workflow-level configuration values |
+| `system.write-config` | Write workflow-level configuration values |
+| `system.data-checkpoint` | Pause and wait for external system to POST data |
 
 ### Logic
 | Type | Purpose |
@@ -91,6 +94,8 @@ See [`docs/sample-workflows/contract-review.md`](./docs/sample-workflows/contrac
 | `logic.switch` | Route by matching a value against configured cases |
 | `logic.delay` | Pause execution for N milliseconds |
 | `logic.merge` | Synchronize multiple branches |
+| `logic.for-each` | Iterate over a collection, spawning sub-executions |
+| `logic.for-each-end` | Collect results from for-each iterations |
 
 ### AI
 | Type | Purpose |
@@ -105,11 +110,13 @@ See [`docs/sample-workflows/contract-review.md`](./docs/sample-workflows/contrac
 | Type | Purpose |
 |---|---|
 | `human.approval` | Pause workflow for approve/reject decision |
+| `human.dynamic-form` | Pause workflow and present a configurable form to the user |
 
 ### Documents
 | Type | Purpose |
 |---|---|
 | `documents.extract-pdf` | Extract plain text from a PDF |
+| `documents.select-document` | Select a document from a collection for downstream use |
 
 ### Integrations
 | Type | Purpose |
@@ -118,12 +125,17 @@ See [`docs/sample-workflows/contract-review.md`](./docs/sample-workflows/contrac
 | `integrations.slack` | Post a message to a Slack webhook |
 | `integrations.webhook-out` | POST execution payload to a URL |
 | `integrations.email` | Send email via SMTP |
+| `integrations.gmail-read` | Read emails from a Gmail account |
+| `integrations.wait-for-webhook` | Pause and wait for an inbound webhook call |
+| `integrations.external-gate` | Pause workflow until an external approval signal arrives |
 
 ### Data
 | Type | Purpose |
 |---|---|
 | `data.set` | Set variables with `{{placeholder}}` substitution |
 | `data.json-transform` | Reshape JSON using dot-notation field mappings |
+| `data.database-query` | Run a read query against an external database |
+| `data.database-execute` | Run a write/DDL command against an external database |
 
 Full catalog with inputs/outputs/config: [`docs/NODES.md`](./docs/NODES.md)
 
@@ -175,7 +187,7 @@ orchest-flow-ai/
 │   ├── logic/                      # Control flow nodes
 │   └── system/                     # Start/End nodes
 ├── tests/
-│   └── OrchestFlowAI.Tests/        # xUnit test project (538 tests)
+│   └── OrchestFlowAI.Tests/        # xUnit test project (537 tests)
 ├── docs/                           # Architecture, API, nodes, setup docs
 ├── .github/workflows/              # CI + GitHub Pages deploy
 ├── docker-compose.yml              # Infra (PostgreSQL, Redis)
@@ -263,10 +275,10 @@ For infra + app only (no observability): `docker compose -f docker-compose.yml -
 
 ### Run tests
 ```bash
-# Backend (538 tests)
+# Backend (537 tests)
 cd tests/OrchestFlowAI.Tests && dotnet test --configuration Release
 
-# Frontend (62 tests)
+# Frontend (80 tests)
 pnpm --filter web test
 ```
 
