@@ -1,6 +1,5 @@
-using global::System.Net.Http;
-using global::System.Text;
-using global::System.Text.Json;
+using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using OrchestFlowAI.Application.Abstractions;
 using OrchestFlowAI.SDK.Context;
