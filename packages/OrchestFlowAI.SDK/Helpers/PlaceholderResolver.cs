@@ -157,7 +157,7 @@ public static class PlaceholderResolver
             JsonValueKind.Number  => current.GetRawText(),
             JsonValueKind.True    => "true",
             JsonValueKind.False   => "false",
-            JsonValueKind.Null    => null,
+            JsonValueKind.Null    => string.Empty,
             _                     => current.GetRawText(),
         };
     }
