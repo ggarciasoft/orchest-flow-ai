@@ -125,9 +125,6 @@ dotnet test --configuration Release
 
 # Frontend (from repo root — pnpm workspace filter)
 pnpm --filter web test
-
-# E2E (from repo root)
-pnpm --filter web test:e2e   # if you touched flows covered by E2E
 ```
 
 CI will run the same.
