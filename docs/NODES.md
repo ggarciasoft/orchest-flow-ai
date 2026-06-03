@@ -473,6 +473,7 @@ With `inheritOutputs=true`, `integrations.http` receives `Amount`, `Currency`, e
   | `headers` | String | JSON object of extra request headers |
   | `body` | String | Request body for POST/PUT |
   | `timeoutSeconds` | Number | Request timeout (default `30`) |
+  | `failOnError` | Boolean | When enabled, non-2xx responses mark the step as Failed (default `false`) |
   | `authType` | Enum | `none` · `bearer` · `basic` · `api-key` · `oauth2-client-credentials` (default `none`) |
 
   **Auth-specific config fields:**
@@ -606,6 +607,32 @@ Any `{{placeholder}}` in a node config value (in `data.set`, `integrations.email
 | `2026-05-30T00:00:01.0000000` | `date:MMMM d, yyyy` | `May 30, 2026` |
 
 Date parsing handles ISO 8601 (`2026-05-30T00:00:01.0000000`) automatically. If the value cannot be parsed as a date, it is returned unchanged.
+
+### Nested Path Resolution
+
+Placeholders support dot-notation for accessing nested JSON properties:
+
+```
+{{root.child.grandchild}}
+{{items.0.name}}
+```
+
+| Syntax | Description |
+|--------|-------------|
+| `{{data.Amount}}` | Traverses into `data` to get `Amount` (works when `data` is a JSON string or object) |
+| `{{items.0.name}}` | Array index access — gets `name` from the first element |
+| `{{obj.deep.value|upper}}` | Combined with filters — nested path + uppercase |
+| `{{data.price|default:0}}` | Falls back to default if nested path is missing |
+
+**How it works:**
+1. First tries the full dotted key as a flat lookup (exact match always wins)
+2. Falls back to splitting at the first `.` and traversing the JSON structure
+3. Supports `JsonElement` objects, JSON strings, and serializable POCOs
+4. Invalid paths leave the placeholder unreplaced
+
+**Example flow:**
+
+A code node outputs `{"extractedJson": "{\"Amount\": 2988.00, \"Currency\": \"DOP\"}"}`. The downstream HTTP node can reference `{{extractedJson.Amount}}` → `2988.00` directly in its body template.
 
 ---
 ## Forms

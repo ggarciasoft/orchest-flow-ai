@@ -2,8 +2,8 @@
 
 <!-- Status & Build -->
 [![Status](https://img.shields.io/badge/status-active%20development-yellow?style=flat-square)](https://github.com/ggarciasoft/orchest-flow-ai)
-[![Backend Tests](https://img.shields.io/badge/backend%20tests-316%20passing-brightgreen?style=flat-square&logo=dotnet)](./tests/OrchestFlowAI.Tests)
-[![Frontend Tests](https://img.shields.io/badge/frontend%20tests-62%20passing-brightgreen?style=flat-square&logo=jest)](./apps/web)
+[![Backend Tests](https://img.shields.io/badge/backend%20tests-538%20passing-brightgreen?style=flat-square&logo=dotnet)](./tests/OrchestFlowAI.Tests)
+[![Frontend Tests](https://img.shields.io/badge/frontend%20tests-76%20passing-brightgreen?style=flat-square&logo=jest)](./apps/web)
 [![Last Commit](https://img.shields.io/github/last-commit/ggarciasoft/orchest-flow-ai?style=flat-square)](https://github.com/ggarciasoft/orchest-flow-ai/commits/main)
 
 <!-- Stack -->
@@ -13,7 +13,7 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev)
 
 <!-- Project Stats -->
-[![Nodes](https://img.shields.io/badge/nodes-21%20built--in-blue?style=flat-square)](./docs/NODES.md)
+[![Nodes](https://img.shields.io/badge/nodes-24%20built--in-blue?style=flat-square)](./docs/NODES.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green?style=flat-square)](./LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/ggarciasoft/orchest-flow-ai?style=flat-square)](https://github.com/ggarciasoft/orchest-flow-ai/stargazers)
 
@@ -36,8 +36,8 @@ OrchestFlowAI is a modular platform that lets teams build AI-driven business wor
 | Frontend (Next.js) | ✅ Running — designer, pages, auth |
 | Marketing site | ✅ Static export → GitHub Pages |
 | Workflow Engine | ✅ Implemented — graph execution, retries, approvals |
-| Node Library | ✅ **21 nodes** across 6 categories |
-| Unit Tests | ✅ **299/299 backend** · **59/59 frontend** passing |
+| Node Library | ✅ **24 nodes** across 6 categories |
+| Unit Tests | ✅ **538/538 backend** · **76/80 frontend** passing |
 | Database | ⚠️ In-memory stubs (PostgreSQL not yet wired) |
 | Auth guard (frontend) | ✅ Complete — RBAC enforced across all pages and actions |
 | Role-gated UI | ✅ Viewers/Approvers cannot trigger write actions anywhere in the UI |
@@ -175,7 +175,7 @@ orchest-flow-ai/
 │   ├── logic/                      # Control flow nodes
 │   └── system/                     # Start/End nodes
 ├── tests/
-│   └── OrchestFlowAI.Tests/        # xUnit test project (316 tests)
+│   └── OrchestFlowAI.Tests/        # xUnit test project (538 tests)
 ├── docs/                           # Architecture, API, nodes, setup docs
 ├── .github/workflows/              # CI + GitHub Pages deploy
 ├── docker-compose.yml              # Infra (PostgreSQL, Redis)
@@ -263,7 +263,7 @@ For infra + app only (no observability): `docker compose -f docker-compose.yml -
 
 ### Run tests
 ```bash
-# Backend (316 tests)
+# Backend (538 tests)
 cd tests/OrchestFlowAI.Tests && dotnet test --configuration Release
 
 # Frontend (62 tests)
