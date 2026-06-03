@@ -31,6 +31,7 @@
 | **Conversational execution monitor** | Chat with a running execution: *"Why is this workflow stuck?"* — agent reads the timeline, node outputs, and approval state to answer. |
 | **AI form field extraction from documents** | Upload PDF/image → AI extracts structured data → auto-fills a form or creates a form definition from the document's fields. |
 | **Smart retry with AI** | On node failure, before retrying, the LLM can transform the inputs or adjust config based on the error — e.g. truncate a prompt that was too long, fix a malformed JSON. |
+| **Partial AI workflow/form patches** | Instead of returning a complete definition, the LLM returns only the diff/patch (new nodes, changed configs). The backend merges the partial result into the existing definition. Same for forms. Avoids token-limit truncation and makes incremental edits natural. |
 
 ## 🔴 Larger, more architectural
 
