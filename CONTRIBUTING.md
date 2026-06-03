@@ -119,9 +119,9 @@ What else was considered, and why we passed.
 Run before opening a PR:
 
 ```bash
-dotnet test OrchestFlowAI.sln
-pnpm --filter @OrchestFlowAI/web test
-pnpm --filter @OrchestFlowAI/web test:e2e   # if you touched flows covered by E2E
+dotnet test --configuration Release
+pnpm --filter web test
+pnpm --filter web test:e2e   # if you touched flows covered by E2E
 ```
 
 CI will run the same.
