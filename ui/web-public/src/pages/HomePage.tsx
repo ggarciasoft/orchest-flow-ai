@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import {
   ArrowRight, GitBranch, Zap, Shield, BarChart3, ClipboardList, Database,
-  Sparkles, Workflow, PlayCircle, Activity, Brain, UserCheck, Code2,
-  PlayCircle as StartIcon, StopCircle,
+  Sparkles, Workflow, PlayCircle, Activity,
 } from 'lucide-react';
 import { PublicFooter } from '../components/PublicFooter';
 
@@ -52,12 +51,12 @@ const features = [
 // ─── canvas mockup ────────────────────────────────────────────────────────────
 
 const mockNodes = [
-  { id: 'start',    x:  40, y:  80, label: 'Start',       color: '#4f46e5', icon: StartIcon, w: 110 },
-  { id: 'ai',       x: 200, y:  30, label: 'AI Classify', color: '#818cf8', icon: Brain,      w: 120 },
-  { id: 'cond',     x: 200, y: 130, label: 'Condition',   color: '#f59e0b', icon: GitBranch,  w: 120 },
-  { id: 'approval', x: 370, y:  30, label: 'Approval',    color: '#ef4444', icon: UserCheck,  w: 120 },
-  { id: 'code',     x: 370, y: 130, label: 'Transform',   color: '#8b5cf6', icon: Code2,      w: 120 },
-  { id: 'endNode',  x: 530, y:  80, label: 'End',         color: '#0f172a', icon: StopCircle, w: 100 },
+  { id: 'start',    x:  40, y:  80, label: 'Start',       color: '#4f46e5', w: 110 },
+  { id: 'ai',       x: 200, y:  30, label: 'AI Classify', color: '#818cf8', w: 120 },
+  { id: 'cond',     x: 200, y: 130, label: 'Condition',   color: '#f59e0b', w: 120 },
+  { id: 'approval', x: 370, y:  30, label: 'Approval',    color: '#ef4444', w: 120 },
+  { id: 'code',     x: 370, y: 130, label: 'Transform',   color: '#8b5cf6', w: 120 },
+  { id: 'endNode',  x: 530, y:  80, label: 'End',         color: '#0f172a', w: 100 },
 ];
 
 const mockEdges: [string, string][] = [
@@ -73,10 +72,18 @@ function nodeCenter(id: string) {
   return { cx: n.x + n.w / 2, cy: n.y + NODE_H / 2 };
 }
 
+const CANVAS_W = 680;
+const CANVAS_H = 200;
+
 function CanvasMockup() {
   return (
-    <div className="relative w-full max-w-[680px] mx-auto select-none" style={{ height: 200 }}>
-      <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+    <div className="relative w-full max-w-[680px] mx-auto select-none">
+      <svg
+        className="w-full h-auto"
+        viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`}
+        xmlns="http://www.w3.org/2000/svg"
+        preserveAspectRatio="xMidYMid meet"
+      >
         <defs>
           <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
             <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e2e8f0" strokeWidth="0.5" />
@@ -85,7 +92,7 @@ function CanvasMockup() {
             <path d="M0,0 L0,6 L6,3 z" fill="#94a3b8" />
           </marker>
         </defs>
-        <rect width="100%" height="100%" fill="url(#grid)" />
+        <rect width={CANVAS_W} height={CANVAS_H} fill="url(#grid)" />
         {mockEdges.map(([src, tgt]) => {
           const s = nodeCenter(src);
           const t = nodeCenter(tgt);
@@ -98,25 +105,27 @@ function CanvasMockup() {
             />
           );
         })}
+        {mockNodes.map(({ id, x, y, label, color, w }) => (
+          <g key={id}>
+            <rect x={x} y={y} width={w} height={NODE_H} rx={8} fill={color} />
+            <text
+              x={x + 24} y={y + NODE_H / 2 + 1}
+              fill="white" fontSize="11" fontWeight="600" dominantBaseline="middle"
+            >
+              {label}
+            </text>
+          </g>
+        ))}
+        {/* Toolbar overlay */}
+        <rect x={CANVAS_W - 168} y={8} width={160} height={28} rx={8} fill="white" fillOpacity={0.92} stroke="#e2e8f0" strokeWidth="1" />
+        <text x={CANVAS_W - 156} y={26} fontSize="10" fill="#64748b" fontWeight="500">v3</text>
+        <line x1={CANVAS_W - 136} y1={14} x2={CANVAS_W - 136} y2={30} stroke="#e2e8f0" strokeWidth="1" />
+        <text x={CANVAS_W - 126} y={26} fontSize="10" fill="#4f46e5" fontWeight="600">✦ AI</text>
+        <line x1={CANVAS_W - 100} y1={14} x2={CANVAS_W - 100} y2={30} stroke="#e2e8f0" strokeWidth="1" />
+        <text x={CANVAS_W - 90} y={26} fontSize="10" fill="#64748b" fontWeight="500">Save</text>
+        <line x1={CANVAS_W - 58} y1={14} x2={CANVAS_W - 58} y2={30} stroke="#e2e8f0" strokeWidth="1" />
+        <text x={CANVAS_W - 48} y={26} fontSize="10" fill="#059669" fontWeight="600">▶ Run</text>
       </svg>
-      {mockNodes.map(({ id, x, y, label, color, icon: Icon, w }) => (
-        <div key={id}
-          className="absolute flex items-center gap-1.5 rounded-lg px-2.5 text-white text-[11px] font-semibold shadow-sm"
-          style={{ left: x, top: y, width: w, height: NODE_H, background: color }}
-        >
-          <Icon size={13} className="shrink-0 opacity-90" />
-          <span className="truncate">{label}</span>
-        </div>
-      ))}
-      <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-white/90 border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-sm">
-        <span className="text-[10px] font-medium text-slate-500">v3</span>
-        <div className="w-px h-3 bg-slate-200" />
-        <span className="text-[10px] text-indigo-600 font-semibold flex items-center gap-0.5"><Sparkles size={9} /> AI</span>
-        <div className="w-px h-3 bg-slate-200" />
-        <span className="text-[10px] font-medium text-slate-500">Save</span>
-        <div className="w-px h-3 bg-slate-200" />
-        <span className="text-[10px] font-semibold text-emerald-600">▶ Run</span>
-      </div>
     </div>
   );
 }
