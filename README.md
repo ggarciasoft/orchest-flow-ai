@@ -22,7 +22,7 @@
 **GitHub:** https://github.com/ggarciasoft/orchest-flow-ai
 **Marketing site:** https://ggarciasoft.github.io/orchest-flow-ai/
 
-OrchestFlowAI is a modular platform that lets teams build AI-driven business workflows using reusable nodes. Workflows are stored as **data**, executed by a backend **engine**, and surfaced through a **visual designer**. You deploy it yourself — no vendor lock-in, no subscription, no data leaving your infrastructure.
+OrchestFlowAI is a modular platform that lets teams build AI-driven business workflows using reusable nodes. Workflows are stored as **data**, executed by a backend **engine**, and surfaced through a **visual designer**. You deploy it yourself - no vendor lock-in, no subscription, no data leaving your infrastructure.
 
 ---
 
@@ -32,16 +32,16 @@ OrchestFlowAI is a modular platform that lets teams build AI-driven business wor
 
 | Area | Status |
 |---|---|
-| Backend API (.NET 9) | ✅ Running — all endpoints implemented |
-| Frontend (Next.js) | ✅ Running — designer, pages, auth |
+| Backend API (.NET 9) | ✅ Running - all endpoints implemented |
+| Frontend (Next.js) | ✅ Running - designer, pages, auth |
 | Marketing site | ✅ Static export → GitHub Pages |
-| Workflow Engine | ✅ Implemented — graph execution, retries, approvals |
+| Workflow Engine | ✅ Implemented - graph execution, retries, approvals |
 | Node Library | ✅ **24 nodes** across 6 categories |
-| Unit Tests | ✅ **538/538 backend** · **76/80 frontend** passing |
-| Database | ⚠️ In-memory stubs (PostgreSQL not yet wired) |
-| Auth guard (frontend) | ✅ Complete — RBAC enforced across all pages and actions |
+| Unit Tests | ✅ **538/538 backend** · **80/80 frontend** passing |
+| Database | ✅ PostgreSQL (Docker) — EF Core, auto-migrations |
+| Auth guard (frontend) | ✅ Complete - RBAC enforced across all pages and actions |
 | Role-gated UI | ✅ Viewers/Approvers cannot trigger write actions anywhere in the UI |
-| CI/CD | ✅ GitHub Actions — backend tests, frontend build, Pages deploy |
+| CI/CD | ✅ GitHub Actions - backend tests, frontend build, Pages deploy |
 
 > See [`BACKLOG.md`](./BACKLOG.md) for the full list of known gaps and next steps.
 
@@ -49,14 +49,14 @@ OrchestFlowAI is a modular platform that lets teams build AI-driven business wor
 
 ## 🎯 What OrchestFlowAI Does
 
-- **Visual workflow design** — drag-and-drop nodes on a canvas (React Flow). Connect, configure, and delete nodes.
-- **Async execution** — a worker service runs workflows, persists state, retries, and resumes after human decisions.
-- **21 built-in nodes** — logic, AI, integrations, data, documents, human approval, and system nodes.
-- **AI nodes** — classify, extract, translate, summarize, and analyze using a provider-agnostic LLM abstraction.
-- **Human approvals** — first-class node type; workflows pause and resume after approve/reject decisions.
-- **Document processing** — PDF text extraction; OCR and classification planned.
-- **Integrations** — HTTP requests, email (SMTP), webhooks, Slack — all shipped.
-- **Auditability** — full execution timeline, AI usage logs, retries, and decisions recorded.
+- **Visual workflow design** - drag-and-drop nodes on a canvas (React Flow). Connect, configure, and delete nodes.
+- **Async execution** - a worker service runs workflows, persists state, retries, and resumes after human decisions.
+- **24 built-in nodes** - logic, AI, integrations, data, documents, human, and system nodes.
+- **AI nodes** - classify, extract, translate, summarize, and analyze using a provider-agnostic LLM abstraction.
+- **Human approvals** - first-class node type; workflows pause and resume after approve/reject decisions.
+- **Document processing** - PDF text extraction; OCR and classification planned.
+- **Integrations** - HTTP requests, email (SMTP), webhooks, Slack - all shipped.
+- **Auditability** - full execution timeline, AI usage logs, retries, and decisions recorded.
 
 ---
 
@@ -81,8 +81,8 @@ See [`docs/sample-workflows/contract-review.md`](./docs/sample-workflows/contrac
 ### System
 | Type | Purpose |
 |---|---|
-| `system.start` | Entry point — surfaces workflow inputs |
-| `system.end` | Terminal node — marks completion |
+| `system.start` | Entry point - surfaces workflow inputs |
+| `system.end` | Terminal node - marks completion |
 
 ### Logic
 | Type | Purpose |
@@ -133,13 +133,13 @@ Full catalog with inputs/outputs/config: [`docs/NODES.md`](./docs/NODES.md)
 
 | Layer | Tech |
 |---|---|
-| Backend | .NET 9 (C#) — xUnit, Moq, FluentAssertions |
+| Backend | .NET 9 (C#) - xUnit, Moq, FluentAssertions |
 | Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS, React Flow |
 | Marketing | Next.js 16 static export → GitHub Pages |
 | Package manager | pnpm (workspace) |
-| Database | PostgreSQL *(planned — currently in-memory stubs)* |
-| Queue | In-memory .NET Channels *(Redis/Service Bus planned)* |
-| AI | Provider abstraction — OpenAI, Anthropic, Azure, Ollama |
+| Database | PostgreSQL (Docker) — EF Core, auto-migrations |
+| Queue | Redis (StackExchange.Redis) — execution queue + pub/sub |
+| AI | Provider abstraction - OpenAI, Anthropic, Azure, Ollama |
 | Testing | xUnit + Jest + React Testing Library |
 | CI/CD | GitHub Actions |
 
@@ -220,12 +220,12 @@ orchest-flow-ai/
 - [Node.js 22+](https://nodejs.org/)
 - [pnpm](https://pnpm.io/installation) (`npm install -g pnpm`)
 
-### Option A — Local dev (no Docker, in-memory DB)
+### Option A - Local dev (no Docker, in-memory DB)
 ```bash
 git clone https://github.com/ggarciasoft/orchest-flow-ai.git
 cd orchest-flow-ai
 
-# Backend API (runs at http://localhost:5080 — Swagger at /swagger)
+# Backend API (runs at http://localhost:5080 - Swagger at /swagger)
 cd services/OrchestFlowAI.Api && dotnet run
 
 # Frontend (runs at http://localhost:3000)
@@ -234,7 +234,7 @@ pnpm install
 pnpm run dev:app
 ```
 
-### Option B — Docker with PostgreSQL
+### Option B - Docker with PostgreSQL
 ```bash
 # Infrastructure only (PostgreSQL + Redis)
 docker compose up -d
@@ -243,7 +243,7 @@ docker compose up -d
 CONNECTION_STRING="Host=localhost;Database=OrchestFlowAI;Username=OrchestFlowAI;Password=OrchestFlowAI" dotnet run --project services/OrchestFlowAI.Api
 ```
 
-### Option C — Full Docker stack (infra + app + observability)
+### Option C - Full Docker stack (infra + app + observability)
 ```bash
 # Copy and configure env vars
 cp .env.example .env
@@ -276,7 +276,7 @@ pnpm run dev:marketing    # http://localhost:3001
 pnpm run build:marketing  # static output → apps/marketing/out/
 ```
 
-> Tables are created automatically on first startup when PostgreSQL is configured — no manual migration step needed.
+> Tables are created automatically on first startup when PostgreSQL is configured - no manual migration step needed.
 
 ---
 
@@ -299,4 +299,4 @@ Contributions are welcome. Please open an issue or pull request on [GitHub](http
 
 ## 📜 License
 
-[Apache 2.0](./LICENSE) — free to use, modify, and distribute, including commercially.
+[Apache 2.0](./LICENSE) - free to use, modify, and distribute, including commercially.

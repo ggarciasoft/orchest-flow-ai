@@ -120,7 +120,7 @@ Run before opening a PR:
 
 ```bash
 # Backend (from repo root)
-cd orchestr-flow-ai
+cd tests\OrchestFlowAI.Tests
 dotnet test --configuration Release
 
 # Frontend (from repo root — pnpm workspace filter)
