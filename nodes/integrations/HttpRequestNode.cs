@@ -2,6 +2,7 @@ using global::System.Net.Http;
 using global::System.Text;
 using global::System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
+using OrchestFlowAI.Application.Abstractions;
 using OrchestFlowAI.SDK.Context;
 using OrchestFlowAI.SDK.Helpers;
 using OrchestFlowAI.SDK.Interfaces;
@@ -26,15 +27,13 @@ public sealed class HttpRequestNode : IWorkflowNode
 
         var url = PlaceholderResolver.Resolve(ctx.GetConfig<string>("url") ?? throw new InvalidOperationException("url config is required"), ctx.NodeInputs);
         var method = ctx.GetConfig<string>("method")?.ToUpperInvariant() ?? "GET";
-        var headersJson = PlaceholderResolver.Resolve(ctx.GetConfig<string>("headers"), ctx.NodeInputs);
+        var headersRaw = PlaceholderResolver.Resolve(ctx.GetConfig<string>("headers"), ctx.NodeInputs);
         var body = PlaceholderResolver.Resolve(ctx.GetConfig<string>("body"), ctx.NodeInputs);
         var timeoutSeconds = (int)(ctx.GetConfig<double?>("timeoutSeconds") ?? 30.0);
         var authType = ctx.GetConfig<string>("authType") ?? "none";
 
-        // Parse optional headers JSON object
-        var headers = headersJson != null
-            ? JsonSerializer.Deserialize<Dictionary<string, string>>(headersJson) ?? new()
-            : new Dictionary<string, string>();
+        // Parse headers — supports JSON object OR raw Key: Value lines
+        var headers = ParseHeaders(headersRaw);
 
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         cts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
@@ -46,7 +45,7 @@ public sealed class HttpRequestNode : IWorkflowNode
         foreach (var kv in headers)
             request.Headers.TryAddWithoutValidation(kv.Key, kv.Value);
 
-        // Apply authentication
+        // Apply authentication (with {{secret:name}} resolution)
         await ApplyAuth(request, authType, ctx, client, ct);
 
         var response = await client.SendAsync(request, cts.Token);
@@ -61,30 +60,71 @@ public sealed class HttpRequestNode : IWorkflowNode
     }
 
     /// <summary>
-    /// Applies authentication to the HTTP request based on the auth type.
+    /// Parses a headers string that can be either a JSON object or raw Key: Value lines.
     /// </summary>
-    private async Task ApplyAuth(HttpRequestMessage request, string authType, WorkflowExecutionContext ctx, HttpClient client, CancellationToken ct)
+    private static Dictionary<string, string> ParseHeaders(string? headersRaw)
     {
-        string Resolve(string? template, IReadOnlyDictionary<string, object?> inputs)
-            => PlaceholderResolver.Resolve(template, inputs);
+        if (string.IsNullOrWhiteSpace(headersRaw))
+            return new Dictionary<string, string>();
+
+        var trimmed = headersRaw.TrimStart();
+        // Try JSON format first
+        if (trimmed.StartsWith('{') || trimmed.StartsWith('['))
+        {
+            try { return JsonSerializer.Deserialize<Dictionary<string, string>>(headersRaw) ?? new(); }
+            catch (JsonException) { /* fall through to raw format */ }
+        }
+
+        // Raw format: one "Key: Value" per line
+        var result = new Dictionary<string, string>();
+        foreach (var line in headersRaw.Split('\n'))
+        {
+            var trimmedLine = line.Trim();
+            if (string.IsNullOrEmpty(trimmedLine)) continue;
+            var colonIndex = trimmedLine.IndexOf(':');
+            if (colonIndex <= 0) continue;
+            var key = trimmedLine[..colonIndex].Trim();
+            var value = trimmedLine[(colonIndex + 1)..].Trim();
+            result[key] = value;
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Applies authentication to the HTTP request based on the auth type.
+    /// Resolves both {{secret:name}} and {{key}} placeholders in auth config values.
+    /// </summary>
+    private static async Task ApplyAuth(HttpRequestMessage request, string authType, WorkflowExecutionContext ctx, HttpClient client, CancellationToken ct)
+    {
+        var secretService = ctx.Services.GetService<ISecretService>();
+
+        async Task<string> ResolveValue(string? template)
+        {
+            if (string.IsNullOrEmpty(template)) return template ?? string.Empty;
+            // 1. Resolve {{secret:name}} → actual secret value
+            if (secretService != null)
+                template = (await secretService.ResolveAsync(template, ctx.TenantId, ct)) ?? template;
+            // 2. Resolve {{key}} / {{key|filter}} → node input values
+            return PlaceholderResolver.Resolve(template, ctx.NodeInputs);
+        }
 
         switch (authType)
         {
             case "none":
                 break;
             case "bearer":
-                var token = Resolve(ctx.GetConfig<string>("authToken"), ctx.NodeInputs);
+                var token = await ResolveValue(ctx.GetConfig<string>("authToken"));
                 request.Headers.Authorization = new global::System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
                 break;
             case "basic":
-                var username = Resolve(ctx.GetConfig<string>("authUsername"), ctx.NodeInputs);
-                var password = Resolve(ctx.GetConfig<string>("authPassword"), ctx.NodeInputs);
+                var username = await ResolveValue(ctx.GetConfig<string>("authUsername"));
+                var password = await ResolveValue(ctx.GetConfig<string>("authPassword"));
                 var basicAuth = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}"));
                 request.Headers.Authorization = new global::System.Net.Http.Headers.AuthenticationHeaderValue("Basic", basicAuth);
                 break;
             case "api-key":
-                var keyName = Resolve(ctx.GetConfig<string>("authApiKeyName"), ctx.NodeInputs);
-                var keyValue = Resolve(ctx.GetConfig<string>("authApiKeyValue"), ctx.NodeInputs);
+                var keyName = await ResolveValue(ctx.GetConfig<string>("authApiKeyName"));
+                var keyValue = await ResolveValue(ctx.GetConfig<string>("authApiKeyValue"));
                 var keyLocation = ctx.GetConfig<string>("authApiKeyLocation")?.ToLowerInvariant() ?? "header";
                 if (keyLocation == "header")
                     request.Headers.TryAddWithoutValidation(keyName, keyValue);
@@ -98,10 +138,10 @@ public sealed class HttpRequestNode : IWorkflowNode
                 }
                 break;
             case "oauth2-client-credentials":
-                var tokenUrl = Resolve(ctx.GetConfig<string>("authTokenUrl"), ctx.NodeInputs);
-                var clientId = Resolve(ctx.GetConfig<string>("authClientId"), ctx.NodeInputs);
-                var clientSecret = Resolve(ctx.GetConfig<string>("authClientSecret"), ctx.NodeInputs);
-                var scope = Resolve(ctx.GetConfig<string>("authScope"), ctx.NodeInputs);
+                var tokenUrl = await ResolveValue(ctx.GetConfig<string>("authTokenUrl"));
+                var clientId = await ResolveValue(ctx.GetConfig<string>("authClientId"));
+                var clientSecret = await ResolveValue(ctx.GetConfig<string>("authClientSecret"));
+                var scope = await ResolveValue(ctx.GetConfig<string>("authScope"));
 
                 var tokenRequest = new HttpRequestMessage(HttpMethod.Post, tokenUrl)
                 {
@@ -140,7 +180,7 @@ public sealed class HttpRequestNodeDescriptor : IWorkflowNodeDescriptor
     /// <inheritdoc />
     public string Category => "integrations";
     /// <inheritdoc />
-    public string Version => "2.0.0";
+    public string Version => "2.1.0";
     /// <inheritdoc />
     public string? IconKey => "globe";
     /// <inheritdoc />
@@ -155,21 +195,21 @@ public sealed class HttpRequestNodeDescriptor : IWorkflowNodeDescriptor
     /// <inheritdoc />
     public IReadOnlyCollection<NodeConfigDefinition> Configuration => new[]
     {
-        new NodeConfigDefinition("url", "URL", "The URL to call.", DataType.String, Required: true),
+        new NodeConfigDefinition("url", "URL", "The URL to call. Supports {{key}} and {{secret:name}}.", DataType.String, Required: true),
         new NodeConfigDefinition("method", "Method", "HTTP method.", DataType.Enum, Required: false, DefaultValue: "GET", AllowedValues: new[] { "GET", "POST", "PUT", "DELETE", "PATCH" }),
-        new NodeConfigDefinition("headers", "Headers", "JSON object of request headers.", DataType.String, Required: false, IsMultiline: true),
-        new NodeConfigDefinition("body", "Body", "Request body for POST/PUT.", DataType.String, Required: false, IsMultiline: true),
+        new NodeConfigDefinition("headers", "Headers", "JSON object or Key: Value lines of request headers.", DataType.String, Required: false, IsMultiline: true),
+        new NodeConfigDefinition("body", "Body", "Request body for POST/PUT. Supports {{key}} placeholders.", DataType.String, Required: false, IsMultiline: true),
         new NodeConfigDefinition("timeoutSeconds", "Timeout (s)", "Request timeout in seconds.", DataType.Number, Required: false, DefaultValue: 30),
         new NodeConfigDefinition("authType", "Auth Type", "Authentication type.", DataType.Enum, Required: false, DefaultValue: "none", AllowedValues: new[] { "none", "bearer", "basic", "api-key", "oauth2-client-credentials" }),
-        new NodeConfigDefinition("authToken", "Auth Token", "Bearer token.", DataType.String, Required: false, IsSensitive: true),
-        new NodeConfigDefinition("authUsername", "Auth Username", "Basic auth username. Supports {{secret:name}}.", DataType.String, Required: false, IsSensitive: true),
-        new NodeConfigDefinition("authPassword", "Auth Password", "Basic auth password.", DataType.String, Required: false, IsSensitive: true),
-        new NodeConfigDefinition("authApiKeyName", "API Key Name", "API key name.", DataType.String, Required: false),
-        new NodeConfigDefinition("authApiKeyValue", "API Key Value", "API key value.", DataType.String, Required: false, IsSensitive: true),
+        new NodeConfigDefinition("authToken", "Auth Token", "Bearer token. Supports {{secret:name}} and {{key}}.", DataType.String, Required: false, IsSensitive: true),
+        new NodeConfigDefinition("authUsername", "Auth Username", "Basic auth username. Supports {{secret:name}} and {{key}}.", DataType.String, Required: false, IsSensitive: true),
+        new NodeConfigDefinition("authPassword", "Auth Password", "Basic auth password. Supports {{secret:name}} and {{key}}.", DataType.String, Required: false, IsSensitive: true),
+        new NodeConfigDefinition("authApiKeyName", "API Key Name", "API key name. Supports {{key}}.", DataType.String, Required: false),
+        new NodeConfigDefinition("authApiKeyValue", "API Key Value", "API key value. Supports {{secret:name}} and {{key}}.", DataType.String, Required: false, IsSensitive: true),
         new NodeConfigDefinition("authApiKeyLocation", "API Key Location", "Location for API key.", DataType.Enum, Required: false, DefaultValue: "header", AllowedValues: new[] { "header", "query" }),
-        new NodeConfigDefinition("authTokenUrl", "Auth Token URL", "OAuth2 token URL.", DataType.String, Required: false),
-        new NodeConfigDefinition("authClientId", "Client ID", "OAuth2 client ID.", DataType.String, Required: false),
-        new NodeConfigDefinition("authClientSecret", "Client Secret", "OAuth2 client secret.", DataType.String, Required: false, IsSensitive: true),
-        new NodeConfigDefinition("authScope", "Scope", "OAuth2 scope.", DataType.String, Required: false)
+        new NodeConfigDefinition("authTokenUrl", "Auth Token URL", "OAuth2 token URL. Supports {{key}}.", DataType.String, Required: false),
+        new NodeConfigDefinition("authClientId", "Client ID", "OAuth2 client ID. Supports {{secret:name}} and {{key}}.", DataType.String, Required: false),
+        new NodeConfigDefinition("authClientSecret", "Client Secret", "OAuth2 client secret. Supports {{secret:name}} and {{key}}.", DataType.String, Required: false, IsSensitive: true),
+        new NodeConfigDefinition("authScope", "Scope", "OAuth2 scope. Supports {{key}}.", DataType.String, Required: false)
     };
 }

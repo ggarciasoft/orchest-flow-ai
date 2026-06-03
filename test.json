@@ -1,0 +1,1099 @@
+{
+    "id": "9c9c6ab1-dfaf-4587-bb95-104c70b3baa3",
+    "name": "t",
+    "version": 1,
+    "nodes": [
+        {
+            "id": "system.start-1",
+            "type": "system.start",
+            "position": {
+                "x": 67.62530709460057,
+                "y": 77.85096673560079
+            },
+            "data": {
+                "label": "Start",
+                "config": {},
+                "descriptor": {
+                    "type": "system.start",
+                    "displayName": "Start",
+                    "description": "Entry point of the workflow. Surfaces workflow inputs.",
+                    "category": "system",
+                    "version": "1.0.0",
+                    "iconKey": "play",
+                    "inputs": [],
+                    "outputs": [],
+                    "configuration": []
+                }
+            },
+            "config": {}
+        },
+        {
+            "id": "system.read-config-1693833600000",
+            "type": "system.read-config",
+            "position": {
+                "x": 347.3609841784542,
+                "y": 132.84639715995235
+            },
+            "data": {
+                "label": "Read Config",
+                "config": {
+                    "key": "gmail.last_sync_date",
+                    "defaultValue": ""
+                },
+                "descriptor": {
+                    "type": "system.read-config",
+                    "displayName": "Read Config",
+                    "description": "Reads a persistent configuration value from the tenant config store.",
+                    "category": "system",
+                    "version": "1.0.0",
+                    "iconKey": "layers",
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "key": "value",
+                            "displayName": "Value",
+                            "description": "The config value (coerced to declared type).",
+                            "type": "String",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "found",
+                            "displayName": "Found",
+                            "description": "True if the key exists in the store.",
+                            "type": "Boolean",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "key",
+                            "displayName": "Key",
+                            "description": "The config key that was read.",
+                            "type": "String",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "valueType",
+                            "displayName": "Value Type",
+                            "description": "The declared value type.",
+                            "type": "String",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        }
+                    ],
+                    "configuration": [
+                        {
+                            "key": "key",
+                            "displayName": "Config Key",
+                            "description": "The config key to read, e.g. gmail.last_sync_date.",
+                            "type": "String",
+                            "required": true,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "defaultValue",
+                            "displayName": "Default Value",
+                            "description": "Value to use if the key does not exist.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        }
+                    ]
+                }
+            },
+            "config": {
+                "key": "gmail.last_sync_date",
+                "defaultValue": ""
+            }
+        },
+        {
+            "id": "data.set-1693833601000",
+            "type": "data.set",
+            "position": {
+                "x": 371.1121265723663,
+                "y": 241.94165192599263
+            },
+            "data": {
+                "label": "Set Variable",
+                "config": {
+                    "variables": "{query: \"{from:no-reply@apap.com.do from:notificaciones@bsc.com.do from:servicio@promerica.com.do from:Alertas@bhd.com.do from:notificaciones@popularenlinea.com} after:{{value}}\" }"
+                },
+                "descriptor": {
+                    "type": "data.set",
+                    "displayName": "Set Variable",
+                    "description": "Sets variables using key-value pairs with placeholder resolution.",
+                    "category": "data",
+                    "version": "1.0.0",
+                    "iconKey": "variable",
+                    "inputs": [],
+                    "outputs": [],
+                    "configuration": [
+                        {
+                            "key": "variables",
+                            "displayName": "Variables",
+                            "description": "JSON key-value pairs with placeholders.",
+                            "type": "String",
+                            "required": true,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        }
+                    ]
+                }
+            },
+            "config": {
+                "variables": "{query: \"{from:no-reply@apap.com.do from:notificaciones@bsc.com.do from:servicio@promerica.com.do from:Alertas@bhd.com.do from:notificaciones@popularenlinea.com} after:{{value}}\" }"
+            }
+        },
+        {
+            "id": "integrations.gmail.read-1693833602000",
+            "type": "integrations.gmail.read",
+            "position": {
+                "x": 141.51775009788267,
+                "y": 282.4224953318424
+            },
+            "data": {
+                "label": "Gmail Read",
+                "config": {
+                    "credentialName": "my-gmail",
+                    "clientId": "ggarciasoft@gmail.com",
+                    "clientSecret": "Gregori123",
+                    "refreshToken": "",
+                    "query": "{{query}}"
+                },
+                "descriptor": {
+                    "type": "integrations.gmail.read",
+                    "displayName": "Gmail Read",
+                    "description": "Reads emails from Gmail using OAuth2 refresh token. Returns a structured array of emails with subject, sender, date, and body.",
+                    "category": "integrations",
+                    "version": "1.0.0",
+                    "iconKey": "mail",
+                    "inputs": [
+                        {
+                            "key": "query",
+                            "displayName": "Query",
+                            "description": "Override the query config at runtime — wire from a Read Config or Set Variable node.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "key": "emails",
+                            "displayName": "Emails",
+                            "description": "JSON array of email objects: [{id, threadId, subject, from, date, body, snippet}].",
+                            "type": "String",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "count",
+                            "displayName": "Count",
+                            "description": "Number of emails returned.",
+                            "type": "Number",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        }
+                    ],
+                    "configuration": [
+                        {
+                            "key": "credentialName",
+                            "displayName": "Credential Name",
+                            "description": "Name of a saved Gmail credential (from /api/gmail/auth/start). If set, clientId/clientSecret/refreshToken are not needed.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": "gmail-credentials",
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "clientId",
+                            "displayName": "Client ID",
+                            "description": "OAuth2 client ID from Google Cloud Console.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "clientSecret",
+                            "displayName": "Client Secret",
+                            "description": "OAuth2 client secret from Google Cloud Console.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": true,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "refreshToken",
+                            "displayName": "Refresh Token",
+                            "description": "OAuth2 refresh token with Gmail read scope.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": true,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "query",
+                            "displayName": "Query",
+                            "description": "Gmail search query (e.g. is:unread, after:2026-05-01). Can be overridden by wiring the 'query' input from Read Config or Set Variable.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": "is:unread",
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "maxResults",
+                            "displayName": "Max Results",
+                            "description": "Maximum emails to retrieve (1-50, default: 10).",
+                            "type": "Number",
+                            "required": false,
+                            "defaultValue": 10,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        }
+                    ]
+                }
+            },
+            "config": {
+                "credentialName": "my-gmail",
+                "clientId": "ggarciasoft@gmail.com",
+                "clientSecret": "Gregori123",
+                "refreshToken": "",
+                "query": "{{query}}"
+            }
+        },
+        {
+            "id": "logic.foreach-1693833603000",
+            "type": "logic.foreach",
+            "position": {
+                "x": 351.3195079107729,
+                "y": 371.72513143628925
+            },
+            "data": {
+                "label": "For Each",
+                "config": {
+                    "itemVariable": "email",
+                    "maxItems": 100,
+                    "loopMode": true
+                },
+                "descriptor": {
+                    "type": "logic.foreach",
+                    "displayName": "For Each",
+                    "description": "Expands a JSON array into indexed outputs (item_0..N). Useful for fan-out processing of lists from previous nodes.",
+                    "category": "logic",
+                    "version": "1.0.0",
+                    "iconKey": "loop",
+                    "inputs": [
+                        {
+                            "key": "inputArray",
+                            "displayName": "Input Array",
+                            "description": "JSON array string (or serialized array) to iterate over.",
+                            "type": "String",
+                            "required": true,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "key": "items",
+                            "displayName": "Items",
+                            "description": "Full JSON array string of all processed items.",
+                            "type": "String",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "count",
+                            "displayName": "Count",
+                            "description": "Number of items in the array.",
+                            "type": "Number",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "firstItem",
+                            "displayName": "First Item",
+                            "description": "JSON string of the first item (convenience output).",
+                            "type": "String",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "item_0",
+                            "displayName": "Item 0",
+                            "description": "JSON string of the first item.",
+                            "type": "String",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "item_1",
+                            "displayName": "Item 1",
+                            "description": "JSON string of the second item.",
+                            "type": "String",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "item_2",
+                            "displayName": "Item 2",
+                            "description": "JSON string of the third item.",
+                            "type": "String",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "_foreach_items",
+                            "displayName": "ForEach Items (loop mode)",
+                            "description": "JSON array emitted when loopMode=true; consumed by the engine to run per-item subgraph iteration.",
+                            "type": "String",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "results",
+                            "displayName": "Results (loop mode)",
+                            "description": "Collected per-item outputs after the engine finishes looping (replaces _foreach_items in nodeOutputs).",
+                            "type": "Json",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        }
+                    ],
+                    "configuration": [
+                        {
+                            "key": "itemVariable",
+                            "displayName": "Item Variable",
+                            "description": "Name prefix for per-item outputs (default: item).",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": "item",
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "maxItems",
+                            "displayName": "Max Items",
+                            "description": "Maximum number of items to expand (default: 50, max: 200).",
+                            "type": "Number",
+                            "required": false,
+                            "defaultValue": 50,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "loopMode",
+                            "displayName": "Loop Mode",
+                            "description": "When true, the engine executes downstream nodes once per item instead of fan-out. Requires a logic.foreach.end node at the end of the loop body.",
+                            "type": "Boolean",
+                            "required": false,
+                            "defaultValue": false,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "inheritOutputs",
+                            "displayName": "Inherit Outputs",
+                            "description": "When true, each node in the loop body receives all outputs accumulated so far in the iteration (e.g. ai.extract outputs available to integrations.http without extra wiring). Off by default to keep memory usage low.",
+                            "type": "Boolean",
+                            "required": false,
+                            "defaultValue": false,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        }
+                    ]
+                }
+            },
+            "config": {
+                "itemVariable": "email",
+                "maxItems": 100,
+                "loopMode": true
+            }
+        },
+        {
+            "id": "ai.extract-1693833604000",
+            "type": "ai.extract",
+            "position": {
+                "x": 195.61757443957134,
+                "y": 474.22284664846507
+            },
+            "data": {
+                "label": "Data Extractor",
+                "config": {
+                    "textInput": "email.body",
+                    "fields": "amount,currency,category,store,date"
+                },
+                "descriptor": {
+                    "type": "ai.extract",
+                    "displayName": "Data Extractor",
+                    "description": "Extracts structured fields from unstructured text using an LLM.",
+                    "category": "ai",
+                    "version": "1.0.0",
+                    "iconKey": "database",
+                    "inputs": [
+                        {
+                            "key": "text",
+                            "displayName": "Text",
+                            "description": "The text to extract data from.",
+                            "type": "String",
+                            "required": true,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "key": "extractedJson",
+                            "displayName": "Extracted JSON",
+                            "description": "All extracted fields as a JSON object.",
+                            "type": "Json",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        }
+                    ],
+                    "configuration": [
+                        {
+                            "key": "fields",
+                            "displayName": "Fields",
+                            "description": "Comma-separated field names to extract e.g. 'name,date,amount'.",
+                            "type": "String",
+                            "required": true,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "formatPreset",
+                            "displayName": "Format Preset",
+                            "description": "Built-in format rules. Merged with Format Instructions (custom rules append/override).",
+                            "type": "Enum",
+                            "required": false,
+                            "defaultValue": "none",
+                            "allowedValues": [
+                                "none",
+                                "financial",
+                                "invoice",
+                                "contact"
+                            ],
+                            "optionsSource": null,
+                            "optionDescriptions": {
+                                "none": "No preset rules. Use Format Instructions for custom rules.",
+                                "financial": "Amount: numeric only (e.g. 150.00)\nCurrency: ISO 4217 code (USD, DOP, EUR…)\nDate: YYYY-MM-DD\nCategory: Food | Transport | Utilities | Entertainment | Healthcare | Other\nStore: merchant name only",
+                                "invoice": "Amount: numeric only (e.g. 1200.00)\nDate: YYYY-MM-DD\nInvoiceNumber: alphanumeric string\nVendor: company name only",
+                                "contact": "Name: full name, title-case\nEmail: lowercase email address\nPhone: E.164 format (e.g. +1234567890)\nCompany: company name only"
+                            },
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "formatInstructions",
+                            "displayName": "Format Instructions",
+                            "description": "Custom per-field format rules appended to the prompt. Overrides preset rules for the same field. E.g. 'Amount: numeric only. Date: YYYY-MM-DD.'.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": true
+                        },
+                        {
+                            "key": "textInput",
+                            "displayName": "Text Input",
+                            "description": "Which upstream output to use as the text source.",
+                            "type": "Enum",
+                            "required": false,
+                            "defaultValue": "text",
+                            "allowedValues": [
+                                "text",
+                                "item",
+                                "body"
+                            ],
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "model",
+                            "displayName": "Model",
+                            "description": "LLM model to use.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": "default",
+                            "allowedValues": null,
+                            "optionsSource": "llm-models",
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        }
+                    ]
+                }
+            },
+            "config": {
+                "textInput": "email.body",
+                "fields": "amount,currency,category,store,date"
+            }
+        },
+        {
+            "id": "integrations.http-1693833605000",
+            "type": "integrations.http",
+            "position": {
+                "x": 372.43163448313925,
+                "y": 570.1230223067763
+            },
+            "data": {
+                "label": "HTTP Request",
+                "config": {
+                    "url": "https://api.toshl.com/entries",
+                    "method": "POST",
+                    "headers": "Authorization: Basic {{secret:toshl-key}}",
+                    "body": "{\"amount\": \"{{amount}}\",\"currency\": {\"code\": \"{{currency}}\",\"rate\": 1,\"fixed\": false},\"date\": \"{{date}}\",\"desc\": \"{{category}} {{store}}\",\"account\": \"45\",\"category\": \"57509331\",\"completed\": false}",
+                    "timeoutSeconds": 30
+                },
+                "descriptor": {
+                    "type": "integrations.http",
+                    "displayName": "HTTP Request",
+                    "description": "Calls any external REST API endpoint with configurable auth (none, bearer, basic, api-key, OAuth2).",
+                    "category": "integrations",
+                    "version": "2.0.0",
+                    "iconKey": "globe",
+                    "inputs": [],
+                    "outputs": [
+                        {
+                            "key": "statusCode",
+                            "displayName": "Status Code",
+                            "description": "HTTP status code.",
+                            "type": "Number",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "responseBody",
+                            "displayName": "Response Body",
+                            "description": "Response body as string.",
+                            "type": "String",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "success",
+                            "displayName": "Success",
+                            "description": "True if 2xx status code.",
+                            "type": "Boolean",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        }
+                    ],
+                    "configuration": [
+                        {
+                            "key": "url",
+                            "displayName": "URL",
+                            "description": "The URL to call.",
+                            "type": "String",
+                            "required": true,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "method",
+                            "displayName": "Method",
+                            "description": "HTTP method.",
+                            "type": "Enum",
+                            "required": false,
+                            "defaultValue": "GET",
+                            "allowedValues": [
+                                "GET",
+                                "POST",
+                                "PUT",
+                                "DELETE",
+                                "PATCH"
+                            ],
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "headers",
+                            "displayName": "Headers",
+                            "description": "JSON object of request headers.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": true
+                        },
+                        {
+                            "key": "body",
+                            "displayName": "Body",
+                            "description": "Request body for POST/PUT.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": true
+                        },
+                        {
+                            "key": "timeoutSeconds",
+                            "displayName": "Timeout (s)",
+                            "description": "Request timeout in seconds.",
+                            "type": "Number",
+                            "required": false,
+                            "defaultValue": 30,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "authType",
+                            "displayName": "Auth Type",
+                            "description": "Authentication type.",
+                            "type": "Enum",
+                            "required": false,
+                            "defaultValue": "none",
+                            "allowedValues": [
+                                "none",
+                                "bearer",
+                                "basic",
+                                "api-key",
+                                "oauth2-client-credentials"
+                            ],
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "authToken",
+                            "displayName": "Auth Token",
+                            "description": "Bearer token.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": true,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "authUsername",
+                            "displayName": "Auth Username",
+                            "description": "Basic auth username. Supports {{secret:name}}.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": true,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "authPassword",
+                            "displayName": "Auth Password",
+                            "description": "Basic auth password.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": true,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "authApiKeyName",
+                            "displayName": "API Key Name",
+                            "description": "API key name.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "authApiKeyValue",
+                            "displayName": "API Key Value",
+                            "description": "API key value.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": true,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "authApiKeyLocation",
+                            "displayName": "API Key Location",
+                            "description": "Location for API key.",
+                            "type": "Enum",
+                            "required": false,
+                            "defaultValue": "header",
+                            "allowedValues": [
+                                "header",
+                                "query"
+                            ],
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "authTokenUrl",
+                            "displayName": "Auth Token URL",
+                            "description": "OAuth2 token URL.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "authClientId",
+                            "displayName": "Client ID",
+                            "description": "OAuth2 client ID.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "authClientSecret",
+                            "displayName": "Client Secret",
+                            "description": "OAuth2 client secret.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": true,
+                            "isMultiline": false
+                        },
+                        {
+                            "key": "authScope",
+                            "displayName": "Scope",
+                            "description": "OAuth2 scope.",
+                            "type": "String",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        }
+                    ]
+                }
+            },
+            "config": {
+                "url": "https://api.toshl.com/entries",
+                "method": "POST",
+                "headers": "Authorization: Basic {{secret:toshl-key}}",
+                "body": "{\"amount\": \"{{amount}}\",\"currency\": {\"code\": \"{{currency}}\",\"rate\": 1,\"fixed\": false},\"date\": \"{{date}}\",\"desc\": \"{{category}} {{store}}\",\"account\": \"45\",\"category\": \"57509331\",\"completed\": false}",
+                "timeoutSeconds": 30
+            }
+        },
+        {
+            "id": "logic.foreach.end-1693833606000",
+            "type": "logic.foreach.end",
+            "position": {
+                "x": 190.3395427964798,
+                "y": 674.5999993851115
+            },
+            "data": {
+                "label": "ForEach End",
+                "config": {},
+                "descriptor": {
+                    "type": "logic.foreach.end",
+                    "displayName": "ForEach End",
+                    "description": "Marks the end of a ForEach loop body. Wire after the last node in the loop body. The engine collects outputs from this node as the per-item result.",
+                    "category": "logic",
+                    "version": "1.0.0",
+                    "iconKey": "chevrons-right",
+                    "inputs": [
+                        {
+                            "key": "*",
+                            "displayName": "Any",
+                            "description": "All inputs are passed through as outputs.",
+                            "type": "Json",
+                            "required": false,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "key": "*",
+                            "displayName": "Any",
+                            "description": "All inputs passed through as outputs unchanged.",
+                            "type": "Json",
+                            "required": null,
+                            "defaultValue": null,
+                            "allowedValues": null,
+                            "optionsSource": null,
+                            "optionDescriptions": null,
+                            "isSensitive": false,
+                            "isMultiline": false
+                        }
+                    ],
+                    "configuration": []
+                }
+            },
+            "config": {}
+        },
+        {
+            "id": "system.end-999",
+            "type": "system.end",
+            "position": {
+                "x": 386,
+                "y": 810.25
+            },
+            "data": {
+                "label": "End",
+                "config": {},
+                "descriptor": {
+                    "type": "system.end",
+                    "displayName": "End",
+                    "description": "Terminal node. Marks workflow completion.",
+                    "category": "system",
+                    "version": "1.0.0",
+                    "iconKey": "stop",
+                    "inputs": [],
+                    "outputs": [],
+                    "configuration": []
+                }
+            },
+            "config": {}
+        }
+    ],
+    "edges": [
+        {
+            "id": "edge-start-read-config",
+            "source": "system.start-1",
+            "target": "system.read-config-1693833600000"
+        },
+        {
+            "id": "edge-read-config-set-query",
+            "source": "system.read-config-1693833600000",
+            "target": "data.set-1693833601000"
+        },
+        {
+            "id": "edge-set-query-read-emails",
+            "source": "data.set-1693833601000",
+            "target": "integrations.gmail.read-1693833602000"
+        },
+        {
+            "id": "edge-read-emails-foreach",
+            "source": "integrations.gmail.read-1693833602000",
+            "target": "logic.foreach-1693833603000"
+        },
+        {
+            "id": "edge-foreach-extract-financial",
+            "source": "logic.foreach-1693833603000",
+            "target": "ai.extract-1693833604000"
+        },
+        {
+            "id": "edge-extract-financial-post-api",
+            "source": "ai.extract-1693833604000",
+            "target": "integrations.http-1693833605000"
+        },
+        {
+            "id": "edge-post-api-foreach-end",
+            "source": "integrations.http-1693833605000",
+            "target": "logic.foreach.end-1693833606000"
+        },
+        {
+            "id": "edge-foreach-end-system-end",
+            "source": "logic.foreach.end-1693833606000",
+            "target": "system.end-999"
+        }
+    ]
+}
