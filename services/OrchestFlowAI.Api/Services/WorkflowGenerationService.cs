@@ -206,7 +206,12 @@ public sealed class WorkflowGenerationService
         {
             foreach (var item in changesEl.EnumerateArray())
             {
-                var s = item.GetString();
+                var s = item.ValueKind switch
+                {
+                    JsonValueKind.String => item.GetString(),
+                    JsonValueKind.Null   => null,
+                    _                    => item.GetRawText(), // object, array, number → raw JSON
+                };
                 if (s != null) changes.Add(s);
             }
         }
