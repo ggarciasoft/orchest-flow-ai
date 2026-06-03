@@ -119,8 +119,14 @@ What else was considered, and why we passed.
 Run before opening a PR:
 
 ```bash
+# Backend (from repo root)
+cd orchestr-flow-ai
 dotnet test --configuration Release
+
+# Frontend (from repo root — pnpm workspace filter)
 pnpm --filter web test
+
+# E2E (from repo root)
 pnpm --filter web test:e2e   # if you touched flows covered by E2E
 ```
 
