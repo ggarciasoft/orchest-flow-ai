@@ -12,6 +12,8 @@ public sealed class NodeExecutionResult
         new() { Success = true, Status = NodeExecutionStatus.Succeeded, Outputs = outputs };
     public static NodeExecutionResult Failed(string message, string? code = null, bool retryable = false) =>
         new() { Success = false, Status = NodeExecutionStatus.Failed, ErrorMessage = message, ErrorCode = code, Retryable = retryable };
+    public static NodeExecutionResult Failed(string message, Dictionary<string, object?> outputs) =>
+        new() { Success = false, Status = NodeExecutionStatus.Failed, ErrorMessage = message, Outputs = outputs };
     public static NodeExecutionResult WaitingForApproval(Dictionary<string, object?> payload) =>
         new() { Success = true, Status = NodeExecutionStatus.WaitingForApproval, Outputs = payload };
     public static NodeExecutionResult Skipped() =>

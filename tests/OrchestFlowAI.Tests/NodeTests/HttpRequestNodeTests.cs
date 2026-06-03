@@ -46,7 +46,7 @@ public sealed class HttpRequestNodeTests
     }
 
     [Fact]
-    public async Task Execute_FailureResponse_ShouldReturnSuccessFalse()
+    public async Task Execute_FailureResponse_Default_ShouldReturnSucceededWithSuccessFalse()
     {
         var services = BuildServices(HttpStatusCode.InternalServerError, "Error");
         var ctx = new TestContextBuilder()
@@ -56,6 +56,41 @@ public sealed class HttpRequestNodeTests
 
         var result = await new HttpRequestNode().ExecuteAsync(ctx, CancellationToken.None);
 
+        result.Status.Should().Be(NodeExecutionStatus.Succeeded);
+        result.Outputs["success"].Should().Be(false);
+        result.Outputs["statusCode"].Should().Be(500);
+    }
+
+    [Fact]
+    public async Task Execute_FailureResponse_FailOnError_ShouldReturnFailed()
+    {
+        var services = BuildServices(HttpStatusCode.BadRequest, "Bad Request Error");
+        var ctx = new TestContextBuilder()
+            .WithConfig(new() { ["url"] = "http://example.com", ["method"] = "GET", ["failOnError"] = true })
+            .WithServices(services)
+            .Build();
+
+        var result = await new HttpRequestNode().ExecuteAsync(ctx, CancellationToken.None);
+
+        result.Status.Should().Be(NodeExecutionStatus.Failed);
+        result.ErrorMessage.Should().Contain("400");
+        result.Outputs["success"].Should().Be(false);
+        result.Outputs["statusCode"].Should().Be(400);
+        result.Outputs["responseBody"].Should().Be("Bad Request Error");
+    }
+
+    [Fact]
+    public async Task Execute_FailureResponse_FailOnError_ExplicitFalse_ShouldSucceed()
+    {
+        var services = BuildServices(HttpStatusCode.InternalServerError, "Error");
+        var ctx = new TestContextBuilder()
+            .WithConfig(new() { ["url"] = "http://example.com", ["method"] = "GET", ["failOnError"] = false })
+            .WithServices(services)
+            .Build();
+
+        var result = await new HttpRequestNode().ExecuteAsync(ctx, CancellationToken.None);
+
+        result.Status.Should().Be(NodeExecutionStatus.Succeeded);
         result.Outputs["success"].Should().Be(false);
         result.Outputs["statusCode"].Should().Be(500);
     }

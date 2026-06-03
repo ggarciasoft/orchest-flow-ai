@@ -49,13 +49,23 @@ public sealed class HttpRequestNode : IWorkflowNode
 
         var response = await client.SendAsync(request, cts.Token);
         var responseBody = await response.Content.ReadAsStringAsync(ct);
+        var failOnError = ctx.GetConfig<bool?>("failOnError") ?? false;
 
-        return NodeExecutionResult.Succeeded(new Dictionary<string, object?>
+        var outputs = new Dictionary<string, object?>
         {
             ["statusCode"] = (int)response.StatusCode,
             ["responseBody"] = responseBody,
             ["success"] = response.IsSuccessStatusCode
-        });
+        };
+
+        if (failOnError && !response.IsSuccessStatusCode)
+        {
+            var summary = responseBody.Length > 500 ? responseBody[..500] + "…" : responseBody;
+            var errorMessage = $"HTTP {(int)response.StatusCode} {response.ReasonPhrase}: {summary}";
+            return NodeExecutionResult.Failed(errorMessage, outputs);
+        }
+
+        return NodeExecutionResult.Succeeded(outputs);
     }
 
     /// <summary>
@@ -199,6 +209,7 @@ public sealed class HttpRequestNodeDescriptor : IWorkflowNodeDescriptor
         new NodeConfigDefinition("headers", "Headers", "JSON object or Key: Value lines of request headers.", DataType.String, Required: false, IsMultiline: true),
         new NodeConfigDefinition("body", "Body", "Request body for POST/PUT. Supports {{key}} placeholders.", DataType.String, Required: false, IsMultiline: true),
         new NodeConfigDefinition("timeoutSeconds", "Timeout (s)", "Request timeout in seconds.", DataType.Number, Required: false, DefaultValue: 30),
+        new NodeConfigDefinition("failOnError", "Fail on Error", "When enabled, the step will be marked as failed if the HTTP response is not successful (non-2xx).", DataType.Boolean, Required: false, DefaultValue: false),
         new NodeConfigDefinition("authType", "Auth Type", "Authentication type.", DataType.Enum, Required: false, DefaultValue: "none", AllowedValues: new[] { "none", "bearer", "basic", "api-key", "oauth2-client-credentials" }),
         new NodeConfigDefinition("authToken", "Auth Token", "Bearer token. Supports {{secret:name}} and {{key}}.", DataType.String, Required: false, IsSensitive: true),
         new NodeConfigDefinition("authUsername", "Auth Username", "Basic auth username. Supports {{secret:name}} and {{key}}.", DataType.String, Required: false, IsSensitive: true),
