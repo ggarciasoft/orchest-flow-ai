@@ -58,7 +58,7 @@ public sealed class WorkflowGenerationService
             Prompt = userPrompt,
             Model = "default",
             Temperature = 0.2,
-            MaxTokens = 4096,
+            MaxTokens = 16384,
             TenantId = tenantId
         };
 
@@ -183,10 +183,24 @@ public sealed class WorkflowGenerationService
         {
             doc = JsonDocument.Parse(text);
         }
-        catch (JsonException ex)
+        catch (JsonException)
         {
-            throw new InvalidOperationException(
-                $"LLM response was not valid JSON. Raw text: {rawText}", ex);
+            // Try to recover from truncated JSON by closing unclosed braces/brackets
+            var repaired = TryRepairTruncatedJson(text);
+            if (repaired != null)
+            {
+                try { doc = JsonDocument.Parse(repaired); }
+                catch (JsonException ex2)
+                {
+                    throw new InvalidOperationException(
+                        $"LLM response was not valid JSON (raw length: {rawText.Length}). Raw text: {rawText}", ex2);
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    $"LLM response was not valid JSON (raw length: {rawText.Length}). Raw text: {rawText}");
+            }
         }
 
         var root = doc.RootElement;
@@ -235,5 +249,58 @@ public sealed class WorkflowGenerationService
         var definition = JsonSerializer.Deserialize<object>(definitionEl.GetRawText())!;
 
         return new WorkflowGenerationResult(definition, explanation, changes, "", "", 0);
+    }
+
+    /// <summary>
+    /// Attempts to repair truncated JSON by closing unmatched braces/brackets and quoting unquoted keys.
+    /// Returns the repaired string, or null if repair is not possible.
+    /// </summary>
+    private static string? TryRepairTruncatedJson(string text)
+    {
+        var trimmed = text.TrimEnd();
+
+        // Remove trailing comma before closing if present
+        trimmed = trimmed.TrimEnd(',');
+
+        // Close any unclosed string
+        var inString = false;
+        var escapeNext = false;
+        foreach (var ch in trimmed)
+        {
+            if (escapeNext) { escapeNext = false; continue; }
+            if (ch == '\\') { escapeNext = true; continue; }
+            if (ch == '"') inString = !inString;
+        }
+        if (inString)
+            trimmed += "\"";
+
+        // Count unmatched braces and brackets
+        var braceDepth = 0;
+        var bracketDepth = 0;
+        inString = false;
+        escapeNext = false;
+        foreach (var ch in trimmed)
+        {
+            if (escapeNext) { escapeNext = false; continue; }
+            if (ch == '\\' && inString) { escapeNext = true; continue; }
+            if (ch == '"') { inString = !inString; continue; }
+            if (inString) continue;
+            switch (ch)
+            {
+                case '{': braceDepth++; break;
+                case '}': braceDepth--; break;
+                case '[': bracketDepth++; break;
+                case ']': bracketDepth--; break;
+            }
+        }
+
+        // Close unmatched braces/brackets
+        for (var i = 0; i < bracketDepth; i++) trimmed += ']';
+        for (var i = 0; i < braceDepth; i++) trimmed += '}';
+
+        if (braceDepth > 0 || bracketDepth > 0 || inString)
+            return trimmed;
+
+        return null; // nothing to repair
     }
 }
