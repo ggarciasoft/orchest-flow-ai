@@ -20,6 +20,7 @@ jest.mock("lucide-react", () => ({
   Play: () => <span>Play</span>,
   CheckSquare: () => <span>CheckSquare</span>,
   AlertCircle: () => <span>AlertCircle</span>,
+  ArrowRight: () => <span>ArrowRight</span>,
   Clock: () => <span>Clock</span>,
   CheckCircle: () => <span>CheckCircle</span>,
   XCircle: () => <span>XCircle</span>,
@@ -41,6 +42,6 @@ describe("DashboardPage", () => {
     render(<DashboardPage />, { wrapper });
     expect(screen.getByText("Total Workflows")).toBeInTheDocument();
     expect(screen.getAllByText(/Executions/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Pending Approvals/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Pending Tasks/).length).toBeGreaterThan(0);
   });
 });

@@ -1,5 +1,10 @@
+import { act } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { NodeConfigDrawer } from '../NodeConfigDrawer';
+
+jest.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ role: 'Editor', canEdit: true, isAdmin: false, isApprover: true, displayName: 'Test', email: 'test@test.com' }),
+}));
 
 jest.mock('@/lib/api', () => ({
   api: {
@@ -54,33 +59,32 @@ const defaultProps = {
 describe('NodeConfigDrawer', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('renders the drawer with node title', () => {
-    render(<NodeConfigDrawer {...defaultProps} />);
+  it('renders the drawer with node title', async () => {
+    await act(async () => { render(<NodeConfigDrawer {...defaultProps} />); });
     expect(screen.getByText('HTTP Request')).toBeInTheDocument();
   });
 
-  it('calls onClose when the close button is clicked', () => {
-    render(<NodeConfigDrawer {...defaultProps} />);
+  it('calls onClose when the close button is clicked', async () => {
+    await act(async () => { render(<NodeConfigDrawer {...defaultProps} />); });
     const closeButton = screen.getByTitle('Close');
     closeButton.click();
     expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onDelete when the delete button is clicked', () => {
-    render(<NodeConfigDrawer {...defaultProps} />);
+  it('calls onDelete when the delete button is clicked', async () => {
+    await act(async () => { render(<NodeConfigDrawer {...defaultProps} />); });
     const deleteButton = screen.getByText('Delete Node');
     deleteButton.click();
     expect(defaultProps.onDelete).toHaveBeenCalledTimes(1);
   });
 
-  it('renders configuration fields', () => {
-    render(<NodeConfigDrawer {...defaultProps} />);
+  it('renders configuration fields', async () => {
+    await act(async () => { render(<NodeConfigDrawer {...defaultProps} />); });
     expect(screen.getAllByText(/URL/).length).toBeGreaterThan(0);
   });
 
-  it('shows auth type field for HTTP nodes', () => {
-    render(<NodeConfigDrawer {...defaultProps} />);
-    // Auth Type field comes from the descriptor configuration — no separate heading
+  it('shows auth type field for HTTP nodes', async () => {
+    await act(async () => { render(<NodeConfigDrawer {...defaultProps} />); });
     expect(screen.getByText('Auth Type')).toBeInTheDocument();
   });
 

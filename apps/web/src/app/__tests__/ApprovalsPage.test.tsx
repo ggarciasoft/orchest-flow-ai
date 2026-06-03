@@ -35,6 +35,6 @@ describe("ApprovalsPage", () => {
 
   it("renders the page heading", () => {
     render(<ApprovalsPage />, { wrapper });
-    expect(screen.getByText("Approval Inbox")).toBeInTheDocument();
+    expect(screen.getByText("Task Inbox")).toBeInTheDocument();
   });
 });
